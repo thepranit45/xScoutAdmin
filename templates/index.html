@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>xScout | Forensic Command</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+
+    <script src="{% static 'js/app.js' %}" defer></script>
+    <style>
+        .brand-x {
+            font-size: 2.2rem;
+            background: linear-gradient(135deg, #d946ef 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 900;
+            margin-right: 2px;
+            font-family: sans-serif;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Neural Network Animation Background -->
+    <canvas id="neuralNetwork"></canvas>
+
+    <div class="sidebar">
+        <div class="logo">
+            <!-- Removed Orb -->
+            <h2 style="font-family: sans-serif; font-size: 1.8rem; display: flex; align-items: center;"><span
+                    class="brand-x">x</span>Scout</h2>
+        </div>
+        <div class="nav">
+            <button class="nav-item active" onclick="switchTab('overview')">Overview</button>
+            <button class="nav-item" onclick="switchTab('forensics')">Forensics</button>
+            <button class="nav-item" onclick="switchTab('add-users')">Add Users</button>
+            <button class="nav-item" onclick="switchTab('settings')">Settings</button>
+        </div>
+        <div class="monitor-status">
+            Active Threads: <span id="active-threads">0</span>
+        </div>
+    </div>
+
+    <main>
+        <header>
+            <div class="search-bar">
+                <input type="text" placeholder="Search Session / Student ID..." />
+            </div>
+            <div class="user-info">
+                <span class="username">👤 {{ user.username }}</span>
+                <a href="{% url 'logout' %}" class="logout-btn">Logout</a>
+            </div>
+            <div class="stats-panel">
+                <div class="stat-card">
+                    <h3>Active Threats</h3>
+                    <div class="stat-value error">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Monitored</h3>
+                    <div class="stat-value secondary" id="total-monitored">1</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- OVERVIEW TAB -->
+        <section id="tab-overview" class="dashboard-grid tab-content">
+            <h2>Priority Alerts</h2>
+            <div class="glass-panel table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Activity</th>
+                            <th>AI Risk</th>
+                            <th>Last Activity</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="student-table">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- FORENSICS TAB -->
+        <section id="tab-forensics" class="tab-content"
+            style="display: none; height: 70vh; flex-direction: column; justify-content: center; align-items: center; color: var(--text-secondary);">
+            <div style="font-size: 3rem; margin-bottom: 20px; opacity: 0.5;">🔍</div>
+            <h3>Forensic Analysis</h3>
+            <p>Select a student from the <a href="#" onclick="switchTab('overview')"
+                    style="color: var(--accent-color);">Overview</a> tab to view detailed forensic reports.</p>
+        </section>
+
+        <!-- ADD USERS TAB -->
+        <section id="tab-add-users" class="tab-content dashboard-grid" style="display: none;">
+            <h2>Authorized User Management</h2>
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <!-- Add User Form -->
+                <div class="glass-panel" style="flex: 1; min-width: 300px; padding: 24px;">
+                    <h3 style="margin-bottom: 20px; color: var(--accent-text);">Authorize New ID</h3>
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label style="display: block; margin-bottom: 8px; color: #aaa;">Student ID</label>
+                        <input type="text" id="new-student-id" placeholder="e.g. STU-2024-001"
+                            style="width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 8px;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 24px;">
+                        <label style="display: block; margin-bottom: 8px; color: #aaa;">Description / Name</label>
+                        <input type="text" id="new-student-desc" placeholder="e.g. John Doe - Lab 3"
+                            style="width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 8px;">
+                    </div>
+                    <button onclick="addAuthorizedUser()"
+                        style="width: 100%; padding: 12px; background: var(--accent-color); border: none; border-radius: 8px; color: white; font-weight: 600; cursor: pointer;">Add
+                        User</button>
+                    <div id="add-user-msg" style="margin-top: 10px; font-size: 0.9rem;"></div>
+                </div>
+
+                <!-- User List -->
+                <div class="glass-panel table-container" style="flex: 2; min-width: 400px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Student ID</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="authorized-users-list">
+                            <!-- Populated by JS -->
+                            <tr>
+                                <td>TEST-001</td>
+                                <td>Demo Account</td>
+                                <td><span style="color: #00ff00;">Active</span></td>
+                                <td><button class="analyze-btn"
+                                        style="background: rgba(255,0,0,0.2); color: red;">Revoke</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- SETTINGS TAB -->
+        <section id="tab-settings" class="tab-content dashboard-grid" style="display: none;">
+            <h2>System Configuration</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;">
+
+                <!-- Card 1: Monitoring Config -->
+                <div class="glass-panel" style="padding: 30px;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                        <h3 style="margin: 0; color: white;">🛡️ Global Monitoring</h3>
+                        <div class="control-dot green"></div>
+                    </div>
+
+                    <div class="setting-item"
+                        style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="color: #ddd; font-weight: 500;">Real-time Telemetry</div>
+                            <div style="color: #666; font-size: 0.8rem;">Live socket connections</div>
+                        </div>
+                        <label class="switch"
+                            style="position: relative; display: inline-block; width: 44px; height: 24px;">
+                            <input type="checkbox" checked onchange="toggleSetting(this)">
+                            <span class="slider round"
+                                style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .4s; border-radius: 34px;"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item"
+                        style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="color: #ddd; font-weight: 500;">AI Threat Detection</div>
+                            <div style="color: #666; font-size: 0.8rem;">Analyze context/semantics</div>
+                        </div>
+                        <label class="switch"
+                            style="position: relative; display: inline-block; width: 44px; height: 24px;">
+                            <input type="checkbox" checked onchange="toggleSetting(this)">
+                            <span class="slider round"
+                                style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .4s; border-radius: 34px;"></span>
+                        </label>
+                    </div>
+
+                    <div class="setting-item"
+                        style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="color: #ddd; font-weight: 500;">Forensic Logging</div>
+                            <div style="color: #666; font-size: 0.8rem;">Save screenshots/logs</div>
+                        </div>
+                        <label class="switch"
+                            style="position: relative; display: inline-block; width: 44px; height: 24px;">
+                            <input type="checkbox" checked onchange="toggleSetting(this)">
+                            <span class="slider round"
+                                style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .4s; border-radius: 34px;"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Card 2: Thresholds -->
+                <div class="glass-panel" style="padding: 30px;">
+                    <h3 style="margin-bottom: 24px; color: white;">⚠️ Alert Thresholds</h3>
+
+                    <div style="margin-bottom: 24px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                            <label style="color: #aaa;">AI Risk Score (High)</label>
+                            <span id="risk-val" style="color: #FF26B9;">85%</span>
+                        </div>
+                        <input type="range" min="0" max="100" value="85" style="width: 100%; accent-color: #FF26B9;"
+                            oninput="document.getElementById('risk-val').innerText = this.value + '%'">
+                    </div>
+
+                    <div style="margin-bottom: 24px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                            <label style="color: #aaa;">Inactivity Timeout</label>
+                            <span id="idle-val" style="color: #B026FF;">5 min</span>
+                        </div>
+                        <input type="range" min="1" max="60" value="5" style="width: 100%; accent-color: #B026FF;"
+                            oninput="document.getElementById('idle-val').innerText = this.value + ' min'">
+                    </div>
+                </div>
+
+                <!-- Card 3: Data & Maintenance -->
+                <div class="glass-panel" style="padding: 30px;">
+                    <h3 style="margin-bottom: 24px; color: white;">💾 Data Management</h3>
+
+                    <button class="settings-btn" onclick="performAction('export')"
+                        style="width: 100%; padding: 12px; margin-bottom: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 8px; cursor: pointer; text-align: left; transition: 0.2s;">
+                        📄 Export All Activity Logs
+                    </button>
+                    <button class="settings-btn" onclick="performAction('backup')"
+                        style="width: 100%; padding: 12px; margin-bottom: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 8px; cursor: pointer; text-align: left; transition: 0.2s;">
+                        ☁️ Create System Backup
+                    </button>
+                    <button class="settings-btn" onclick="performAction('purge')"
+                        style="width: 100%; padding: 12px; background: rgba(255, 38, 38, 0.1); border: 1px solid rgba(255, 38, 38, 0.3); color: #ff6b6b; border-radius: 8px; cursor: pointer; text-align: left; transition: 0.2s;">
+                        🗑️ Purge Old Records (>30 Days)
+                    </button>
+
+                    <div style="margin-top: 24px; font-size: 0.8rem; color: #555; text-align: center;">
+                        xScout Core v2.4.1 (Build 2026.01.29)<br>
+                        Server Status: <span style="color: #4CAF50;">Operational</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ADD STYLE FOR SETTINGS TOGGLES -->
+        <style>
+            .switch input {
+                opacity: 0;
+                width: 0;
+                height: 0;
+            }
+
+            .slider {
+                position: absolute;
+                cursor: pointer;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: #ccc;
+                -webkit-transition: .4s;
+                transition: .4s;
+            }
+
+            .slider:before {
+                position: absolute;
+                content: "";
+                height: 16px;
+                width: 16px;
+                left: 4px;
+                bottom: 4px;
+                background-color: white;
+                -webkit-transition: .4s;
+                transition: .4s;
+                border-radius: 50%;
+            }
+
+            input:checked+.slider {
+                background-color: #B026FF;
+            }
+
+            input:focus+.slider {
+                box-shadow: 0 0 1px #B026FF;
+            }
+
+            input:checked+.slider:before {
+                -webkit-transform: translateX(20px);
+                -ms-transform: translateX(20px);
+                transform: translateX(20px);
+            }
+
+            .settings-btn:hover {
+                background: rgba(255, 255, 255, 0.1) !important;
+                padding-left: 16px !important;
+            }
+        </style>
+
+        <script>
+            function toggleSetting(el) {
+                // Mock save setting
+                console.log('Setting changed:', el.checked);
+            }
+
+            async function performAction(action) {
+                if (action === 'export') {
+                    window.location.href = '/api/export-logs/';
+                } else if (action === 'backup') {
+                    window.location.href = '/api/system-backup/';
+                } else if (action === 'purge') {
+                    if (!confirm('Are you sure you want to delete records relative to testing?')) return;
+
+                    try {
+                        const res = await fetch('/api/purge-logs/', { method: 'POST' });
+                        const data = await res.json();
+                        alert(data.message);
+                    } catch (e) {
+                        alert('Error purging logs');
+                    }
+                }
+            }
+        </script>
+
+        <!-- Forensic Details Modal -->
+        <div id="forensic-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Forensic Detail Analysis</h2>
+                    <span class="close-modal" onclick="closeModal()">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="student-info-header">
+                        <div>
+                            <span class="label">STUDENT</span>
+                            <h1 id="modal-student-name">Student Name</h1>
+                        </div>
+                        <div class="risk-score-panel">
+                            <span class="label">RISK SCORE</span>
+                            <h2 id="modal-risk-score" style="color: #00ff00;">0%</h2>
+                        </div>
+                    </div>
+
+                    <h3 class="section-title">APP USAGE HISTORY</h3>
+                    <div class="glass-panel">
+                        <table class="forensic-table">
+                            <thead>
+                                <tr>
+                                    <th>APP</th>
+                                    <th>WINDOW TITLE</th>
+                                    <th>CONTEXT</th>
+                                    <th>TIME</th>
+                                    <th>ACTION</th>
+                                </tr>
+                            </thead>
+                            <tbody id="forensic-history-body">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Tab Switching Logic
+        function switchTab(tabId) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.style.display = 'none';
+            });
+
+            // Show selected tab
+            const selectedTab = document.getElementById('tab-' + tabId);
+            if (selectedTab) {
+                if (tabId === 'forensics') {
+                    selectedTab.style.display = 'flex'; // Flex for centering
+                } else {
+                    selectedTab.style.display = 'block'; // Block for normal layout
+                }
+            }
+
+            // Update nav buttons
+            document.querySelectorAll('.nav-item').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.innerText.toLowerCase().includes(tabId.replace('-', ' '))) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        // Connect Nexus Logic (Dashboard Version)
+        async function connectDashboardNexus() {
+            const idInput = document.getElementById('nexus-student-id');
+            const msgBox = document.getElementById('nexus-dashboard-msg');
+            const studentId = idInput.value.trim();
+            const btn = document.querySelector('.nexus-btn');
+
+            if (!studentId) {
+                msgBox.style.color = '#F87171';
+                msgBox.innerText = "Please enter a Student ID";
+                return;
+            }
+
+            msgBox.style.color = '#a855f7';
+            msgBox.innerText = "Verifying Identity...";
+            btn.style.opacity = '0.7';
+
+            try {
+                const response = await fetch('/auth/api/verify-id/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ student_id: studentId })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    msgBox.style.color = '#4CAF50';
+                    msgBox.innerText = "ACCESS GRANTED.";
+                    idInput.style.borderColor = '#4CAF50';
+                    // Here you would typically load that student's specific data
+                    setTimeout(() => {
+                        alert("Connection Established to " + studentId);
+                        idInput.value = '';
+                        msgBox.innerText = '';
+                        idInput.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                    }, 1000);
+                } else {
+                    msgBox.style.color = '#F87171';
+                    msgBox.innerText = data.message || "Access Denied";
+                    idInput.style.borderColor = '#F87171';
+                }
+            } catch (error) {
+                msgBox.style.color = '#F87171';
+                msgBox.innerText = "Connection Error.";
+            }
+            btn.style.opacity = '1';
+        }
+
+        // Add User Logic
+        async function addAuthorizedUser() {
+            const id = document.getElementById('new-student-id').value;
+            const desc = document.getElementById('new-student-desc').value;
+
+            if (!id) return alert('ID Required');
+
+            try {
+                const response = await fetch('/auth/api/add-user/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ student_id: id, description: desc })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('add-user-msg').innerHTML = '<span style="color:#4CAF50">User Added!</span>';
+                    document.getElementById('new-student-id').value = '';
+                    document.getElementById('new-student-desc').value = '';
+                    loadUsers();
+                } else {
+                    document.getElementById('add-user-msg').innerHTML = `<span style="color:#F87171">${data.message}</span>`;
+                }
+            } catch (e) {
+                alert('Error adding user');
+            }
+        }
+
+        async function loadUsers() {
+            try {
+                const response = await fetch('/auth/api/list-users/');
+                const data = await response.json();
+
+                if (data.success) {
+                    const tbody = document.getElementById('authorized-users-list');
+                    tbody.innerHTML = '';
+
+                    data.users.forEach(user => {
+                        const row = `<tr>
+                            <td>${user.student_id}</td>
+                            <td>${user.description}</td>
+                            <td><span style="color: ${user.is_active ? '#00ff00' : '#F87171'};">${user.is_active ? 'Active' : 'Inactive'}</span></td>
+                            <td><button onclick="toggleUser('${user.student_id}')" class="analyze-btn" style="background: rgba(255,255,255,0.1); color: white;">${user.is_active ? 'Revoke' : 'Activate'}</button></td>
+                        </tr>`;
+                        tbody.innerHTML += row;
+                    });
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function toggleUser(studentId) {
+            try {
+                const response = await fetch('/auth/api/toggle-status/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ student_id: studentId })
+                });
+                await loadUsers();
+            } catch (e) { alert('Error updating status'); }
+        }
+
+        // Load users on startup
+        document.addEventListener('DOMContentLoaded', loadUsers);
+    </script>
+</body>
+
+</html>
+```
