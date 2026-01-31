@@ -36,9 +36,13 @@ if EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(EXTERNAL_HOSTNAME)
 
 # Handle CSRF Trust for Railway (HTTPS)
-CSRF_TRUSTED_ORIGINS = []
+CSRF_TRUSTED_ORIGINS = ['https://*.pythonanywhere.com']
 if EXTERNAL_HOSTNAME:
     CSRF_TRUSTED_ORIGINS.append(f'https://{EXTERNAL_HOSTNAME}')
+
+# Allow PythonAnywhere and local development
+ALLOWED_HOSTS.extend(['.pythonanywhere.com', 'localhost', '127.0.0.1'])
+
 
 
 
