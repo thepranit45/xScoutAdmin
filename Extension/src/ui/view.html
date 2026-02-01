@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline';">
+    <title>xScout Config</title>
+    <!-- System Fonts only to prevent blocking -->
+    <style>
+        :root {
+            --primary: #B026FF;
+            --secondary: #FF26B9;
+            --bg: #0a0a0a;
+
+            --glass: rgba(20, 20, 25, 0.75);
+            --border: rgba(255, 255, 255, 0.1);
+            --text-main: #ffffff;
+            --text-dim: #a0a0a0;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(176, 38, 255, 0.05) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(255, 38, 185, 0.05) 0%, transparent 20%);
+        }
+
+        /* Warp Grid Background */
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+            background-size: 30px 30px;
+            opacity: 0.2;
+            z-index: -1;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 380px;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 35px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* NEW LOGO STYLE */
+        .brand-x {
+            font-size: 2.2rem;
+            background: linear-gradient(135deg, #d946ef 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 900;
+        }
+
+        .logo-text {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .logo-container {
+            margin-bottom: 8px;
+        }
+
+        p {
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            margin-bottom: 25px;
+            margin-top: 5px;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px;
+            margin-bottom: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            transition: 0.3s;
+            box-sizing: border-box;
+        }
+
+        input:focus {
+            border-color: #8b5cf6;
+            background: rgba(139, 92, 246, 0.05);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(90deg, #d946ef, #8b5cf6);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.3s;
+            letter-spacing: 0.5px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* DASHBOARD METRICS */
+        .metrics {
+            margin-top: 25px;
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            gap: 10px;
+        }
+
+        .metric-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 15px 10px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .metric-value {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 4px;
+        }
+
+        .metric-label {
+            font-size: 0.7rem;
+            color: #888;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .status-dot {
+            height: 10px;
+            width: 10px;
+            background-color: #00ff00;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #00ff00;
+            display: inline-block;
+            margin-right: 5px;
+        }
+
+        /* Hidden initially, shown after login */
+        #dashboard-view {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Login View -->
+    <div id="login-view" class="container">
+        <div class="logo-container">
+            <span class="brand-x">x</span><span class="logo-text">Scout</span>
+        </div>
+        <p>Enterprise Forensic Monitoring</p>
+
+        <input type="text" id="username" placeholder="Enter Student ID" autocomplete="off" />
+        <button onclick="login()">Connect</button>
+    </div>
+
+    <!-- Live Telemetry View -->
+    <div id="dashboard-view" class="container">
+        <div style="margin-bottom: 20px;">
+            <span class="status-dot"></span> <span style="font-weight: 600; font-size: 0.9rem; color: #ccc;">MONITORING
+                ACTIVE</span>
+        </div>
+
+        <div class="logo-text" style="font-size: 1.5rem; margin-bottom: 5px;">
+            Session: <span id="session-id" style="color: #d8b4fe;">...</span>
+        </div>
+
+        <div class="metrics">
+            <div class="metric-card">
+                <span class="metric-value" id="wpm-val" style="color: #d8b4fe;">--</span>
+                <span class="metric-label">WPM</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-value" id="ai-val" style="color: #f0abfc;">0%</span>
+                <span class="metric-label">AI Risk</span>
+            </div>
+        </div>
+
+        <div style="margin-top: 25px; font-size: 0.8rem; color: #555;">
+            Connected to xScout Core v2.4
+        </div>
+    </div>
+
+    <script>
+        const vscode = acquireVsCodeApi();
+
+        function login() {
+            const username = document.getElementById('username').value;
+            const btn = document.querySelector('button');
+            const err = document.getElementById('login-error');
+
+            if (username) {
+                // Disable button and clear error
+                btn.disabled = true;
+                btn.innerText = "Verifying...";
+                if (err) err.style.display = 'none';
+
+                // Notify extension
+                vscode.postMessage({ command: 'login', user: username });
+            }
+        }
+
+        window.addEventListener('message', event => {
+            const message = event.data;
+            const btn = document.querySelector('button');
+            const err = document.getElementById('login-error');
+
+            switch (message.command) {
+                case 'loginSuccess':
+                    document.getElementById('login-view').style.display = 'none';
+                    document.getElementById('dashboard-view').style.display = 'block';
+                    document.getElementById('session-id').innerText = message.user;
+                    break;
+
+                case 'loginFailed':
+                    btn.disabled = false;
+                    btn.innerText = "Connect";
+
+                    if (!err) {
+                        const errorDiv = document.createElement('div');
+                        errorDiv.id = 'login-error';
+                        errorDiv.style.color = '#ff6b6b';
+                        errorDiv.style.marginTop = '15px';
+                        errorDiv.style.fontSize = '0.9rem';
+                        errorDiv.style.fontWeight = '600';
+                        document.querySelector('#login-view').appendChild(errorDiv);
+                    }
+
+                    document.getElementById('login-error').innerHTML = `⚠️ ${message.message || "Access Denied"}`;
+                    document.getElementById('login-error').style.display = 'block';
+
+                    // Shake animation
+                    const container = document.querySelector('.container');
+                    container.style.transform = 'translateX(10px)';
+                    setTimeout(() => container.style.transform = 'translateX(-10px)', 50);
+                    setTimeout(() => container.style.transform = 'translateX(0)', 100);
+                    break;
+
+                case 'updateData':
+                    document.getElementById('wpm-val').innerText = message.data.behavior.wpm || 0;
+                    document.getElementById('ai-val').innerText = (message.data.ai * 100).toFixed(0) + '%';
+                    break;
+            }
+        });
+    </script>
+</body>
+
+</html>

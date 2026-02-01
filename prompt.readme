@@ -1,0 +1,35 @@
+System Context: xScout 
+You are working on xScout Nexus, an advanced proctoring and forensic analysis ecosystem designed to monitor coding environments (specifically VS Code) and detect AI usage or academic dishonesty.
+
+Architecture Overview
+The system consists of two main components connected via Firebase:
+
+Client (VS Code Extension):
+
+Tech: JavaScript (Node.js runtime within VS Code API).
+location: d:/xScout/Extension
+modules: aiScanner, behaviorScanner (keystrokes, WPM), forensicScanner (window titles, process list), reportPanel (WebView UI).
+Function: Runs locally on the student's machine. detailed telemetry (pulses) every 5 seconds to the backend/Firebase.
+UI: custom "Neon Purple" glassmorphism login panel.
+Admin Dashboard (Command Center):
+
+Tech: Django (Python) serving a single-page-like application (HTML/Vanilla JS).
+location: d:xScout/AdminDashboard
+Function: visualizations of student sessions. Connects directly to Firestore (client-side) for real-time updates to avoid backend bottlenecks.
+UI: High-end "Cyberpunk/Glassmorphism" aesthetic (Neon Purple #B026FF, Deep Violet background).
+Key Features & Data Flow
+Traceability: The system captures "Window Titles" and "Browser Tab History" to detect if a user opened ChatGPT, StackOverflow, etc.
+Biometrics: Tracks typing speed (WPM), backspace rate, and suspicious paste events (to detect copy-pasting from AI).
+Data Storage: All data is stored in Firebase Firestore.
+Collection: 
+reports
+Fields: stack (tech stack detected), ai (probability score), behavior (biometrics), titleHistory (list of visited tabs).
+Current State & Standards
+Design System: Strict "Neon Glass" aesthetic.
+Primary: #B026FF (Neon Purple)
+Secondary: #FF26B9 (Neon Pink)
+Background: #0f0518 (Deep Void) with radial orbs.
+Implementation Status:
+Firebase connection is verified and active.
+Dashboard Tab History parsing is robust (handles both REST and Native Firestore formats).
+Extension and Dashboard share the exact same CSS variables and visual theme.

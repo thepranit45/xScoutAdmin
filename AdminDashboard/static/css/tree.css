@@ -1,0 +1,189 @@
+/* Tree View Styles - Interactive Cyberpunk HUD Theme */
+.tree {
+    list-style-type: none;
+    margin: 0;
+    padding: 20px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    background: transparent;
+    overflow-x: hidden;
+    user-select: none;
+    /* Prevent text selection during toggle */
+}
+
+.tree ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+.tree li {
+    margin: 0;
+    padding: 0 0 0 24px;
+    line-height: 24px;
+    position: relative;
+    font-size: 14px;
+}
+
+/* Vertical Line */
+.tree li::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 1px;
+    background: #00f3ff;
+    opacity: 0.6;
+    transition: opacity 0.3s;
+}
+
+/* Horizontal Connector */
+.tree li::after {
+    content: '';
+    position: absolute;
+    top: 12px;
+    left: 0;
+    width: 16px;
+    height: 1px;
+    background: #00f3ff;
+    opacity: 0.6;
+    transition: opacity 0.3s;
+}
+
+/* Remove vertical line for last child's hanging part */
+.tree li:last-child::before {
+    height: 12px;
+    bottom: auto;
+}
+
+/* Item Container */
+.tree-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 8px;
+    border-radius: 2px;
+    cursor: default;
+    color: #e0e0e0;
+    transition: all 0.2s;
+    position: relative;
+    width: max-content;
+    /* Ensure hover covers content */
+}
+
+.tree-item.folder {
+    cursor: pointer;
+}
+
+/* Hover Effect */
+.tree-item:hover {
+    background: rgba(0, 243, 255, 0.15);
+    color: #fff;
+    text-shadow: 0 0 4px rgba(0, 243, 255, 0.8);
+}
+
+.tree-icon {
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tree-label {
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+
+/* Caret for collapsing */
+.caret {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 12px;
+    height: 12px;
+    margin-right: 4px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    color: #00f3ff;
+    opacity: 0.8;
+}
+
+.caret svg {
+    width: 10px;
+    height: 10px;
+    fill: currentColor;
+}
+
+/* Rotate caret when active (open) */
+.caret-down {
+    transform: rotate(90deg);
+}
+
+/* Nested lists - Hidden by default */
+.nested {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+/* Show when active */
+.active {
+    display: block;
+    opacity: 1;
+    animation: slideDown 0.2s ease forwards;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Icons Styling */
+.folder-icon {
+    color: #00f3ff;
+    filter: drop-shadow(0 0 2px rgba(0, 243, 255, 0.5));
+}
+
+.file-icon {
+    color: #51a0cf;
+}
+
+.js-icon {
+    color: #f1e05a;
+}
+
+.css-icon {
+    color: #00d9ff;
+}
+
+.html-icon {
+    color: #ff6b6b;
+}
+
+.py-icon {
+    color: #3572A5;
+}
+
+/* Connection Lines for Hidden Lists */
+.nested:not(.active)+li::before {
+    display: none;
+}
+
+/* Root Node Override */
+.tree>li:first-child::before,
+.tree>li:first-child::after {
+    display: none;
+}
+
+/* Adjustment for nested ULs to line up */
+.tree ul {
+    margin-left: 4px;
+}

@@ -19,19 +19,6 @@ env/
 .vscode
 .idea
 
-# OS
-.DS_Store
-Thumbs.db
-desktop.ini
-*.node
-
-# Artifacts
-Extension.zip
-Extension/gen_icon.py
-*.vsix
-node_modules/
-Extension/node_modules/
-
 # Static
 staticfiles/
 

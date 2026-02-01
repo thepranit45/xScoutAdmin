@@ -1,0 +1,80 @@
+{
+  "name": "xscout-client",
+  "publisher": "PranitGopale",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thepranit/xScout-Extension"
+  },
+  "displayName": "xScout",
+  "description": "Advanced proctoring and forensic analysis ecosystem.",
+  "version": "1.0.1",
+  "icon": "resources/icon.png",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "proctoring",
+    "forensics",
+    "education",
+    "security"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./src/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "xscout.login",
+        "title": "xScout: Login"
+      },
+      {
+        "command": "xscout.openReport",
+        "title": "xScout: Open Report"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "xscout-view-container",
+          "title": "xScout",
+          "icon": "resources/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "xscout-view-container": [
+        {
+          "id": "xscout-report-view",
+          "name": "Live Report",
+          "type": "webview"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "pretest": "npm run lint",
+    "test": "node ./test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "20.2.5",
+    "@types/vscode": "^1.80.0",
+    "@vscode/test-electron": "^2.3.2",
+    "@vscode/vsce": "^3.7.1",
+    "eslint": "^8.41.0",
+    "glob": "^8.1.0",
+    "mocha": "^10.2.0",
+    "typescript": "^5.1.3"
+  },
+  "dependencies": {
+    "active-win": "^8.1.0",
+    "chrome-paths": "^1.0.1",
+    "firebase": "^9.23.0"
+  }
+}

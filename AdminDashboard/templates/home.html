@@ -1,0 +1,980 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>xScout - The Forensic Platform for Modern Education</title>
+
+    <!-- Fonts: Inter (Warp uses a similar clean sans-serif) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Retain Advanced Animations if needed, but styling will be overridden by Warp theme -->
+    <link rel="stylesheet" href="{% static 'css/advanced-animations.css' %}">
+
+    <style>
+        :root {
+            /* Warp.dev Appearance Variables */
+            --bg-body: #0a0a0a;
+            /* Deep charcoal black */
+            --bg-card: rgba(255, 255, 255, 0.03);
+            --bg-card-hover: rgba(255, 255, 255, 0.06);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --text-primary: #ffffff;
+            --text-secondary: #a1a1aa;
+            /* Light grey */
+            --accent-primary: #FF4D30;
+            /* xScout Orange (kept as brand color) */
+            --accent-glow: rgba(255, 77, 48, 0.5);
+            --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+            --grid-dot: #222;
+        }
+
+        /* RESET & BASE */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            line-height: 1.5;
+            overflow-x: hidden;
+            /* Warp-style Radial Grid Background */
+            background-image: radial-gradient(var(--grid-dot) 1px, transparent 1px);
+            background-size: 32px 32px;
+        }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-body);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* NAVIGATION - Floating & Glass */
+        .navbar {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 1200px;
+            padding: 12px 24px;
+            background: rgba(10, 10, 10, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 100px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .nav-logo {
+            font-weight: 800;
+            font-size: 1.5rem;
+            letter-spacing: -0.02em;
+            color: #fff;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .brand-x {
+            font-size: 1.8rem;
+            background: linear-gradient(135deg, #d946ef 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 900;
+            margin-right: 1px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+        }
+
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-link:hover {
+            color: white;
+        }
+
+        .nav-cta {
+            background: white;
+            color: black;
+            padding: 8px 20px;
+            border-radius: 100px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: transform 0.2s, background 0.2s;
+        }
+
+        .nav-cta:hover {
+            transform: translateY(-1px);
+            background: #e5e5e5;
+        }
+
+        /* HERO SECTION */
+        .hero-section {
+            padding-top: 160px;
+            padding-bottom: 80px;
+            text-align: center;
+            max-width: 1000px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            background: rgba(255, 77, 48, 0.1);
+            border: 1px solid rgba(255, 77, 48, 0.2);
+            color: var(--accent-primary);
+            border-radius: 100px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 32px;
+            letter-spacing: 0.02em;
+        }
+
+        .hero-h1 {
+            font-size: 4.5rem;
+            line-height: 1.1;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            margin-bottom: 24px;
+            background: linear-gradient(180deg, #fff 0%, #aaa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-sub {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto 40px;
+            line-height: 1.6;
+        }
+
+        /* NEXUS CARD */
+        .nexus-card {
+            background: rgba(10, 8, 15, 0.95);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 24px;
+            padding: 40px;
+            width: 100%;
+            max-width: 420px;
+            margin: 40px auto;
+            text-align: center;
+            box-shadow: 0 0 50px rgba(139, 92, 246, 0.15);
+            position: relative;
+            z-index: 100;
+        }
+
+        .nexus-orb-container {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 24px;
+        }
+
+        .nexus-orb {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #d8b4fe, #a855f7, #581c87);
+            box-shadow: 0 0 30px rgba(168, 85, 247, 0.6), inset 0 0 20px rgba(255, 255, 255, 0.5);
+            animation: orb-pulse 3s infinite ease-in-out;
+        }
+
+        .nexus-orb::after {
+            content: '';
+            position: absolute;
+            top: -10%;
+            left: -10%;
+            right: -10%;
+            bottom: -10%;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.4), transparent 70%);
+            z-index: -1;
+            animation: glow-pulse 3s infinite ease-in-out;
+        }
+
+        @keyframes orb-pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        @keyframes glow-pulse {
+
+            0%,
+            100% {
+                opacity: 0.5;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.8;
+                transform: scale(1.2);
+            }
+        }
+
+        .nexus-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #d8b4fe;
+            margin-bottom: 8px;
+            text-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
+            letter-spacing: 0.05em;
+        }
+
+        .nexus-sub {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin-bottom: 32px;
+        }
+
+        .nexus-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 16px;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .nexus-input:focus {
+            border-color: #a855f7;
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 4px rgba(168, 85, 247, 0.1);
+        }
+
+        .nexus-btn {
+            width: 100%;
+            background: linear-gradient(90deg, #d946ef, #8b5cf6);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 16px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
+        }
+
+        .nexus-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(139, 92, 246, 0.6);
+        }
+
+        .hero-ctas {
+            margin-bottom: 40px;
+        }
+
+        /* Adjust spacing for card */
+
+        .btn-large {
+            padding: 14px 32px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: var(--accent-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #ff3310;
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* XSCOUT NEXUS ID ENTRY */
+        /*
+        <div class="nexus-card">
+            <div class="nexus-orb-container">
+                <div class="nexus-orb"></div>
+            </div>
+            <h2 class="nexus-title">XSCOUT NEXUS</h2>
+            <p class="nexus-sub">Secure Environment Monitoring</p>
+            
+            <input type="text" id="student-id" class="nexus-input" placeholder="Enter Student ID" autocomplete="off">
+            <button onclick="connectNexus()" class="nexus-btn">CONNECT</button>
+            <div id="nexus-msg" style="margin-top: 15px; font-size: 0.9rem; min-height: 20px;"></div>
+        </div>
+        */
+
+        /* LIVE TERMINAL (Our centerpiece) */
+        .terminal-wrapper {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .terminal-window {
+            background: rgba(15, 15, 16, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            box-shadow: 0 20px 80px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 600px;
+        }
+
+        .terminal-header {
+            padding: 16px 24px;
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .control-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .red {
+            background: #FF5F56;
+        }
+
+        .yellow {
+            background: #FFBD2E;
+        }
+
+        .green {
+            background: #27C93F;
+        }
+
+        .terminal-title {
+            margin-left: 20px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .terminal-body {
+            display: flex;
+            flex: 1;
+        }
+
+        .terminal-sidebar {
+            width: 250px;
+            border-right: 1px solid var(--border-color);
+            background: rgba(0, 0, 0, 0.3);
+            padding: 24px;
+        }
+
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .sidebar-item.active {
+            background: rgba(255, 77, 48, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 77, 48, 0.2);
+        }
+
+        .terminal-content {
+            flex: 1;
+            padding: 24px;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            overflow-y: auto;
+        }
+
+        .log-line {
+            margin-bottom: 8px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .timestamp {
+            color: #555;
+        }
+
+        .log-text {
+            color: #ccc;
+        }
+
+        .log-text.success {
+            color: #4CAF50;
+        }
+
+        .log-text.warn {
+            color: #FFBD2E;
+        }
+
+        .log-text.danger {
+            color: #F87171;
+            font-weight: bold;
+        }
+
+        /* BENTO GRID (Warp Style) */
+        .features-section {
+            padding: 120px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            margin-bottom: 60px;
+            text-align: left;
+        }
+
+        .section-tag {
+            color: var(--accent-primary);
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.05em;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .section-h2 {
+            font-size: 3rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        .warp-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 32px;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .warp-card:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            background: var(--bg-card-hover);
+            transform: translateY(-4px);
+        }
+
+        /* Bento Spans */
+        .span-2 {
+            grid-column: span 2;
+        }
+
+        .span-3 {
+            grid-column: span 3;
+        }
+
+        .card-icon {
+            font-size: 2rem;
+            color: var(--accent-primary);
+            margin-bottom: 24px;
+        }
+
+        .card-h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: white;
+        }
+
+        .card-p {
+            color: var(--text-secondary);
+            line-height: 1.5;
+            font-size: 1rem;
+        }
+
+        .card-graphic {
+            margin-top: 32px;
+            height: 200px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            /* Placeholder for card graphics/screenshots */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+            font-family: monospace;
+        }
+
+        /* TRUST BAR */
+        .trust-section {
+            padding: 40px 0;
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 80px;
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        .trust-logos {
+            display: flex;
+            justify-content: center;
+            gap: 60px;
+            flex-wrap: wrap;
+            opacity: 0.5;
+            filter: grayscale(1);
+        }
+
+        .trust-logos i {
+            font-size: 2rem;
+        }
+
+        /* FOOTER */
+        .warp-footer {
+            padding: 80px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            border-top: 1px solid var(--border-color);
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 40px;
+        }
+
+        .footer-col h4 {
+            color: white;
+            font-weight: 600;
+            margin-bottom: 24px;
+        }
+
+        .footer-links a {
+            display: block;
+            color: var(--text-secondary);
+            text-decoration: none;
+            margin-bottom: 12px;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: var(--accent-primary);
+        }
+
+        /* Responsive */
+        @media(max-width: 900px) {
+            .bento-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .span-2,
+            .span-3 {
+                grid-column: auto;
+            }
+
+            .hero-h1 {
+                font-size: 3rem;
+            }
+
+            .terminal-body {
+                flex-direction: column;
+            }
+
+            .terminal-sidebar {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- NAVIGATION -->
+    <nav class="navbar">
+        <a href="#" class="nav-logo">
+            <span class="brand-x">x</span>Scout
+        </a>
+        <div class="nav-links">
+            <a href="#features" class="nav-link">Features</a>
+            <a href="#pricing" class="nav-link">Enterprise</a>
+            <a href="#docs" class="nav-link">Documentation</a>
+            <a href="#blog" class="nav-link">Blog</a>
+        </div>
+        <a href="/login/" class="nav-cta">Get Started</a>
+    </nav>
+
+    <!-- HERO SECTION -->
+    <section class="hero-section">
+        <div class="hero-badge">v2.4 Now Available</div>
+        <h1 class="hero-h1">The Forensic Platform for<br>Modern Education</h1>
+        <p class="hero-sub">xScout gives you real-time visibility, AI-powered threat detection, and comprehensive
+            forensic analysis. Secure your digital learning environment with the speed of Warp.</p>
+
+        <div class="hero-ctas">
+            <a href="/login/" class="btn-large btn-primary">Start Monitoring Free</a>
+            <a href="#demo" class="btn-large btn-secondary">Request Demo</a>
+        </div>
+
+        <!-- LIVE TERMINAL CONSOLE -->
+        <div class="terminal-wrapper">
+            <div class="terminal-window">
+                <div class="terminal-header">
+                    <div class="window-controls">
+                        <div class="control-dot red"></div>
+                        <div class="control-dot yellow"></div>
+                        <div class="control-dot green"></div>
+                    </div>
+                    <div class="terminal-title">xscout-forensic-console — admin@school-district</div>
+                </div>
+                <div class="terminal-body">
+                    <!-- Left Task Manager -->
+                    <div class="terminal-sidebar">
+                        <div
+                            style="font-size:0.75rem; color:#555; font-weight:700; margin-bottom:16px; letter-spacing:0.05em;">
+                            SYSTEM PROTOCOLS</div>
+                        <div class="sidebar-item active">
+                            <span>⚡</span> Threat Scan
+                        </div>
+                        <div class="sidebar-item">
+                            <span>🛡️</span> Firewall Monitor
+                        </div>
+                        <div class="sidebar-item">
+                            <span>👁️</span> Student Activity
+                        </div>
+                        <div class="sidebar-item">
+                            <span>📊</span> Generate Report
+                        </div>
+                        <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid var(--border-color);">
+                            <div style="font-size:0.8rem; color:#fff;">Status: <span style="color:#4CAF50">Online</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Logs -->
+                    <div class="terminal-content">
+                        <div id="terminal-logs">
+                            <!-- JS will populate this -->
+                        </div>
+                        <span style="color:var(--accent-primary)">➜</span> <span class="typing-cursor">_</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- TRUST SECTION -->
+    <section class="trust-section">
+        <div style="text-align:center; color:#555; font-size:0.9rem; margin-bottom:24px; font-weight:600;">TRUSTED BY
+            INNOVATIVE INSTITUTIONS</div>
+        <div class="trust-logos">
+            <i class="fa-solid fa-school"></i>
+            <i class="fa-solid fa-graduation-cap"></i>
+            <i class="fa-solid fa-building-columns"></i>
+            <i class="fa-solid fa-book"></i>
+            <i class="fa-solid fa-laptop-code"></i>
+        </div>
+    </section>
+
+    <!-- FEATURES BENTO GRID -->
+    <section class="features-section" id="features">
+        <div class="section-header">
+            <span class="section-tag">Powerful Capabilities</span>
+            <h2 class="section-h2">Forensics at the speed of thought.</h2>
+        </div>
+
+        <div class="bento-grid">
+            <!-- Feature 1: Big Card -->
+            <div class="warp-card span-2">
+                <i class="fa-solid fa-magnifying-glass card-icon"></i>
+                <h3 class="card-h3">Real-Time Activity Monitoring</h3>
+                <p class="card-p">Track student activity across all applications and websites instantly. Our low-latency
+                    engine captures every keystroke and click without performance impact.</p>
+                <div class="card-graphic">
+                    [Live Activity Graph Visualization]
+                </div>
+            </div>
+
+            <!-- Feature 2: Tall Card -->
+            <div class="warp-card">
+                <i class="fa-solid fa-brain card-icon"></i>
+                <h3 class="card-h3">AI Threat Detection</h3>
+                <p class="card-p">Machine learning algorithms analyze behavioral patterns to predict and prevent
+                    security breaches before they happen.</p>
+                <div class="card-graphic" style="height: 100px; margin-top: auto;">
+                    [AI Confidence Score]
+                </div>
+            </div>
+
+            <!-- Feature 3: Standard Card -->
+            <div class="warp-card">
+                <i class="fa-solid fa-lock card-icon"></i>
+                <h3 class="card-h3">Enterprise Security</h3>
+                <p class="card-p">End-to-end encryption and compliance with FERPA/CIPA standards ensures student data is
+                    always protected.</p>
+            </div>
+
+            <!-- Feature 4: Standard Card -->
+            <div class="warp-card">
+                <i class="fa-solid fa-bolt card-icon"></i>
+                <h3 class="card-h3">Lightning Deployment</h3>
+                <p class="card-p">Deploy to thousands of devices in minutes using our silent installer or MDM
+                    integration.</p>
+            </div>
+
+            <!-- Feature 5: Wide Card -->
+            <div class="warp-card">
+                <i class="fa-solid fa-file-waveform card-icon"></i>
+                <h3 class="card-h3">Comprehensive Forensic Reports</h3>
+                <p class="card-p">Generate detailed PDFs with evidence snapshots, timestamps, and active process lists
+                    for disciplinary actions.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="warp-footer">
+        <div class="footer-col">
+            <a href="#" class="nav-logo" style="margin-bottom:20px; display:inline-block;">
+                <span class="brand-x">x</span>Scout
+            </a>
+            <p style="color:var(--text-secondary); line-height:1.6; max-width: 300px;">
+                The advanced student monitoring platform built for the modern digital classroom. Secure, fast, and
+                intelligent.
+            </p>
+            <div style="margin-top:24px; display:flex; gap:16px;">
+                <a href="#" style="color:#666;"><i class="fa-brands fa-twitter"></i></a>
+                <a href="#" style="color:#666;"><i class="fa-brands fa-github"></i></a>
+                <a href="#" style="color:#666;"><i class="fa-brands fa-discord"></i></a>
+            </div>
+        </div>
+
+        <div class="footer-col">
+            <h4>Product</h4>
+            <div class="footer-links">
+                <a href="#">Features</a>
+                <a href="#">Integrations</a>
+                <a href="#">Pricing</a>
+                <a href="#">Changelog</a>
+                <a href="#">Download</a>
+            </div>
+        </div>
+
+        <div class="footer-col">
+            <h4>Resources</h4>
+            <div class="footer-links">
+                <a href="#">Documentation</a>
+                <a href="#">API Reference</a>
+                <a href="#">Community</a>
+                <a href="#">Blog</a>
+                <a href="#">Help Center</a>
+            </div>
+        </div>
+
+        <div class="footer-col">
+            <h4>Company</h4>
+            <div class="footer-links">
+                <a href="#">About</a>
+                <a href="#">Careers</a>
+                <a href="#">Legal</a>
+                <a href="#">Privacy</a>
+                <a href="#">Contact</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Nexus Connection Script -->
+    <script>
+        async function connectNexus() {
+            const idInput = document.getElementById('student-id');
+            const msgBox = document.getElementById('nexus-msg');
+            const studentId = idInput.value.trim();
+
+            if (!studentId) {
+                msgBox.style.color = '#F87171';
+                msgBox.innerText = "Please enter a Student ID";
+                return;
+            }
+
+            msgBox.style.color = '#a855f7';
+            msgBox.innerText = "Verifying Identity...";
+
+            try {
+                const response = await fetch('/auth/api/verify-id/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ student_id: studentId })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    msgBox.style.color = '#4CAF50';
+                    msgBox.innerText = "ACCESS GRANTED. Redirecting...";
+                    setTimeout(() => {
+                        window.location.href = data.redirect || '/dashboard/';
+                    }, 1000);
+                } else {
+                    msgBox.style.color = '#F87171';
+                    msgBox.innerText = data.message || "Access Denied";
+                    // Shake effect
+                    const card = document.querySelector('.nexus-card');
+                    card.style.transform = "translateX(5px)";
+                    setTimeout(() => card.style.transform = "translateX(-5px)", 50);
+                    setTimeout(() => card.style.transform = "translateX(0)", 100);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                msgBox.style.color = '#F87171';
+                msgBox.innerText = "Connection Error. Try again.";
+            }
+        }
+
+        // Allow Enter key
+        document.getElementById('student-id').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                connectNexus();
+            }
+        });
+    </script>
+
+    <!-- Terminal Simulation Script (Restored) -->
+    <script>
+        const tasks = [
+            { txt: "Initializing xScout Core Daemon...", delay: 200 },
+            { txt: "Connecting to secure monitoring node [10.0.0.1]...", delay: 600 },
+            { txt: "Connection established. Latency: 12ms", delay: 900, type: 'success' },
+            { txt: "Starting background threat scan...", delay: 1200 },
+            { txt: "Analyzing active processes (24 running)...", delay: 1800 },
+            { txt: "WARNING: Unidentified Network Traffic detected on PID 4402", delay: 2600, type: 'warn' },
+            { txt: "Pattern matched: Known VPN Signature", delay: 3000, type: 'danger' },
+            { txt: "Auto-terminating process PID 4402...", delay: 3800 },
+            { txt: "Process terminated successfully.", delay: 4500, type: 'success' },
+            { txt: "Generating forensic snapshot #8821...", delay: 5000 },
+            { txt: "Snapshot uploaded to secure vault.", delay: 5800, type: 'success' },
+            { txt: "Monitoring resumed. System secure.", delay: 6500, type: 'success' }
+        ];
+
+        const logsContainer = document.getElementById('terminal-logs');
+
+        function addLog(item) {
+            const line = document.createElement('div');
+            line.className = 'log-line';
+
+            const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+
+            let colorClass = 'log-text';
+            if (item.type === 'success') colorClass += ' success';
+            if (item.type === 'warn') colorClass += ' warn';
+            if (item.type === 'danger') colorClass += ' danger';
+
+            line.innerHTML = `
+                <span class="timestamp">[${time}]</span>
+                <span class="${colorClass}">${item.txt}</span>
+            `;
+
+            logsContainer.appendChild(line);
+            logsContainer.parentElement.scrollTop = logsContainer.parentElement.scrollHeight;
+        }
+
+        let taskIndex = 0;
+        function runSimulation() {
+            if (taskIndex >= tasks.length) {
+                setTimeout(() => {
+                    logsContainer.innerHTML = ''; // Reset
+                    taskIndex = 0;
+                    runSimulation();
+                }, 5000);
+                return;
+            }
+
+            const item = tasks[taskIndex];
+            setTimeout(() => {
+                addLog(item);
+                taskIndex++;
+                runSimulation();
+            }, item.delay - (taskIndex > 0 ? tasks[taskIndex - 1].delay : 0));
+        }
+
+        // Start animation
+        setTimeout(runSimulation, 1000);
+    </script>
+
+    <!-- Retain Custom Cursor/Particles if desired -->
+    <script src="{% static 'js/advanced-animations.js' %}"></script>
+</body>
+
+</html>

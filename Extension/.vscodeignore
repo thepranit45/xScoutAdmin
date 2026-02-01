@@ -1,0 +1,12 @@
+.git
+.gitignore
+.vscode
+src/test
+chrome_history_reader.py
+debug_firebase.js
+serviceAccountKey.json
+*.map
+out
+dist
+*~
+*.DS_Store
