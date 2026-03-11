@@ -9,6 +9,7 @@ pipelines:
   default:
     - step:
         name: Build and Deploy
+        deployment: test
         caches:
           - pip
         script:
