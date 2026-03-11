@@ -1,0 +1,18 @@
+# This is a sample build configuration for Python.
+# Check our guides at https://confluence.atlassian.com/x/x4UWN for more examples.
+# Only use spaces to indent your .yml configuration.
+# -----
+# You can specify a custom docker image from Docker Hub as your build environment.
+image: python:3.8
+
+pipelines:
+  default:
+    - step:
+        name: Build and Deploy
+        caches:
+          - pip
+        script:
+          - if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          #- pip install pytest
+          #- pytest -v tests/* --junitxml=test-reports/report.xml
+          - echo "Build and basic checks successful! Update this step with your test commands when you add tests."
