@@ -7,22 +7,49 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='AuthorizedID',
+            name="AuthorizedID",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('student_id', models.CharField(help_text='Unique Student ID allowed to access the system', max_length=50, unique=True)),
-                ('is_active', models.BooleanField(default=True, help_text='Uncheck to temporarily disable access for this ID')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('description', models.CharField(blank=True, help_text='Optional: Name or notes for this ID', max_length=100)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "student_id",
+                    models.CharField(
+                        help_text="Unique Student ID allowed to access the system",
+                        max_length=50,
+                        unique=True,
+                    ),
+                ),
+                (
+                    "is_active",
+                    models.BooleanField(
+                        default=True,
+                        help_text="Uncheck to temporarily disable access for this ID",
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "description",
+                    models.CharField(
+                        blank=True,
+                        help_text="Optional: Name or notes for this ID",
+                        max_length=100,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Authorized Student ID',
-                'verbose_name_plural': 'Authorized Student IDs',
+                "verbose_name": "Authorized Student ID",
+                "verbose_name_plural": "Authorized Student IDs",
             },
         ),
     ]

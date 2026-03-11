@@ -11,14 +11,18 @@ import datetime
 # Initialize Firebase (Singleton pattern to match dashboard view)
 if not firebase_admin._apps:
     try:
-        current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        current_dir = os.path.dirname(
+            os.path.dirname(os.path.abspath(__file__))
+        )
         # Adjust path to find serviceAccountKey.json which is in the parent d:\xScout\AdminDashboard
-        json_path = os.path.join(current_dir, 'serviceAccountKey.json')
-        
+        json_path = os.path.join(current_dir, "serviceAccountKey.json")
+
         # Fallback if not found (e.g. if current_dir is inside authentication)
         if not os.path.exists(json_path):
-             # Try going one level up d:\xScout
-             json_path = os.path.join(current_dir, '..', 'serviceAccountKey.json')
+            # Try going one level up d:\xScout
+            json_path = os.path.join(
+                current_dir, "..", "serviceAccountKey.json"
+            )
 
         cred = credentials.Certificate(json_path)
         firebase_admin.initialize_app(cred)
@@ -30,34 +34,88 @@ try:
 except Exception:
     db = None
 
+
 @csrf_exempt
 @require_POST
 def verify_student_id(request):
     try:
         data = json.loads(request.body)
-        student_id = data.get('student_id')
-        
-        if not student_id:
-            return JsonResponse({'success': False, 'message': 'Student ID is required'}, status=400)
-            
-        # FIRESTORE QUERY
-        if not db:
-             return JsonResponse({'success': False, 'message': 'Database connection error'}, status=500)
+        student_id = data.get("student_id")
 
-        doc_ref = db.collection('authorized_users').document(student_id)
+        if not student_id:
+            return JsonResponse(
+                {"success": False, "message": "Student ID is required"},
+                status=400,
+            )
+
+        # FIRESTORE QUERY
+        # 1. Check Django Local DB (SQL) - Primary Source for Admin Panel
+        from .models import AuthorizedID
+
+        try:
+            student = AuthorizedID.objects.get(student_id=student_id)
+            if student.is_active:
+                return JsonResponse(
+                    {
+                        "success": True,
+                        "message": "Connection Authorized (Local)",
+                        "redirect": "/dashboard/",
+                    }
+                )
+            else:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": "Access Denied: ID is disabled (Local)",
+                    },
+                    status=403,
+                )
+        except AuthorizedID.DoesNotExist:
+            pass  # Continue to Firestore check as fallback
+
+        # 2. FIRESTORE QUERY (Fallback)
+        if not db:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": "Access Denied: ID not found locally and DB connection error",
+                },
+                status=500,
+            )
+
+        doc_ref = db.collection("authorized_users").document(student_id)
         doc = doc_ref.get()
-        
+
         if doc.exists:
             user_data = doc.to_dict()
-            if user_data.get('is_active', True):
-                return JsonResponse({'success': True, 'message': 'Connection Authorized', 'redirect': '/dashboard/'})
+            if user_data.get("is_active", True):
+                return JsonResponse(
+                    {
+                        "success": True,
+                        "message": "Connection Authorized",
+                        "redirect": "/dashboard/",
+                    }
+                )
             else:
-                return JsonResponse({'success': False, 'message': 'Access Denied: ID is disabled'}, status=403)
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "message": "Access Denied: ID is disabled",
+                    },
+                    status=403,
+                )
         else:
-            return JsonResponse({'success': False, 'message': 'Access Denied: ID not authorized'}, status=403)
-            
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": "Access Denied: ID not authorized",
+                },
+                status=403,
+            )
+
     except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+        return JsonResponse({"success": False, "message": str(e)}, status=500)
+
 
 @csrf_exempt
 @require_POST
@@ -65,49 +123,66 @@ def verify_student_id(request):
 def add_authorized_user(request):
     try:
         data = json.loads(request.body)
-        student_id = data.get('student_id')
-        description = data.get('description', '')
-        
+        student_id = data.get("student_id")
+        description = data.get("description", "")
+
         if not student_id:
-            return JsonResponse({'success': False, 'message': 'Student ID is required'}, status=400)
-            
+            return JsonResponse(
+                {"success": False, "message": "Student ID is required"},
+                status=400,
+            )
+
         if not db:
-             return JsonResponse({'success': False, 'message': 'Database connection error'}, status=500)
+            return JsonResponse(
+                {"success": False, "message": "Database connection error"},
+                status=500,
+            )
 
         # Check if exists in Firestore
-        doc_ref = db.collection('authorized_users').document(student_id)
+        doc_ref = db.collection("authorized_users").document(student_id)
         if doc_ref.get().exists:
-             return JsonResponse({'success': False, 'message': 'ID already exists'}, status=400)
+            return JsonResponse(
+                {"success": False, "message": "ID already exists"}, status=400
+            )
 
         # Create in Firestore
-        doc_ref.set({
-            'student_id': student_id,
-            'description': description,
-            'is_active': True,
-            'created_at': datetime.datetime.now().isoformat()
-        })
-        
-        return JsonResponse({'success': True, 'message': 'User added successfully'})
+        doc_ref.set(
+            {
+                "student_id": student_id,
+                "description": description,
+                "is_active": True,
+                "created_at": datetime.datetime.now().isoformat(),
+            }
+        )
+
+        return JsonResponse(
+            {"success": True, "message": "User added successfully"}
+        )
     except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+        return JsonResponse({"success": False, "message": str(e)}, status=500)
+
 
 @login_required
 def get_authorized_users(request):
     try:
         if not db:
-             return JsonResponse({'success': False, 'message': 'Database connection error'}, status=500)
+            return JsonResponse(
+                {"success": False, "message": "Database connection error"},
+                status=500,
+            )
 
-        users_ref = db.collection('authorized_users').stream()
+        users_ref = db.collection("authorized_users").stream()
         users_list = []
         for doc in users_ref:
             users_list.append(doc.to_dict())
-            
+
         # Sort manually since we can't easily order_by on stream without index sometimes
-        users_list.sort(key=lambda x: x.get('created_at', ''), reverse=True)
-        
-        return JsonResponse({'success': True, 'users': users_list})
+        users_list.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+
+        return JsonResponse({"success": True, "users": users_list})
     except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+        return JsonResponse({"success": False, "message": str(e)}, status=500)
+
 
 @csrf_exempt
 @require_POST
@@ -115,21 +190,26 @@ def get_authorized_users(request):
 def toggle_user_status(request):
     try:
         data = json.loads(request.body)
-        student_id = data.get('student_id')
-        
-        if not db:
-             return JsonResponse({'success': False, 'message': 'Database connection error'}, status=500)
+        student_id = data.get("student_id")
 
-        doc_ref = db.collection('authorized_users').document(student_id)
+        if not db:
+            return JsonResponse(
+                {"success": False, "message": "Database connection error"},
+                status=500,
+            )
+
+        doc_ref = db.collection("authorized_users").document(student_id)
         doc = doc_ref.get()
-        
+
         if doc.exists:
-            current_status = doc.to_dict().get('is_active', True)
+            current_status = doc.to_dict().get("is_active", True)
             new_status = not current_status
-            doc_ref.update({'is_active': new_status})
-            return JsonResponse({'success': True, 'active': new_status})
+            doc_ref.update({"is_active": new_status})
+            return JsonResponse({"success": True, "active": new_status})
         else:
-            return JsonResponse({'success': False, 'message': 'User not found'}, status=404)
-            
+            return JsonResponse(
+                {"success": False, "message": "User not found"}, status=404
+            )
+
     except Exception as e:
-        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+        return JsonResponse({"success": False, "message": str(e)}, status=500)

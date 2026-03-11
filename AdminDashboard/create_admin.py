@@ -1,19 +1,20 @@
 """
 Script to create default admin user for xScout Admin Dashboard
 """
+
+from django.contrib.auth.models import User
 import os
 import django
 
 # Setup Django environment
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'dashboard.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "dashboard.settings")
 django.setup()
 
-from django.contrib.auth.models import User
 
 # Create admin user
-username = 'admin'
-password = 'admin123'
-email = 'admin@xscout.local'
+username = "admin"
+password = "admin123"
+email = "admin@xscout.local"
 
 # Check if user already exists
 if User.objects.filter(username=username).exists():
@@ -24,12 +25,10 @@ if User.objects.filter(username=username).exists():
 else:
     # Create new superuser
     user = User.objects.create_superuser(
-        username=username,
-        email=email,
-        password=password
+        username=username, email=email, password=password
     )
-    print(f"[OK] Created admin user successfully!")
+    print("[OK] Created admin user successfully!")
     print(f"   Username: {username}")
     print(f"   Password: {password}")
     print(f"   Email: {email}")
-    print(f"\n[WARNING] IMPORTANT: Change this password after first login!")
+    print("\n[WARNING] IMPORTANT: Change this password after first login!")

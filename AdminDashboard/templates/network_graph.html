@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>xScout Nexus // Network Graph</title>
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            background-color: #0f0518;
+            color: #fff;
+            font-family: 'Segoe UI', sans-serif;
+            overflow: hidden;
+        }
+
+        #mynetwork {
+            width: 100vw;
+            height: 100vh;
+            border: none;
+        }
+
+        #overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            background: rgba(15, 5, 24, 0.8);
+            padding: 20px;
+            border: 1px solid #b026ff;
+            border-radius: 8px;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 0 20px rgba(176, 38, 255, 0.2);
+        }
+
+        h1 {
+            margin: 0 0 10px 0;
+            color: #b026ff;
+            text-transform: uppercase;
+            font-size: 1.2rem;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+
+        .stat-val {
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-top: 5px;
+            font-size: 0.8rem;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .safe {
+            background: #00ff9d;
+        }
+
+        .danger {
+            background: #ff0055;
+        }
+
+        .back-btn {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 8px 15px;
+            background: rgba(176, 38, 255, 0.1);
+            border: 1px solid #b026ff;
+            color: #b026ff;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            transition: all 0.3s;
+        }
+
+        .back-btn:hover {
+            background: #b026ff;
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="overlay">
+        <h1>Cheating Ring Detector</h1>
+        <div class="stat-row">
+            <span>Active Nodes:</span>
+            <span id="node-count" class="stat-val">0</span>
+        </div>
+        <div class="stat-row">
+            <span>Critical Links:</span>
+            <span id="edge-count" class="stat-val" style="color: #ff0055">0</span>
+        </div>
+
+        <div style="margin-top: 15px; border-top: 1px solid #333; padding-top: 10px;">
+            <div class="legend-item">
+                <div class="dot safe"></div> Isolated (Safe)
+            </div>
+            <div class="legend-item">
+                <div class="dot danger"></div> Connected (>80% Match)
+            </div>
+        </div>
+
+        <a href="/dashboard/" class="back-btn">← Back to Dashboard</a>
+    </div>
+
+    <div id="mynetwork"></div>
+
+    <script type="text/javascript">
+        // --- Configuration ---
+        const options = {
+            nodes: {
+                shape: 'dot',
+                size: 20,
+                font: { size: 14, color: '#ffffff', face: 'Segoe UI' },
+                borderWidth: 2,
+                shadow: true
+            },
+            edges: {
+                width: 2,
+                color: { color: '#ff0055', highlight: '#ff0055' },
+                shadow: true,
+                smooth: { type: 'continuous' }
+            },
+            physics: {
+                stabilization: false,
+                barnesHut: {
+                    gravitationalConstant: -2000,
+                    springConstant: 0.04,
+                    springLength: 200
+                }
+            },
+            interaction: { hover: true }
+        };
+
+        const container = document.getElementById('mynetwork');
+        let network = null;
+        let nodesDataSet = new vis.DataSet();
+        let edgesDataSet = new vis.DataSet();
+
+        // Initial Draw
+        const data = { nodes: nodesDataSet, edges: edgesDataSet };
+        network = new vis.Network(container, data, options);
+
+        // --- Fetch Logic ---
+        async function updateGraph() {
+            try {
+                const response = await fetch('/api/network-data/');
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    const serverNodes = result.data.nodes;
+                    const serverEdges = result.data.edges;
+
+                    // Update UI Stats
+                    document.getElementById('node-count').innerText = serverNodes.length;
+                    document.getElementById('edge-count').innerText = serverEdges.length;
+
+                    // Sync Nodes
+                    // We update existing, add new, remove old
+                    const currentIds = nodesDataSet.getIds();
+                    const newIds = serverNodes.map(n => n.id);
+
+                    // Add/Update
+                    serverNodes.forEach(node => {
+                        const isRisky = typeof node.risky !== 'undefined' ? node.risky : false;
+                        nodesDataSet.update({
+                            id: node.id,
+                            label: node.label,
+                            color: {
+                                background: isRisky ? '#ff0055' : '#00ff9d',
+                                border: '#ffffff'
+                            },
+                            title: `Last Update: ${node.last_seen}`
+                        });
+                    });
+
+                    // Remove
+                    const toRemove = currentIds.filter(id => !newIds.includes(id));
+                    nodesDataSet.remove(toRemove);
+
+                    // Sync Edges
+                    // For edges, it's easier to clear and add if the count is low, 
+                    // or implement a smart diff. Since edges represent dynamic similarity, 
+                    // let's clear and re-add for simplicity in this demo.
+                    edgesDataSet.clear();
+                    edgesDataSet.add(serverEdges);
+                }
+            } catch (error) {
+                console.error("Error fetching network data:", error);
+            }
+        }
+
+        // Poll every 3 seconds
+        setInterval(updateGraph, 3000);
+        updateGraph(); // Initial call
+
+    </script>
+</body>
+
+</html>

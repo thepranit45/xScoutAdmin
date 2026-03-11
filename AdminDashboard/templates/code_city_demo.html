@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>xScout Nexus // City View</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #050510;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #b026ff;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border: 1px solid #b026ff;
+            border-radius: 8px;
+            pointer-events: none;
+            box-shadow: 0 0 15px rgba(176, 38, 255, 0.3);
+        }
+
+        h1 {
+            margin: 0 0 5px 0;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        .stat {
+            color: #fff;
+            font-weight: bold;
+        }
+
+        #tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid #00f3ff;
+            color: #fff;
+            padding: 10px;
+            display: none;
+            pointer-events: none;
+            font-size: 0.8rem;
+            z-index: 100;
+        }
+    </style>
+    <!-- Load Three.js from CDN -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+
+<body>
+    <div id="info">
+        <h1>Code City Visualization</h1>
+        <p>Live Session: <span class="stat">Student_001</span></p>
+        <p>Active Files: <span class="stat">12</span></p>
+        <p>Status: <span class="stat" style="color:#00ff9d">ONLINE</span></p>
+    </div>
+    <div id="tooltip"></div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+        // --- Setup ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x050510);
+        scene.fog = new THREE.FogExp2(0x050510, 0.02);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(15, 15, 15);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.toneMapping = THREE.ReinhardToneMapping;
+        document.body.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 - 0.1; // Don't allow going under the floor
+
+        // --- Post Processing (Bloom) ---
+        const renderScene = new RenderPass(scene, camera);
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+        bloomPass.threshold = 0;
+        bloomPass.strength = 1.2; // Neon Intensity
+        bloomPass.radius = 0.5;
+
+        const composer = new EffectComposer(renderer);
+        composer.addPass(renderScene);
+        composer.addPass(bloomPass);
+
+        const outputPass = new OutputPass();
+        composer.addPass(outputPass);
+
+        // --- Environment ---
+        // Grid Floor
+        const gridHelper = new THREE.GridHelper(100, 50, 0xb026ff, 0x1f1f3a);
+        scene.add(gridHelper);
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0x404040); // Soft white light
+        scene.add(ambientLight);
+
+        const pointLight = new THREE.PointLight(0xb026ff, 2, 50); // Purple core light
+        pointLight.position.set(0, 10, 0);
+        scene.add(pointLight);
+
+        // --- Data Mockup ---
+        const files = [
+            { name: "main.py", lines: 150, risk: 10, type: "python" },
+            { name: "utils.js", lines: 80, risk: 0, type: "js" },
+            { name: "styles.css", lines: 200, risk: 5, type: "css" },
+            { name: "auth.py", lines: 320, risk: 85, type: "python" },
+            { name: "index.html", lines: 50, risk: 0, type: "html" },
+            { name: "database.py", lines: 120, risk: 15, type: "python" },
+            { name: "api.js", lines: 90, risk: 0, type: "js" },
+            { name: "config.json", lines: 30, risk: 0, type: "json" },
+            { name: "test_suite.py", lines: 400, risk: 0, type: "python" },
+            { name: "legacy_code.py", lines: 50, risk: 90, type: "python" },
+        ];
+
+        // --- Building Generation ---
+        const buildings = [];
+        const geometry = new THREE.BoxGeometry(1, 1, 1);
+
+        // Materials (Neon Palette)
+        const materials = {
+            python: new THREE.MeshStandardMaterial({ color: 0x3776ab, roughness: 0.2, metalness: 0.8 }),
+            js: new THREE.MeshStandardMaterial({ color: 0xf7df1e, roughness: 0.2, metalness: 0.8 }),
+            css: new THREE.MeshStandardMaterial({ color: 0x264de4, roughness: 0.2, metalness: 0.8 }),
+            html: new THREE.MeshStandardMaterial({ color: 0xe34f26, roughness: 0.2, metalness: 0.8 }),
+            default: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2, metalness: 0.8 }),
+            riskHigh: new THREE.MeshStandardMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 2 }), // Glowing Red
+        };
+
+        files.forEach((file, index) => {
+            const height = file.lines / 20; // Scale lines to height
+            const material = file.risk > 80 ? materials.riskHigh : (materials[file.type] || materials.default);
+
+            const mesh = new THREE.Mesh(geometry, material);
+
+            // Random positioning in a grid layout logic or circle
+            const angle = (index / files.length) * Math.PI * 2;
+            const radius = 5 + Math.random() * 5;
+            const x = Math.cos(angle) * radius;
+            const z = Math.sin(angle) * radius;
+
+            mesh.position.set(x, height / 2, z);
+            mesh.scale.set(1, height, 1);
+
+            // Metadata for raycasting
+            mesh.userData = file;
+
+            scene.add(mesh);
+            buildings.push(mesh);
+
+            // Add base "glitch" wireframe effect for visual flair if risky
+            if (file.risk > 50) {
+                const wiregeo = new THREE.EdgesGeometry(mesh.geometry);
+                const wiremat = new THREE.LineBasicMaterial({ color: 0xff0000, linewidth: 2 });
+                const wireframe = new THREE.LineSegments(wiregeo, wiremat);
+                mesh.add(wireframe);
+            }
+        });
+
+        // --- Interactions (Raycaster) ---
+        const raycaster = new THREE.Raycaster();
+        const pointer = new THREE.Vector2();
+        const tooltip = document.getElementById('tooltip');
+        let hoveredObj = null;
+
+        function onPointerMove(event) {
+            pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+            pointer.y = - (event.clientY / window.innerHeight) * 2 + 1;
+
+            // Move tooltip
+            tooltip.style.left = event.clientX + 10 + 'px';
+            tooltip.style.top = event.clientY + 10 + 'px';
+        }
+
+        window.addEventListener('pointermove', onPointerMove);
+
+        // --- Animation ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            controls.update();
+
+            // Hover Logic
+            raycaster.setFromCamera(pointer, camera);
+            const intersects = raycaster.intersectObjects(buildings);
+
+            if (intersects.length > 0) {
+                const object = intersects[0].object;
+                if (hoveredObj !== object) {
+                    hoveredObj = object;
+                    // Show Tooltip
+                    tooltip.style.display = 'block';
+                    tooltip.innerHTML = `
+                        <strong style="color: #b026ff">${object.userData.name}</strong><br>
+                        Lines: ${object.userData.lines}<br>
+                        Risk: ${object.userData.risk}%
+                    `;
+                    document.body.style.cursor = 'pointer';
+
+                    // Highlight effect (scale up)
+                    object.scale.set(1.2, object.userData.lines / 20, 1.2);
+                }
+            } else {
+                if (hoveredObj) {
+                    // Reset
+                    hoveredObj.scale.set(1, hoveredObj.userData.lines / 20, 1);
+                    hoveredObj = null;
+                    tooltip.style.display = 'none';
+                    document.body.style.cursor = 'default';
+                }
+            }
+
+            // Rotate the whole scene slowly for cinematic effect
+            // scene.rotation.y += 0.001;
+
+            composer.render();
+        }
+
+        animate();
+
+        // Responsive
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+
+</html>

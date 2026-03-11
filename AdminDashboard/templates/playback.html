@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>xScout // Cinema Mode</title>
+    <style>
+        :root {
+            --neon-purple: #b026ff;
+            --neon-green: #00ff9d;
+            --bg-dark: #050510;
+            --panel-bg: rgba(20, 20, 30, 0.8);
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: #fff;
+            font-family: 'Consolas', 'Monaco', monospace;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--neon-purple);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: var(--neon-purple);
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px var(--neon-purple);
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        button {
+            background: transparent;
+            border: 1px solid var(--neon-purple);
+            color: var(--neon-purple);
+            padding: 5px 15px;
+            cursor: pointer;
+            font-family: inherit;
+            text-transform: uppercase;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: var(--neon-purple);
+            color: #000;
+            box-shadow: 0 0 15px var(--neon-purple);
+        }
+
+        #timeline-container {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            background: #333;
+            height: 5px;
+            border-radius: 5px;
+            outline: none;
+            accent-color: var(--neon-purple);
+        }
+
+        #code-viewer {
+            flex: 1;
+            background: #1e1e1e;
+            border: 1px solid #333;
+            padding: 20px;
+            overflow: auto;
+            position: relative;
+            box-shadow: inset 0 0 20px #000;
+        }
+
+        pre {
+            margin: 0;
+            white-space: pre-wrap;
+            color: #d4d4d4;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .meta-info {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            text-align: right;
+            border-left: 2px solid var(--neon-green);
+            padding-left: 10px;
+        }
+
+        .timestamp {
+            color: #888;
+            margin-bottom: 5px;
+        }
+
+        .filename {
+            color: #bdc3c7;
+            font-size: 0.9rem;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>xScout Cinema Mode</h1>
+        <div class="controls">
+            <input type="text" id="user-id-input" placeholder="User ID (e.g. user_001)" value="user_001"
+                style="background:#000; color:#fff; border:1px solid #555; padding:5px;">
+            <button onclick="loadSession()">Load Session</button>
+            <button onclick="window.location.href='/dashboard/'">Back to Dashboard</button>
+        </div>
+    </header>
+
+    <div id="timeline-container">
+        <input type="range" id="seek-bar" min="0" max="100" value="0" disabled>
+        <div style="display:flex; justify-content:space-between; margin-top:5px;">
+            <button id="play-btn" onclick="togglePlay()" disabled>Play</button>
+            <span id="current-time">00:00</span>
+        </div>
+        <div class="filename" id="display-filename" style="margin-top: 15px;">No File</div>
+    </div>
+
+    <div id="code-viewer">
+        <div class="meta-info">
+            <div class="timestamp" id="display-time">--:--</div>
+        </div>
+        <pre><code id="code-content">// Select a user and click Load Session to begin playback...</code></pre>
+    </div>
+
+    <script>
+        let historyData = [];
+        let isPlaying = false;
+        let currentIndex = 0;
+        let playInterval;
+        const seekBar = document.getElementById('seek-bar');
+        const codeContent = document.getElementById('code-content');
+        const displayFilename = document.getElementById('display-filename');
+        const displayTime = document.getElementById('display-time');
+        const playBtn = document.getElementById('play-btn');
+
+        // Check for URL param on load
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const userId = urlParams.get('user_id');
+            if (userId) {
+                document.getElementById('user-id-input').value = userId;
+                loadSession();
+            }
+        });
+
+        async function loadSession() {
+            const userId = document.getElementById('user-id-input').value;
+            if (!userId) return alert("Enter User ID");
+
+            try {
+                const res = await fetch(`/api/playback-data/?user_id=${userId}`);
+                const json = await res.json();
+
+                if (json.status === 'success' && json.data.length > 0) {
+                    historyData = json.data;
+                    setupPlayer();
+                } else {
+                    alert("No history found for this user.");
+                    codeContent.innerText = "// No history data found.";
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Error loading session.");
+            }
+        }
+
+        function setupPlayer() {
+            seekBar.disabled = false;
+            playBtn.disabled = false;
+            seekBar.max = historyData.length - 1;
+            seekBar.value = 0;
+            currentIndex = 0;
+            updateView(0);
+        }
+
+        // State persistence
+        let lastCode = "// Waiting for code...";
+        let lastFile = "No File";
+
+        function updateView(index) {
+            if (index >= historyData.length) return;
+            const entry = historyData[index];
+            const snapshot = entry.snapshot;
+
+            // Only update if we have a valid snapshot
+            if (snapshot && snapshot.code) {
+                lastCode = snapshot.code;
+                lastFile = snapshot.file;
+            }
+
+            // Custom Path Formatting
+            if (snapshot && snapshot.file) {
+                lastFile = snapshot.file;
+            }
+
+            codeContent.innerText = lastCode;
+            displayFilename.innerText = lastFile;
+            displayTime.innerText = new Date(entry.timestamp).toLocaleTimeString();
+            seekBar.value = index;
+            currentIndex = index;
+        }
+
+        function togglePlay() {
+            if (isPlaying) {
+                pause();
+            } else {
+                play();
+            }
+        }
+
+        function play() {
+            isPlaying = true;
+            playBtn.innerText = "Pause";
+            playInterval = setInterval(() => {
+                if (currentIndex < historyData.length - 1) {
+                    currentIndex++;
+                    updateView(currentIndex);
+                } else {
+                    pause();
+                }
+            }, 1000); // 1 second per snapshot (five times speed of recording)
+        }
+
+        function pause() {
+            isPlaying = false;
+            playBtn.innerText = "Play";
+            clearInterval(playInterval);
+        }
+
+        seekBar.addEventListener('input', (e) => {
+            pause();
+            updateView(parseInt(e.target.value));
+        });
+
+    </script>
+</body>
+
+</html>

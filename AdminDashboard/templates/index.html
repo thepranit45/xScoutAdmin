@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="{% static 'css/tree.css' %}">
     <link rel="stylesheet" href="{% static 'css/explorer.css' %}">
 
+    <script src="{% static 'js/forensics.js' %}" defer></script>
     <script src="{% static 'js/app.js' %}" defer></script>
     <style>
         .brand-x {
@@ -38,6 +39,8 @@
         <div class="nav">
             <button class="nav-item active" onclick="switchTab('overview')">Overview</button>
             <button class="nav-item" onclick="switchTab('forensics')">Forensics</button>
+            <button class="nav-item" onclick="window.location.href='/network/'">Network Graph</button>
+            <button class="nav-item" onclick="switchTab('environments')">Environments</button>
             <button class="nav-item" onclick="switchTab('add-users')">Add Users</button>
             <button class="nav-item" onclick="switchTab('settings')">Settings</button>
         </div>
@@ -52,6 +55,10 @@
                 <input type="text" placeholder="Search Session / Student ID..." />
             </div>
             <div class="user-info">
+                <button onclick="toggleExplorer()"
+                    style="background: rgba(0, 243, 255, 0.1); border: 1px solid rgba(0, 243, 255, 0.3); color: #00f3ff; padding: 6px 12px; border-radius: 6px; cursor: pointer; margin-right: 15px; font-weight: 600;">
+                    📂 Explorer
+                </button>
                 <span class="username">👤 {{ user.username }}</span>
                 <a href="{% url 'logout' %}" class="logout-btn">Logout</a>
             </div>
@@ -89,6 +96,101 @@
             </div>
         </section>
 
+        <!-- ENVIRONMENTS TAB -->
+        <section id="tab-environments" class="tab-content dashboard-grid" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>Active Environments</h2>
+                <button onclick="createEnvironment()"
+                    style="background: var(--accent-color); color: white; border:none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">+
+                    Create New</button>
+            </div>
+
+            <div class="glass-panel" style="padding: 24px;">
+                <div id="env-list-container"
+                    style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
+                    <!-- Populated by JS -->
+                    <div style="color: #666; font-style: italic;">Loading environments...</div>
+                </div>
+            </div>
+        </section>
+
+        <script>
+            async function createEnvironment() {
+                // If creating from tab, confirm is redundant if we assume intentional click, but keeping for safety
+                if (!confirm("Create a new monitoring environment?")) return;
+
+                try {
+                    const res = await fetch('/environment/create/', { method: 'POST' });
+                    const json = await res.json();
+
+                    if (json.status === 'success') {
+                        window.location.href = `/environment/${json.invite_code}/`;
+                    } else {
+                        alert("Error creating environment: " + json.message);
+                    }
+                } catch (e) {
+                    console.error(e);
+                    alert("Failed to create environment.");
+                }
+            }
+
+            async function loadEnvironments() {
+                try {
+                    const res = await fetch('/api/environments/list/');
+                    const json = await res.json();
+
+                    const container = document.getElementById('env-list-container');
+
+                    if (json.status === 'success' && json.data.length > 0) {
+                        container.innerHTML = '';
+                        json.data.forEach(env => {
+                            const card = document.createElement('div');
+                            card.style.cssText = 'background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 20px; transition: 0.2s;';
+                            card.innerHTML = `
+                                <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:15px;">
+                                    <div>
+                                        <h3 style="margin:0; color: #B026FF; letter-spacing:1px;">${env.code}</h3>
+                                        <div style="font-size:0.8rem; color:#888; margin-top:5px;">Created by: ${env.created_by || 'Unknown'}</div>
+                                    </div>
+                                    <div style="font-size:1.5rem;">🌍</div>
+                                </div>
+                                <div style="display:flex; gap:10px;">
+                                    <button onclick="window.location.href='/environment/${env.code}/'" style="flex:1; background:transparent; border:1px solid #00f3ff; color:#00f3ff; padding:8px; border-radius:4px; cursor:pointer;">Enter</button>
+                                    <button onclick="deleteEnvironment('${env.code}')" style="background:rgba(255,0,0,0.1); border:1px solid #ff4d4d; color:#ff4d4d; padding:8px 12px; border-radius:4px; cursor:pointer;">🗑️</button>
+                                </div>
+                            `;
+                            container.appendChild(card);
+                        });
+                    } else {
+                        container.innerHTML = '<div style="color: #666; grid-column: 1/-1; text-align: center;">No active environments found. Create one!</div>';
+                    }
+                } catch (e) {
+                    console.error("Failed to load environments", e);
+                }
+            }
+
+            async function deleteEnvironment(code) {
+                if (!confirm(`Are you sure you want to delete environment '${code}'?`)) return;
+                try {
+                    const res = await fetch('/api/environment/delete/', {
+                        method: 'POST',
+                        body: JSON.stringify({ code: code }),
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    const json = await res.json();
+                    if (json.status === 'success') {
+                        loadEnvironments();
+                    } else {
+                        alert("Error: " + json.message);
+                    }
+                } catch (e) {
+                    alert("Delete failed");
+                }
+            }
+
+            // Hook removed: Logic moved to main switchTab function
+
+        </script>
         <!-- FORENSICS TAB -->
         <section id="tab-forensics" class="tab-content"
             style="display: none; height: 70vh; flex-direction: column; justify-content: center; align-items: center; color: var(--text-secondary);">
@@ -327,142 +429,24 @@
                     }
                 }
             }
+
+            function openCinemaMode() {
+                const studentName = document.getElementById('modal-student-name').innerText;
+                // Assuming student name is the ID or we have the ID stored somewhere. 
+                // In a real app we'd store the ID in a data-attribute. 
+                // For now, let's grab it from the modal title which usually reflects the clicked row.
+                if (studentName && studentName !== 'Student Name') {
+                    window.location.href = `/playback/?user_id=${encodeURIComponent(studentName)}`;
+                } else {
+                    alert("No student selected");
+                }
+            }
         </script>
 
-        <!-- Forensic Details Modal -->
-        <div id="forensic-modal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Forensic Detail Analysis</h2>
-                    <span class="close-modal" onclick="closeModal()">&times;</span>
-                </div>
-                <div class="modal-body">
-                    <div class="student-info-header">
-                        <div>
-                            <span class="label">STUDENT</span>
-                            <div style="display: flex; align-items: center; gap: 15px;">
-                                <h1 id="modal-student-name">Student Name</h1>
-                                <!-- View Structure Shortcut -->
-                                <a href="#" onclick="toggleExplorer(); return false;"
-                                    style="color: #00f3ff; font-size: 0.8rem; text-decoration: none; border: 1px solid rgba(0, 243, 255, 0.3); padding: 4px 10px; border-radius: 4px; transition: all 0.3s; margin-top: 5px;">
-                                    View Folder Structure
-                                </a>
-                                <!-- Analyze Stack Shortcut -->
-                                <a href="#" onclick="analyzeStack(); return false;"
-                                    style="color: #B026FF; font-size: 0.8rem; text-decoration: none; border: 1px solid rgba(176, 38, 255, 0.3); padding: 4px 10px; border-radius: 4px; transition: all 0.3s; margin-top: 5px;">
-                                    ⚡ Analyze Stack
-                                </a>
-                            </div>
-                        </div>
-                        <div class="risk-score-panel">
-                            <span class="label">RISK SCORE</span>
-                            <h2 id="modal-risk-score" style="color: #00ff00;">0%</h2>
-                        </div>
-                    </div>
+        {% include 'components/forensic_modal.html' %}
+        {% include 'components/tech_modal.html' %}
 
-                    <h3 class="section-title">APP USAGE HISTORY</h3>
-                    <div class="glass-panel">
-                        <table class="forensic-table">
-                            <thead>
-                                <tr>
-                                    <th>APP</th>
-                                    <th>WINDOW TITLE</th>
-                                    <th>CONTEXT</th>
-                                    <th>TIME</th>
-                                    <th>ACTION</th>
-                                </tr>
-                            </thead>
-                            <tbody id="forensic-history-body">
-                                <!-- Populated by JS -->
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- CODE SNAPSHOT (Shadow IDE) -->
-                    <div style="margin-top: 20px;">
-                        <h3 class="section-title">ACTIVE CODE SNAPSHOT</h3>
-                        <div class="glass-panel"
-                            style="background: #1e1e1e; padding: 0; overflow: hidden; position: relative;">
-                            <div
-                                style="background: #252526; padding: 5px 15px; color: #ccc; font-size: 0.8rem; display: flex; justify-content: space-between;">
-                                <span id="snapshot-file">No active file</span>
-                                <span id="snapshot-lang">Unknown</span>
-                            </div>
-                            <pre id="snapshot-code"
-                                style="margin: 0; padding: 15px; color: #d4d4d4; font-family: 'Consolas', 'Monaco', monospace; font-size: 0.9rem; overflow-x: auto; max-height: 300px;">
-// Waiting for telemetry...
-                            </pre>
-                            <div id="paste-alert"
-                                style="display: none; position: absolute; top: 10px; right: 10px; background: rgba(255, 0, 0, 0.8); color: white; padding: 5px 10px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; animation: pulse 1s infinite;">
-                                ⚠️ PASTE DETECTED
-                            </div>
-                        </div>
-                    </div>
-
-                    <style>
-                        @keyframes pulse {
-                            0% {
-                                opacity: 1;
-                            }
-
-                            50% {
-                                opacity: 0.5;
-                            }
-
-                            100% {
-                                opacity: 1;
-                            }
-                        }
-                    </style>
-
-                    <!-- EXPLORER SIDEBAR (Hidden by default) -->
-
-                </div>
-            </div>
-        </div>
-
-        <!-- Tech Stack Modal -->
-        <div id="tech-stack-modal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Technology Stack Analysis</h2>
-                    <span class="close-modal"
-                        onclick="document.getElementById('tech-stack-modal').style.display='none'">&times;</span>
-                </div>
-                <div class="modal-body">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-                        <div class="glass-panel" style="padding: 15px;">
-                            <h4 style="color: #aaa; margin-bottom: 10px;">Project Metadata</h4>
-                            <div style="margin-bottom: 5px;">Author: <strong id="tech-author"
-                                    style="color: white; margin-left: 5px;">-</strong></div>
-                            <div style="margin-bottom: 5px;">Created: <strong id="tech-created"
-                                    style="color: white; margin-left: 5px;">-</strong></div>
-                            <div>Git Tracking: <span id="tech-git" style="margin-left: 5px;">-</span></div>
-                        </div>
-                    </div>
-
-                    <h3 class="section-title">Detected Technologies</h3>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                        <div class="glass-panel" style="padding: 15px;">
-                            <h4 style="color: #00f3ff; margin-bottom: 10px;">Frontend</h4>
-                            <div id="tech-frontend" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
-                        </div>
-                        <div class="glass-panel" style="padding: 15px;">
-                            <h4 style="color: #B026FF; margin-bottom: 10px;">Backend</h4>
-                            <div id="tech-backend" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
-                        </div>
-                        <div class="glass-panel" style="padding: 15px;">
-                            <h4 style="color: #f1e05a; margin-bottom: 10px;">Database</h4>
-                            <div id="tech-database" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
-                        </div>
-                        <div class="glass-panel" style="padding: 15px;">
-                            <h4 style="color: #ff6b6b; margin-bottom: 10px;">DevOps / Tools</h4>
-                            <div id="tech-devops" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <!-- File Viewer Modal -->
     </main>
 
     </main>
@@ -470,14 +454,16 @@
     <!-- EXPLORER SIDEBAR (Moved to root for fixed positioning) -->
     <div id="explorer-sidebar" class="explorer-sidebar">
         <div class="explorer-header">
-            <span>EXPLORER</span>
-            <span class="close-explorer" onclick="toggleExplorer()">×</span>
+            <h3>EXPLORER</h3>
+            <span class="close-sidebar" onclick="toggleExplorer()">&times;</span>
         </div>
-        <div class="explorer-content" id="project-tree-view">
-            <span style="color: #666; font-style: italic; padding: 20px;">No active workspace structure data
-                available.</span>
+        <div id="project-tree-view" class="explorer-content">
+            <!-- Content loaded via API -->
         </div>
     </div>
+
+    <!-- File Viewer Panel (Split Screen Layout) -->
+    {% include 'components/file_viewer_modal.html' %}
 
     <script>
         // Tab Switching Logic
@@ -494,6 +480,14 @@
                     selectedTab.style.display = 'flex'; // Flex for centering
                 } else {
                     selectedTab.style.display = 'block'; // Block for normal layout
+                }
+
+                // Load data if environments tab
+                if (tabId === 'environments') {
+                    // Check if function exists (it's in an earlier script block)
+                    if (typeof loadEnvironments === 'function') {
+                        loadEnvironments();
+                    }
                 }
             }
 
