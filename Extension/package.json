@@ -53,6 +53,21 @@
           "type": "webview"
         }
       ]
+    },
+    "configuration": {
+      "title": "xScout",
+      "properties": {
+        "xscout.dashboardHost": {
+          "type": "string",
+          "default": "127.0.0.1",
+          "description": "The hostname of your xScout Dashboard."
+        },
+        "xscout.dashboardPort": {
+          "type": "number",
+          "default": 8000,
+          "description": "The port of your xScout Dashboard (e.g. 8000 for local, 443 for HTTPS)."
+        }
+      }
     }
   },
   "scripts": {

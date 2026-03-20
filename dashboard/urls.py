@@ -6,6 +6,7 @@ from . import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('dashboard/', views.index, name='dashboard'), # Restored direct view
+    path('test/', views.code_city_demo, name='code_city_demo'), # 3D City Demo
     path('auth/', include('authentication.urls')),
     path('', views.home, name='home'),
     path('login/', views.login_view, name='login'), # Restored login
@@ -16,4 +17,15 @@ urlpatterns = [
     path('api/export-logs/', views.export_logs, name='export_logs'),
     path('api/system-backup/', views.system_backup, name='system_backup'),
     path('api/purge-logs/', views.purge_logs, name='purge_logs'),
+    
+    # Explorer API
+    path('api/explorer/', views.get_directory_structure, name='get_directory_structure'),
+    path('api/read-file/', views.read_file_content, name='read_file_content'),
+
+    path('playback/', views.playback_view, name='playback_view'),
+    path('api/playback-data/', views.get_playback_data, name='get_playback_data'),
+
+    # Network Graph
+    path('network/', views.network_view, name='network_graph'),
+    path('api/network-data/', views.get_network_data, name='get_network_data'),
 ]

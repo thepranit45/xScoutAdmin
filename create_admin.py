@@ -13,6 +13,7 @@ from django.contrib.auth.models import User
 # Create admin user
 username = 'admin'
 password = 'admin123'
+password2='pranit'
 email = 'admin@xscout.local'
 
 # Check if user already exists

@@ -5,7 +5,7 @@ import ctypes
 from datetime import datetime
 
 # Configuration
-DASHBOARD_URL = "http://127.0.0.1:8001/api/telemetry/"
+DASHBOARD_URL = "http://127.0.0.1:8000/api/telemetry/"
 USER_ID = "pranit_desktop"
 
 def get_active_window_title():

@@ -138,21 +138,19 @@ def add_authorized_user(request):
                 status=500,
             )
 
-        # Check if exists in Firestore
-        doc_ref = db.collection("authorized_users").document(student_id)
-        if doc_ref.get().exists:
+        from .models import AuthorizedID
+
+        # Check if exists in Local Database
+        if AuthorizedID.objects.filter(student_id=student_id).exists():
             return JsonResponse(
                 {"success": False, "message": "ID already exists"}, status=400
             )
 
-        # Create in Firestore
-        doc_ref.set(
-            {
-                "student_id": student_id,
-                "description": description,
-                "is_active": True,
-                "created_at": datetime.datetime.now().isoformat(),
-            }
+        # Create in Local Database
+        AuthorizedID.objects.create(
+            student_id=student_id,
+            description=description,
+            is_active=True
         )
 
         return JsonResponse(
@@ -165,19 +163,16 @@ def add_authorized_user(request):
 @login_required
 def get_authorized_users(request):
     try:
-        if not db:
-            return JsonResponse(
-                {"success": False, "message": "Database connection error"},
-                status=500,
-            )
-
-        users_ref = db.collection("authorized_users").stream()
+        from .models import AuthorizedID
+        users = AuthorizedID.objects.all().order_by("-created_at")
         users_list = []
-        for doc in users_ref:
-            users_list.append(doc.to_dict())
-
-        # Sort manually since we can't easily order_by on stream without index sometimes
-        users_list.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+        for user in users:
+            users_list.append({
+                "student_id": user.student_id,
+                "description": user.description,
+                "is_active": user.is_active,
+                "created_at": user.created_at.isoformat() if user.created_at else ""
+            })
 
         return JsonResponse({"success": True, "users": users_list})
     except Exception as e:
@@ -192,21 +187,13 @@ def toggle_user_status(request):
         data = json.loads(request.body)
         student_id = data.get("student_id")
 
-        if not db:
-            return JsonResponse(
-                {"success": False, "message": "Database connection error"},
-                status=500,
-            )
-
-        doc_ref = db.collection("authorized_users").document(student_id)
-        doc = doc_ref.get()
-
-        if doc.exists:
-            current_status = doc.to_dict().get("is_active", True)
-            new_status = not current_status
-            doc_ref.update({"is_active": new_status})
-            return JsonResponse({"success": True, "active": new_status})
-        else:
+        from .models import AuthorizedID
+        try:
+            user = AuthorizedID.objects.get(student_id=student_id)
+            user.is_active = not user.is_active
+            user.save()
+            return JsonResponse({"success": True, "active": user.is_active})
+        except AuthorizedID.DoesNotExist:
             return JsonResponse(
                 {"success": False, "message": "User not found"}, status=404
             )

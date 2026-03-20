@@ -45,13 +45,15 @@ class Project_Scanner {
         if (!stats.isDirectory()) {
             return {
                 name: name,
-                type: 'file'
+                type: 'file',
+                path: dirPath
             };
         }
 
         const item = {
             name: name,
             type: 'folder',
+            path: dirPath,
             children: []
         };
 

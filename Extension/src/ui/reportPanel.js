@@ -42,7 +42,7 @@ class ReportPanel {
                 switch (message.command) {
                     case 'login':
                         if (ReportPanel.onLogin) {
-                            ReportPanel.onLogin(message.user);
+                            ReportPanel.onLogin(message.user, message.inviteCode);
                         }
                         return;
                 }
@@ -82,6 +82,7 @@ class ReportPanel {
         <h1>xScout</h1>
         <p>Forensic Monitoring</p>
         <input type="text" id="username" placeholder="Enter Student ID" />
+        <input type="text" id="invite-code" placeholder="Invite Code (Optional)" style="margin-top: 5px;" />
         <button onclick="login()">Connect</button>
         <div id="error-msg" style="color: #ff6b6b; margin-top: 10px; font-size: 0.8em; display: none;"></div>
     </div>
@@ -97,9 +98,10 @@ class ReportPanel {
         const vscode = acquireVsCodeApi();
         function login() {
             const user = document.getElementById('username').value;
+            const inviteCode = document.getElementById('invite-code').value;
             if(user) {
                 document.querySelector('button').innerText = 'Verifying...';
-                vscode.postMessage({ command: 'login', user: user });
+                vscode.postMessage({ command: 'login', user: user, inviteCode: inviteCode });
             }
         }
         window.addEventListener('message', event => {

@@ -9,12 +9,18 @@ class Behavior_Scanner {
         this.lastFocusTime = Date.now();
         this.startTime = Date.now();
         this.isFocused = true;
+        this.currentContent = '';
+        this.currentFile = '';
         this.setupListeners();
     }
 
     setupListeners() {
         // Track Typing
         vscode.workspace.onDidChangeTextDocument(event => {
+            // Update Snapshot
+            this.currentContent = event.document.getText();
+            this.currentFile = event.document.fileName;
+
             if (event.contentChanges.length > 0) {
                 event.contentChanges.forEach(change => {
                     if (change.text.length > 50) {
@@ -73,7 +79,10 @@ class Behavior_Scanner {
             backspaces: this.backspaces,
             pasteCount: this.pasteCount, // Cumulative since start
             fatigue: fatigueScore,
-            flowState: this.getFlowState()
+            flowState: this.getFlowState(),
+            // Snapshot Data
+            activeFile: this.currentFile || 'None',
+            content: this.currentContent || ''
         };
     }
 }

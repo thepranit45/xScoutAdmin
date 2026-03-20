@@ -39,5 +39,14 @@ staticfiles/
 serviceAccountKey.json
 *.json
 !package.json
+!package-lock.json
 !tsconfig.json
 !jsconfig.json
+
+# Java / Android
+*.hprof
+.gradle/
+.kotlin/
+build/
+app/build/
+local.properties

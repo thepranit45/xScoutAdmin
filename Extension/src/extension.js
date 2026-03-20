@@ -10,10 +10,9 @@ const http = require('http');
 // const admin = require('firebase-admin');
 // const serviceAccount = require('../serviceAccountKey.json');
 
-const DASHBOARD_HOST = 'thepranit19.pythonanywhere.com';
-const DASHBOARD_PORT = 443;
-// const DASHBOARD_HOST = '127.0.0.1';
-// const DASHBOARD_PORT = 8000;
+const config = vscode.workspace.getConfiguration('xscout');
+const DASHBOARD_HOST = config.get('dashboardHost') || '127.0.0.1';
+const DASHBOARD_PORT = config.get('dashboardPort') || 8000;
 const DASHBOARD_PATH = '/api/telemetry/';
 
 /*
@@ -42,14 +41,16 @@ function activate(context) {
 	const techScanner = new Tech_Scanner();
 
 	let activeUser = null; // Default null until authorized
+	let activeEnvironment = ''; // Store environment code
 	let telemetryInterval = null;
+	let lastSentContent = ''; // Track last sent code to avoid duplicates
 
 	// Listen for Login from UI
-	ReportPanel.onLogin = (user) => {
-		console.log(`Verifying User: ${user}`);
+	ReportPanel.onLogin = (user, inviteCode) => {
+		console.log(`Verifying User: ${user} for Env: ${inviteCode}`);
 
 		// CHECK AUTHORIZATION
-		const verifyData = JSON.stringify({ student_id: user });
+		const verifyData = JSON.stringify({ student_id: user, invite_code: inviteCode });
 		const verifyOptions = {
 			hostname: DASHBOARD_HOST,
 			port: DASHBOARD_PORT,
@@ -70,6 +71,7 @@ function activate(context) {
 					const response = JSON.parse(data);
 					if (response.success) {
 						activeUser = user;
+						activeEnvironment = inviteCode || '';
 						vscode.window.showInformationMessage(`✅ xScout Authorized: Tracking active for ${user}`);
 						startTelemetryLoop();
 
@@ -109,13 +111,25 @@ function activate(context) {
 			const project = await projectScanner.scan() || {};
 			const tech = await techScanner.scan() || {};
 
+			// Check for Code Changes (Snapshot)
+			let snapshotData = null;
+			if (behavior.content && behavior.content !== lastSentContent) {
+				snapshotData = {
+					file: behavior.activeFile,
+					code: behavior.content
+				};
+				lastSentContent = behavior.content;
+			}
+
 			const pulseData = {
 				timestamp: new Date().toISOString(),
 				behavior: behavior,
 				forensic: forensic,
 				project: project,
 				tech: tech,
-				ai: aiScanner.lastScanResult || 0
+				ai: aiScanner.lastScanResult || 0,
+				environment: activeEnvironment, // Send Environment Code
+				snapshot: snapshotData // Send snapshot only if changed
 			};
 
 			console.log('Telemetry Pulse:', pulseData);
