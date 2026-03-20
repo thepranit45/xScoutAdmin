@@ -1,0 +1,35 @@
+name: xScout CI (Extension)
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build:
+    name: Build & Lint Extension
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: Extension/package-lock.json
+
+    - name: Install Dependencies
+      working-directory: ./Extension
+      run: npm install
+
+    - name: Lint Extension
+      working-directory: ./Extension
+      run: npm run lint
+
+    - name: Package Extension
+      working-directory: ./Extension
+      run: npx @vscode/vsce package --no-git-tag-version --no-update-package-json -o xscout.vsix
