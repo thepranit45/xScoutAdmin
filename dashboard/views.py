@@ -121,7 +121,7 @@ def get_dashboard_data(request):
                 'studentId': user_id,
                 'studentName': user_id, # Fallback to ID until we have a name lookup
                 'email': body.get('email', f"{user_id}@xscout.app"),
-                'timestamp': int(datetime.now().timestamp() * 1000),
+                'timestamp': firestore.SERVER_TIMESTAMP,
                 'isActive': True,
                 'ai': body.get('ai', 0) * 100, # Scale 0.0-1.0 to 0-100 for Android logic
                 'behavior': {
