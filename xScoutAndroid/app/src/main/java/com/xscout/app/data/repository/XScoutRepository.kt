@@ -3,6 +3,7 @@ package com.xscout.app.data.repository
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.xscout.app.data.model.Alert
@@ -43,7 +44,8 @@ private const val KEY_LOGGED  = "is_logged_in"
 @Singleton
 class XScoutRepository @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val firestore: FirebaseFirestore
+    private val firestore: FirebaseFirestore,
+    private val auth: FirebaseAuth
 ) {
     private val prefs: SharedPreferences =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -60,12 +62,22 @@ class XScoutRepository @Inject constructor(
         }?.value
 
         return if (storedPass != null && storedPass == password) {
-            prefs.edit()
-                .putBoolean(KEY_LOGGED, true)
-                .putString(KEY_EMAIL, email.trim())
-                .apply()
-            Log.d("XScoutRepo", "Local auth success: $email")
-            AuthResult.Success(email)
+            try {
+                // Background auth to satisfy Firestore Rules
+                if (auth.currentUser == null) {
+                    auth.signInAnonymously().await()
+                }
+                
+                prefs.edit()
+                    .putBoolean(KEY_LOGGED, true)
+                    .putString(KEY_EMAIL, email.trim())
+                    .apply()
+                Log.d("XScoutRepo", "Local auth success: $email")
+                AuthResult.Success(email)
+            } catch (e: Exception) {
+                Log.e("XScoutRepo", "Firebase Auth Fail", e)
+                AuthResult.Error("Firebase Auth Failed: ${e.message}")
+            }
         } else {
             Log.w("XScoutRepo", "Local auth failed for: $email")
             AuthResult.Error("Invalid email or password")
