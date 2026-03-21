@@ -1,12 +1,15 @@
 :root {
-    --primary: #B026FF;
-    --secondary: #FF26B9;
-    --bg: #0f0518;
+    --primary: #d946ef;
+    --secondary: #8b5cf6;
+    --accent: #00f3ff;
+    --bg: #030008;
     --glass: rgba(255, 255, 255, 0.03);
-    --border: rgba(176, 38, 255, 0.2);
+    --glass-hover: rgba(255, 255, 255, 0.08);
+    --border: rgba(217, 70, 239, 0.2);
     --text-main: #ffffff;
-    --text-dim: #a0a0a0;
-    --error: #ff3b3b;
+    --text-dim: #94a3b8;
+    --error: #ff3366;
+    --success: #00ff88;
 }
 
 body {
@@ -17,8 +20,17 @@ body {
     display: flex;
     height: 100vh;
     overflow: hidden;
-    background-image: radial-gradient(circle at 10% 10%, rgba(176, 38, 255, 0.05) 0%, transparent 40%);
+    background-image: 
+        radial-gradient(circle at 15% 50%, rgba(217, 70, 239, 0.08), transparent 35%),
+        radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.08), transparent 35%);
+    background-size: 100% 100%;
+    animation: bgPulse 15s ease-in-out infinite alternate;
     position: relative;
+}
+
+@keyframes bgPulse {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 100% 100%; }
 }
 
 /* Neural Network Canvas */
@@ -48,12 +60,18 @@ body {
     display: flex;
     align-items: center;
     margin-bottom: 40px;
+    padding: 10px;
 }
 
 .logo h2 {
     margin: 0;
     line-height: 1;
-    text-shadow: 0 0 10px var(--primary);
+    font-size: 1.8rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 10px rgba(217, 70, 239, 0.3));
 }
 
 .orb {
@@ -70,19 +88,24 @@ body {
     border: none;
     color: var(--text-dim);
     text-align: left;
-    padding: 15px;
+    padding: 15px 20px;
     cursor: pointer;
     font-size: 1rem;
-    border-radius: 8px;
-    transition: 0.3s;
-    margin-bottom: 5px;
+    border-radius: 12px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-bottom: 8px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .nav-item.active,
 .nav-item:hover {
-    background: rgba(176, 38, 255, 0.1);
+    background: rgba(217, 70, 239, 0.1);
     color: var(--text-main);
-    border-left: 3px solid var(--primary);
+    box-shadow: inset 3px 0 0 0 var(--primary);
+    transform: translateX(4px);
 }
 
 main {
@@ -103,11 +126,20 @@ header {
 .search-bar input {
     background: var(--glass);
     border: 1px solid var(--border);
-    padding: 15px;
-    border-radius: 25px;
+    padding: 14px 24px;
+    border-radius: 30px;
     color: white;
-    width: 300px;
+    width: 350px;
     outline: none;
+    transition: all 0.3s ease;
+    font-family: 'Inter', sans-serif;
+}
+
+.search-bar input:focus {
+    background: var(--glass-hover);
+    border-color: var(--primary);
+    box-shadow: 0 0 15px rgba(217, 70, 239, 0.2);
+    width: 400px;
 }
 
 .user-info {
@@ -118,24 +150,25 @@ header {
 
 .username {
     color: var(--text-dim);
-    font-size: 0.9rem;
+    font-size: 0.95rem;
+    font-weight: 500;
 }
 
 .logout-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
     color: white;
-    padding: 8px 20px;
-    border-radius: 20px;
+    padding: 10px 24px;
+    border-radius: 30px;
     text-decoration: none;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     font-weight: 600;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 15px rgba(225, 29, 72, 0.3);
 }
 
 .logout-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 8px 25px rgba(225, 29, 72, 0.5);
 }
 
 .stats-panel {
@@ -145,10 +178,20 @@ header {
 
 .stat-card {
     background: var(--glass);
-    padding: 15px 30px;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-    min-width: 150px;
+    padding: 20px 30px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    min-width: 160px;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--border);
+    background: var(--glass-hover);
+    box-shadow: 0 15px 40px rgba(217, 70, 239, 0.15);
 }
 
 .stat-card h3 {
@@ -174,10 +217,18 @@ header {
 
 .glass-panel {
     background: var(--glass);
-    border: 1px solid var(--border);
-    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
     overflow: hidden;
-    backdrop-filter: blur(5px);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+.glass-panel:hover {
+    border-color: var(--border);
+    box-shadow: 0 25px 60px rgba(217, 70, 239, 0.1);
 }
 
 table {
@@ -187,16 +238,24 @@ table {
 
 th,
 td {
-    padding: 20px;
+    padding: 20px 24px;
     text-align: left;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    transition: background 0.2s ease;
+}
+
+tr:hover td {
+    background: rgba(255, 255, 255, 0.02);
 }
 
 th {
     color: var(--text-dim);
-    font-size: 0.8rem;
+    font-size: 0.85rem;
+    font-weight: 600;
     text-transform: uppercase;
-    background: rgba(0, 0, 0, 0.2);
+    letter-spacing: 0.05em;
+    background: rgba(0, 0, 0, 0.3);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.05);
 }
 
 .status-dot {
