@@ -2,12 +2,9 @@
 <div id="tech-stack-modal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <div style="display: flex; align-items: center; gap: 15px;">
-                <h2 style="margin: 0;">Technology Stack Analysis</h2>
-                <button onclick="analyzeStack()"
-                    style="background: transparent; border: 1px solid #444; color: #00f3ff; border-radius: 4px; cursor: pointer; padding: 4px 8px; font-size: 0.8rem; transition: all 0.2s;"
-                    onmouseover="this.style.background='rgba(0, 243, 255, 0.1)'"
-                    onmouseout="this.style.background='transparent'">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <h2 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: var(--text-main);">Technology Stack Analysis</h2>
+                <button onclick="analyzeStack()" class="analyze-btn" style="color: var(--primary); border-color: var(--primary); background: var(--table-header-bg);">
                     ⟳ Refresh
                 </button>
             </div>
@@ -15,33 +12,31 @@
                 onclick="document.getElementById('tech-stack-modal').style.display='none'">&times;</span>
         </div>
         <div class="modal-body">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-                <div class="glass-panel" style="padding: 15px;">
-                    <h4 style="color: #aaa; margin-bottom: 10px;">Project Metadata</h4>
-                    <div style="margin-bottom: 5px;">Author: <strong id="tech-author"
-                            style="color: white; margin-left: 5px;">-</strong></div>
-                    <div style="margin-bottom: 5px;">Created: <strong id="tech-created"
-                            style="color: white; margin-left: 5px;">-</strong></div>
-                    <div>Git Tracking: <span id="tech-git" style="margin-left: 5px;">-</span></div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px;">
+                <div class="glass-panel" style="padding: 24px; background: var(--table-header-bg);">
+                    <h4 style="color: var(--text-dim); margin-bottom: 12px; font-size: 0.8rem; text-transform: uppercase; font-weight: 700;">Project Ownership</h4>
+                    <div style="margin-bottom: 8px; font-size: 0.95rem;">Author: <strong id="tech-author" style="color: var(--text-main); margin-left: 8px;">-</strong></div>
+                    <div style="margin-bottom: 8px; font-size: 0.95rem;">Created: <strong id="tech-created" style="color: var(--text-main); margin-left: 8px;">-</strong></div>
+                    <div style="font-size: 0.95rem;">Git Tracking: <span id="tech-git" style="margin-left: 8px; font-weight: 600;">-</span></div>
                 </div>
             </div>
 
-            <h3 class="section-title">Detected Technologies</h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                <div class="glass-panel" style="padding: 15px;">
-                    <h4 style="color: #00f3ff; margin-bottom: 10px;">Frontend</h4>
+            <h3 class="section-title" style="margin-bottom: 20px;">Detection Intelligence</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
+                <div class="glass-panel" style="padding: 20px;">
+                    <h4 style="color: var(--primary); margin-bottom: 12px; font-size: 0.85rem; font-weight: 700;">Frontend Engines</h4>
                     <div id="tech-frontend" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
                 </div>
-                <div class="glass-panel" style="padding: 15px;">
-                    <h4 style="color: #B026FF; margin-bottom: 10px;">Backend</h4>
+                <div class="glass-panel" style="padding: 20px;">
+                    <h4 style="color: #bc46ff; margin-bottom: 12px; font-size: 0.85rem; font-weight: 700;">Backend Services</h4>
                     <div id="tech-backend" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
                 </div>
-                <div class="glass-panel" style="padding: 15px;">
-                    <h4 style="color: #f1e05a; margin-bottom: 10px;">Database</h4>
+                <div class="glass-panel" style="padding: 20px;">
+                    <h4 style="color: #f29e2f; margin-bottom: 12px; font-size: 0.85rem; font-weight: 700;">Database Layer</h4>
                     <div id="tech-database" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
                 </div>
-                <div class="glass-panel" style="padding: 15px;">
-                    <h4 style="color: #ff6b6b; margin-bottom: 10px;">DevOps / Tools</h4>
+                <div class="glass-panel" style="padding: 20px;">
+                    <h4 style="color: #cd3d64; margin-bottom: 12px; font-size: 0.85rem; font-weight: 700;">Forensic Infrastructure</h4>
                     <div id="tech-devops" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
                 </div>
             </div>

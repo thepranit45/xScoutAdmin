@@ -9,9 +9,9 @@
     <style>
         body {
             margin: 0;
-            background-color: #0f0518;
-            color: #fff;
-            font-family: 'Segoe UI', sans-serif;
+            background-color: #f6f9fc;
+            color: #0a2540;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             overflow: hidden;
         }
 
@@ -23,101 +23,112 @@
 
         #overlay {
             position: absolute;
-            top: 20px;
-            left: 20px;
+            top: 24px;
+            left: 24px;
             z-index: 10;
-            background: rgba(15, 5, 24, 0.8);
-            padding: 20px;
-            border: 1px solid #b026ff;
+            background: #ffffff;
+            padding: 24px;
+            border: 1px solid #e3e8ee;
             border-radius: 8px;
-            backdrop-filter: blur(5px);
-            box-shadow: 0 0 20px rgba(176, 38, 255, 0.2);
+            box-shadow: 0 15px 35px rgba(50,50,93,0.1), 0 5px 15px rgba(0,0,0,0.07);
+            max-width: 300px;
         }
 
         h1 {
-            margin: 0 0 10px 0;
-            color: #b026ff;
+            margin: 0 0 12px 0;
+            color: #635bff;
             text-transform: uppercase;
-            font-size: 1.2rem;
+            font-size: 1rem;
+            font-weight: 800;
+            letter-spacing: 0.05em;
         }
 
         .stat-row {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 5px;
-            color: #aaa;
+            margin-bottom: 8px;
+            color: #425466;
             font-size: 0.9rem;
+            font-weight: 500;
         }
 
         .stat-val {
-            color: #fff;
-            font-weight: bold;
+            color: #0a2540;
+            font-weight: 700;
         }
 
         .legend-item {
             display: flex;
             align-items: center;
-            margin-top: 5px;
-            font-size: 0.8rem;
+            margin-top: 8px;
+            font-size: 0.85rem;
+            color: #425466;
+            font-weight: 500;
         }
 
         .dot {
             width: 10px;
             height: 10px;
             border-radius: 50%;
-            margin-right: 8px;
+            margin-right: 12px;
         }
 
         .safe {
-            background: #00ff9d;
+            background: #2ecc71;
         }
 
         .danger {
-            background: #ff0055;
+            background: #cd3d64;
         }
 
         .back-btn {
             display: inline-block;
-            margin-top: 15px;
-            padding: 8px 15px;
-            background: rgba(176, 38, 255, 0.1);
-            border: 1px solid #b026ff;
-            color: #b026ff;
+            margin-top: 20px;
+            padding: 10px 16px;
+            background: #ffffff;
+            border: 1px solid #e3e8ee;
+            color: #0a2540;
             text-decoration: none;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            transition: all 0.3s;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            width: 100%;
+            text-align: center;
+            box-sizing: border-box;
         }
 
         .back-btn:hover {
-            background: #b026ff;
-            color: #fff;
+            background: #f6f9fc;
+            border-color: #c1c9d2;
+            transform: translateY(-1px);
         }
     </style>
 </head>
 
 <body>
     <div id="overlay">
-        <h1>Cheating Ring Detector</h1>
+        <h1>Network Analysis</h1>
         <div class="stat-row">
-            <span>Active Nodes:</span>
+            <span>Detected Nodes:</span>
             <span id="node-count" class="stat-val">0</span>
         </div>
         <div class="stat-row">
             <span>Critical Links:</span>
-            <span id="edge-count" class="stat-val" style="color: #ff0055">0</span>
+            <span id="edge-count" class="stat-val" style="color: #cd3d64">0</span>
         </div>
 
-        <div style="margin-top: 15px; border-top: 1px solid #333; padding-top: 10px;">
+        <div style="margin-top: 20px; border-top: 1px solid #e3e8ee; padding-top: 16px;">
             <div class="legend-item">
-                <div class="dot safe"></div> Isolated (Safe)
+                <div class="dot safe"></div> Isolated (Authorized)
             </div>
             <div class="legend-item">
-                <div class="dot danger"></div> Connected (>80% Match)
+                <div class="dot danger"></div> Pattern Match (>80%)
             </div>
         </div>
 
-        <a href="/dashboard/" class="back-btn">← Back to Dashboard</a>
+        <a href="/dashboard/" class="back-btn">← Back to Command Center</a>
     </div>
 
     <div id="mynetwork"></div>
@@ -128,20 +139,26 @@
             nodes: {
                 shape: 'dot',
                 size: 20,
-                font: { size: 14, color: '#ffffff', face: 'Segoe UI' },
+                font: { size: 14, color: '#0a2540', face: '-apple-system' },
                 borderWidth: 2,
-                shadow: true
+                shadow: {
+                    enabled: true,
+                    color: 'rgba(0,0,0,0.05)',
+                    size: 10,
+                    x: 0,
+                    y: 2
+                }
             },
             edges: {
                 width: 2,
-                color: { color: '#ff0055', highlight: '#ff0055' },
-                shadow: true,
+                color: { color: '#cd3d64', highlight: '#635bff' },
+                shadow: false,
                 smooth: { type: 'continuous' }
             },
             physics: {
                 stabilization: false,
                 barnesHut: {
-                    gravitationalConstant: -2000,
+                    gravitationalConstant: -2500,
                     springConstant: 0.04,
                     springLength: 200
                 }
@@ -173,7 +190,6 @@
                     document.getElementById('edge-count').innerText = serverEdges.length;
 
                     // Sync Nodes
-                    // We update existing, add new, remove old
                     const currentIds = nodesDataSet.getIds();
                     const newIds = serverNodes.map(n => n.id);
 
@@ -184,7 +200,7 @@
                             id: node.id,
                             label: node.label,
                             color: {
-                                background: isRisky ? '#ff0055' : '#00ff9d',
+                                background: isRisky ? '#cd3d64' : '#2ecc71',
                                 border: '#ffffff'
                             },
                             title: `Last Update: ${node.last_seen}`
@@ -196,9 +212,6 @@
                     nodesDataSet.remove(toRemove);
 
                     // Sync Edges
-                    // For edges, it's easier to clear and add if the count is low, 
-                    // or implement a smart diff. Since edges represent dynamic similarity, 
-                    // let's clear and re-add for simplicity in this demo.
                     edgesDataSet.clear();
                     edgesDataSet.add(serverEdges);
                 }
@@ -207,8 +220,8 @@
             }
         }
 
-        // Poll every 3 seconds
-        setInterval(updateGraph, 3000);
+        // Poll every 5 seconds for lighter load in light mode
+        setInterval(updateGraph, 5000);
         updateGraph(); // Initial call
 
     </script>

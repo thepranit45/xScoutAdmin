@@ -7,114 +7,188 @@
     <title>xScout // Cinema Mode</title>
     <style>
         :root {
-            --neon-purple: #b026ff;
-            --neon-green: #00ff9d;
-            --bg-dark: #050510;
-            --panel-bg: rgba(20, 20, 30, 0.8);
+            /* DEFAULTS: Light Mode */
+            --primary: #635bff;
+            --bg: #f6f9fc;
+            --card-bg: #ffffff;
+            --border: #e3e8ee;
+            --text-main: #0a2540;
+            --text-dim: #425466;
+            --success: #2ecc71;
+            --header-bg: #fbfcfd;
+        }
+
+        [data-theme="dark"] {
+            /* Dark Mode */
+            --bg: #0f0518;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --border: rgba(176, 38, 255, 0.2);
+            --text-main: #ffffff;
+            --text-dim: #a0a0a0;
+            --primary: #B026FF;
+            --header-bg: rgba(0, 0, 0, 0.2);
         }
 
         body {
-            background-color: var(--bg-dark);
-            color: #fff;
-            font-family: 'Consolas', 'Monaco', monospace;
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 32px;
             display: flex;
             flex-direction: column;
             height: 100vh;
             overflow: hidden;
+            box-sizing: border-box;
+            transition: background 0.3s, color 0.3s;
         }
 
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid var(--neon-purple);
-            padding-bottom: 10px;
-            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 20px;
+            margin-bottom: 32px;
         }
 
         h1 {
-            color: var(--neon-purple);
+            color: var(--primary);
             margin: 0;
             text-transform: uppercase;
-            letter-spacing: 2px;
-            text-shadow: 0 0 10px var(--neon-purple);
+            font-size: 1.1rem;
+            font-weight: 800;
+            letter-spacing: 0.1em;
         }
 
         .controls {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             align-items: center;
         }
 
+        .theme-toggle {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        input[type="text"] {
+            background: var(--card-bg);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 8px 12px;
+            border-radius: 6px;
+            outline: none;
+            font-size: 0.9rem;
+            width: 200px;
+            transition: all 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 91, 255, 0.15);
+        }
+
         button {
-            background: transparent;
-            border: 1px solid var(--neon-purple);
-            color: var(--neon-purple);
-            padding: 5px 15px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 8px 16px;
             cursor: pointer;
             font-family: inherit;
-            text-transform: uppercase;
-            transition: all 0.3s;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-radius: 6px;
+            transition: all 0.2s;
         }
 
         button:hover {
-            background: var(--neon-purple);
-            color: #000;
-            box-shadow: 0 0 15px var(--neon-purple);
+            background: var(--bg);
+            border-color: var(--primary);
+            transform: translateY(-1px);
         }
 
         #timeline-container {
-            margin-bottom: 20px;
-            position: relative;
+            margin-bottom: 32px;
+            background: var(--card-bg);
+            padding: 24px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+            transition: background 0.3s;
         }
 
         input[type="range"] {
             width: 100%;
-            background: #333;
-            height: 5px;
-            border-radius: 5px;
+            background: var(--border);
+            height: 4px;
+            border-radius: 2px;
             outline: none;
-            accent-color: var(--neon-purple);
+            -webkit-appearance: none;
+            appearance: none;
+            accent-color: var(--primary);
         }
 
         #code-viewer {
             flex: 1;
-            background: #1e1e1e;
-            border: 1px solid #333;
-            padding: 20px;
-            overflow: auto;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0;
+            overflow: hidden;
             position: relative;
-            box-shadow: inset 0 0 20px #000;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            flex-direction: column;
+            transition: background 0.3s;
+        }
+
+        .code-header {
+            background: var(--header-bg);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         pre {
             margin: 0;
+            padding: 24px;
             white-space: pre-wrap;
-            color: #d4d4d4;
-            font-size: 14px;
-            line-height: 1.5;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            line-height: 1.6;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            overflow-y: auto;
+            flex: 1;
+            transition: color 0.3s;
         }
 
         .meta-info {
-            position: absolute;
-            top: 20px;
-            right: 20px;
             text-align: right;
-            border-left: 2px solid var(--neon-green);
-            padding-left: 10px;
         }
 
         .timestamp {
-            color: #888;
-            margin-bottom: 5px;
+            color: var(--text-light);
+            font-size: 0.8rem;
+            font-weight: 600;
         }
 
         .filename {
-            color: #bdc3c7;
-            font-size: 0.9rem;
-            font-family: 'Consolas', 'Monaco', monospace;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            font-weight: 600;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
         }
     </style>
 </head>
@@ -124,27 +198,32 @@
     <header>
         <h1>xScout Cinema Mode</h1>
         <div class="controls">
-            <input type="text" id="user-id-input" placeholder="User ID (e.g. user_001)" value="user_001"
-                style="background:#000; color:#fff; border:1px solid #555; padding:5px;">
+            <button id="theme-toggle" class="theme-toggle" title="Toggle Theme">🌓</button>
+            <input type="text" id="user-id-input" placeholder="User ID (e.g. user_001)" value="user_001">
             <button onclick="loadSession()">Load Session</button>
-            <button onclick="window.location.href='/dashboard/'">Back to Dashboard</button>
+            <button onclick="window.location.href='/dashboard/'">Back to Command Center</button>
         </div>
     </header>
 
     <div id="timeline-container">
         <input type="range" id="seek-bar" min="0" max="100" value="0" disabled>
-        <div style="display:flex; justify-content:space-between; margin-top:5px;">
-            <button id="play-btn" onclick="togglePlay()" disabled>Play</button>
-            <span id="current-time">00:00</span>
+        <div style="display:flex; justify-content:space-between; align-items: center; margin-top:20px;">
+            <button id="play-btn" onclick="togglePlay()" disabled style="min-width: 100px;">Play</button>
+            <div style="text-align: right;">
+                <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Reconstruction Time</div>
+                <span id="current-time" style="font-size: 1.25rem; font-weight: 800; color: var(--text-main);">00:00:00</span>
+            </div>
         </div>
-        <div class="filename" id="display-filename" style="margin-top: 15px;">No File</div>
     </div>
 
     <div id="code-viewer">
-        <div class="meta-info">
-            <div class="timestamp" id="display-time">--:--</div>
+        <div class="code-header">
+            <div class="filename" id="display-filename">Waiting for Telemetry...</div>
+            <div class="meta-info">
+                <div class="timestamp" id="display-time">--:--:--</div>
+            </div>
         </div>
-        <pre><code id="code-content">// Select a user and click Load Session to begin playback...</code></pre>
+        <pre><code id="code-content">// Select a user and click Load Session to begin reconstruction...</code></pre>
     </div>
 
     <script>
@@ -156,16 +235,29 @@
         const codeContent = document.getElementById('code-content');
         const displayFilename = document.getElementById('display-filename');
         const displayTime = document.getElementById('display-time');
+        const currentTimeLabel = document.getElementById('current-time');
         const playBtn = document.getElementById('play-btn');
 
         // Check for URL param on load
         window.addEventListener('DOMContentLoaded', () => {
+            const currentTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            if (currentTheme === 'dark') document.getElementById('theme-toggle').innerText = '☀️';
+
             const urlParams = new URLSearchParams(window.location.search);
             const userId = urlParams.get('user_id');
             if (userId) {
                 document.getElementById('user-id-input').value = userId;
                 loadSession();
             }
+        });
+
+        document.getElementById('theme-toggle').addEventListener('click', () => {
+            let theme = document.documentElement.getAttribute('data-theme');
+            let newTheme = theme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            document.getElementById('theme-toggle').innerText = newTheme === 'light' ? '🌓' : '☀️';
         });
 
         async function loadSession() {
@@ -198,9 +290,8 @@
             updateView(0);
         }
 
-        // State persistence
-        let lastCode = "// Waiting for code...";
-        let lastFile = "No File";
+        let lastCode = "// Waiting for evidence...";
+        let lastFile = "No Active File";
 
         function updateView(index) {
             if (index >= historyData.length) return;
@@ -208,20 +299,16 @@
             const forensic = entry.forensic || {};
             const snapshot = forensic.snapshot;
 
-            // Only update if we have a valid snapshot
             if (snapshot && snapshot.code) {
                 lastCode = snapshot.code;
                 lastFile = snapshot.file || snapshot.filename || "Active Editor";
             }
 
-            // Custom Path Formatting
-            if (snapshot && snapshot.file) {
-                lastFile = snapshot.file;
-            }
-
             codeContent.innerText = lastCode;
             displayFilename.innerText = lastFile;
-            displayTime.innerText = new Date(entry.timestamp).toLocaleTimeString();
+            const timeStr = new Date(entry.timestamp).toLocaleTimeString();
+            displayTime.innerText = timeStr;
+            currentTimeLabel.innerText = timeStr;
             seekBar.value = index;
             currentIndex = index;
         }
@@ -244,7 +331,7 @@
                 } else {
                     pause();
                 }
-            }, 1000); // 1 second per snapshot (five times speed of recording)
+            }, 800); 
         }
 
         function pause() {

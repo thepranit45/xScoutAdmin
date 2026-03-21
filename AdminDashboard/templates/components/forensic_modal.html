@@ -8,27 +8,24 @@
         <div class="modal-body">
             <div class="student-info-header">
                 <div>
-                    <span class="label">STUDENT</span>
-                    <div style="display: flex; align-items: center; gap: 15px;">
-                        <h1 id="modal-student-name">Student Name</h1>
+                    <span class="label">STUDENT IDENTITY</span>
+                    <div style="display: flex; align-items: center; gap: 12px; margin-top: 8px;">
+                        <h1 id="modal-student-name" style="font-size: 1.5rem; font-weight: 700; color: var(--text-main);">Student Name</h1>
                         <!-- View Structure Shortcut -->
-                        <a href="#" onclick="viewStudentWorkspace(); return false;"
-                            style="color: #00f3ff; font-size: 0.8rem; text-decoration: none; border: 1px solid rgba(0, 243, 255, 0.3); padding: 4px 10px; border-radius: 4px; transition: all 0.3s; margin-top: 5px;">
-                            View Folder Structure
+                        <a href="#" onclick="viewStudentWorkspace(); return false;" class="analyze-btn">
+                             📂 Folder Structure
                         </a>
-                        <a href="#" onclick="analyzeStack(); return false;"
-                            style="color: #B026FF; font-size: 0.8rem; text-decoration: none; border: 1px solid rgba(176, 38, 255, 0.3); padding: 4px 10px; border-radius: 4px; transition: all 0.3s; margin-top: 5px;">
+                        <a href="#" onclick="analyzeStack(); return false;" class="analyze-btn" style="color: var(--primary); border-color: var(--primary); background: var(--table-header-bg);">
                             ⚡ Analyze Stack
                         </a>
-                        <a href="#" onclick="openCinemaMode(); return false;"
-                            style="color: #00ff9d; font-size: 0.8rem; text-decoration: none; border: 1px solid rgba(0, 255, 157, 0.3); padding: 4px 10px; border-radius: 4px; transition: all 0.3s; margin-top: 5px;">
+                        <a href="#" onclick="openCinemaMode(); return false;" class="analyze-btn">
                             🎥 Watch Replay
                         </a>
                     </div>
                 </div>
                 <div class="risk-score-panel">
-                    <span class="label">RISK SCORE</span>
-                    <h2 id="modal-risk-score" style="color: #00ff00;">0%</h2>
+                    <span class="label">AI CONVICTION SCORE</span>
+                    <h2 id="modal-risk-score" style="color: var(--success); font-size: 1.5rem; font-weight: 800;">0%</h2>
                 </div>
             </div>
 
@@ -51,28 +48,28 @@
             </div>
 
             <!-- Time Travel Timeline -->
-            <div style="margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 8px;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                    <label style="color: #aaa; font-size: 0.8rem;">TIMELINE REPLAY</label>
-                    <span id="timeline-current" style="color: #666; font-size: 0.8rem;">Waiting for
-                        history...</span>
+            <div style="margin-top: 32px; padding: 20px; background: var(--table-header-bg); border: 1px solid var(--border); border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                    <label style="color: var(--text-dim); font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">Timeline Reconstruction</label>
+                    <span id="timeline-current" style="color: var(--text-light); font-size: 0.75rem; font-weight: 500;">Waiting for history...</span>
                 </div>
                 <input type="range" id="time-travel-slider" min="0" max="100" value="100" disabled
-                    style="width: 100%; height: 6px; background: #333; border-radius: 5px; outline: none; -webkit-appearance: none; appearance: none; cursor: pointer;">
+                    style="width: 100%; height: 4px; background: var(--border); border-radius: 2px; outline: none; -webkit-appearance: none; appearance: none; cursor: pointer;">
                 <style>
                     #time-travel-slider::-webkit-slider-thumb {
                         -webkit-appearance: none;
-                        width: 16px;
-                        height: 16px;
+                        width: 14px;
+                        height: 14px;
                         border-radius: 50%;
-                        background: #B026FF;
+                        background: var(--primary);
                         cursor: pointer;
+                        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
                         transition: all 0.2s;
                     }
 
                     #time-travel-slider::-webkit-slider-thumb:hover {
                         transform: scale(1.2);
-                        box-shadow: 0 0 10px #B026FF;
+                        box-shadow: 0 0 10px var(--primary);
                     }
                 </style>
             </div>
@@ -82,7 +79,7 @@
                 <h3 class="section-title">ACTIVE CODE SNAPSHOT</h3>
                 <div class="glass-panel" style="background: #1e1e1e; padding: 0; overflow: hidden; position: relative;">
                     <div
-                        style="background: #252526; padding: 5px 15px; color: #ccc; font-size: 0.8rem; display: flex; justify-content: space-between;">
+                        style="background: #252526; padding: 10px 20px; color: #ccc; font-size: 0.8rem; display: flex; justify-content: space-between; border-bottom: 1px solid #333;">
                         <span id="snapshot-file">No active file</span>
                         <span id="snapshot-lang">Unknown</span>
                     </div>
