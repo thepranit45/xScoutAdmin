@@ -672,7 +672,10 @@
             <a href="#docs" class="nav-link">Documentation</a>
             <a href="#blog" class="nav-link">Blog</a>
         </div>
-        <a href="/login/" class="nav-cta">Get Started</a>
+        <div style="display: flex; gap: 16px; align-items: center;">
+            <a href="{% static 'xScoutApp.apk' %}" download class="nav-link" style="color: #eea0fe; border: 1px solid rgba(217, 70, 239, 0.3); padding: 8px 16px; border-radius: 8px; font-weight: 600;">📱 Get App</a>
+            <a href="/login/" class="nav-cta">Get Started</a>
+        </div>
     </nav>
 
     <!-- HERO SECTION -->
@@ -682,9 +685,10 @@
         <p class="hero-sub">xScout gives you real-time visibility, AI-powered threat detection, and comprehensive
             forensic analysis. Secure your digital learning environment with the speed of Warp.</p>
 
-        <div class="hero-ctas">
+        <div class="hero-ctas" style="display: flex; gap: 20px; justify-content: center; align-items: center; flex-wrap: wrap;">
             <a href="/login/" class="btn-large btn-primary">Start Monitoring Free</a>
             <a href="#demo" class="btn-large btn-secondary">Request Demo</a>
+            <a href="{% static 'xScoutApp.apk' %}" download class="btn-large" style="background: rgba(217, 70, 239, 0.1); color: #eea0fe; border: 1px solid rgba(217, 70, 239, 0.4);">📱 Download Android App</a>
         </div>
 
         <!-- LIVE TERMINAL CONSOLE -->
