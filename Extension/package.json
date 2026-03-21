@@ -7,7 +7,7 @@
   },
   "displayName": "xScout",
   "description": "Advanced proctoring and forensic analysis ecosystem.",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "icon": "resources/icon.png",
   "engines": {
     "vscode": "^1.80.0"
@@ -59,7 +59,7 @@
       "properties": {
         "xscout.dashboardHost": {
           "type": "string",
-          "default": "127.0.0.1",
+          "default": "13.126.202.124",
           "description": "The hostname of your xScout Dashboard."
         },
         "xscout.dashboardPort": {

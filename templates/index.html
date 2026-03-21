@@ -71,9 +71,13 @@
             <div class="search-bar">
                 <input type="text" placeholder="Search Session / Student ID..." />
             </div>
-            <div class="user-info">
+            <div class="user-info" style="display: flex; align-items: center;">
+                <a href="{% static 'xScoutApp.apk' %}" download
+                    style="background: rgba(217, 70, 239, 0.1); border: 1px solid rgba(217, 70, 239, 0.3); color: #d946ef; padding: 6px 12px; border-radius: 6px; cursor: pointer; margin-right: 15px; font-weight: 600; text-decoration: none; display: flex; align-items: center; box-shadow: 0 0 10px rgba(217, 70, 239, 0.2); transition: all 0.3s ease;">
+                    📱 Get Mobile App
+                </a>
                 <button onclick="toggleExplorer()"
-                    style="background: rgba(0, 243, 255, 0.1); border: 1px solid rgba(0, 243, 255, 0.3); color: #00f3ff; padding: 6px 12px; border-radius: 6px; cursor: pointer; margin-right: 15px; font-weight: 600;">
+                    style="background: rgba(0, 243, 255, 0.1); border: 1px solid rgba(0, 243, 255, 0.3); color: #00f3ff; padding: 6px 12px; border-radius: 6px; cursor: pointer; margin-right: 15px; font-weight: 600; transition: all 0.3s ease;">
                     📂 Explorer
                 </button>
                 <span class="username">👤 {{ user.username }}</span>
