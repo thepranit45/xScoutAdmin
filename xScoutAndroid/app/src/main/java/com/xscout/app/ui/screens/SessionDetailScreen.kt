@@ -1,6 +1,7 @@
 package com.xscout.app.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -20,6 +21,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.xscout.app.data.model.StudentSession
+import com.xscout.app.data.model.TechDetails
+import com.xscout.app.data.model.DirectoryItem
+import com.xscout.app.data.model.SessionSnapshot
 import com.xscout.app.data.repository.XScoutRepository
 import com.xscout.app.ui.components.XScoutLogo
 import com.xscout.app.ui.components.WarpBackground
@@ -43,11 +47,20 @@ class SessionDetailViewModel @Inject constructor(
     val session = _session.asStateFlow()
     private val _isLoading = MutableStateFlow(true)
     val isLoading = _isLoading.asStateFlow()
+    
+    private val _snapshots = MutableStateFlow<List<SessionSnapshot>>(emptyList())
+    val snapshots = _snapshots.asStateFlow()
 
     fun load(sessionId: String) {
         viewModelScope.launch {
             _session.value = repository.getSession(sessionId)
             _isLoading.value = false
+        }
+    }
+
+    fun loadReplay(sessionId: String) {
+        viewModelScope.launch {
+            _snapshots.value = repository.getSnapshotHistory(sessionId)
         }
     }
 }
@@ -60,7 +73,12 @@ fun SessionDetailScreen(
     viewModel: SessionDetailViewModel = hiltViewModel()
 ) {
     val session by viewModel.session.collectAsState()
+    val snapshots by viewModel.snapshots.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+
+    var showReplay by remember { mutableStateOf(false) }
+    var showTechStack by remember { mutableStateOf(false) }
+    var showExplorer by remember { mutableStateOf(false) }
 
     LaunchedEffect(sessionId) { viewModel.load(sessionId) }
 
@@ -80,7 +98,7 @@ fun SessionDetailScreen(
                 
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 40.dp)
+                    contentPadding = PaddingValues(bottom = 60.dp)
                 ) {
                     // ── Header (Forensic Identity) ──
                     item {
@@ -126,7 +144,23 @@ fun SessionDetailScreen(
                         }
                     }
 
-                    // ── Biometrics (Warp Style) ──
+                    // ── Advanced Actions (Cinema/Tech/Explorer) ──
+                    item {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            ActionButton(Modifier.weight(1f), "REPLAY", XScoutColors.NeonPurple) {
+                                viewModel.loadReplay(s.id)
+                                showReplay = true
+                            }
+                            ActionButton(Modifier.weight(1f), "STACK", XScoutColors.NeonCyan) { showTechStack = true }
+                            ActionButton(Modifier.weight(1f), "FILES", Color(0xFFFACC15)) { showExplorer = true }
+                        }
+                        Spacer(Modifier.height(24.dp))
+                    }
+
+                    // ── Biometrics ──
                     item {
                         Text(
                             "RECOVERY BIOMETRICS",
@@ -147,23 +181,7 @@ fun SessionDetailScreen(
                         Spacer(Modifier.height(24.dp))
                     }
 
-                    // ── Environment Details ──
-                    item {
-                         GlassCard(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-                            cornerRadius = 16.dp,
-                            borderColor = Color.White.copy(0.05f)
-                        ) {
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                                DetailSpec("TECH STACK", s.stack)
-                                Box(Modifier.width(1.dp).height(30.dp).background(Color.White.copy(0.1f)).align(Alignment.CenterVertically))
-                                DetailSpec("DURATION", "${s.duration / 60}m ${s.duration % 60}s")
-                            }
-                        }
-                        Spacer(Modifier.height(24.dp))
-                    }
-
-                    // ── Activity Log (the table from website) ──
+                    // ── Activity Log ──
                     if (s.titleHistory.isNotEmpty()) {
                         item {
                             Text(
@@ -181,6 +199,163 @@ fun SessionDetailScreen(
                         }
                     }
                 }
+            }
+        }
+    }
+
+    // ── Dialogs ──
+    if (showReplay && snapshots.isNotEmpty()) {
+        ReplayDialog(snapshots) { showReplay = false }
+    }
+    
+    if (showTechStack && session?.techDetails != null) {
+        TechStackDialog(session!!.techDetails!!) { showTechStack = false }
+    }
+    
+    if (showExplorer && session?.projectStructure != null) {
+        ExplorerDialog(session!!.projectStructure!!) { showExplorer = false }
+    }
+}
+
+@Composable
+fun ActionButton(modifier: Modifier, label: String, color: Color, onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        modifier = modifier.height(44.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = color.copy(0.1f)),
+        shape = RoundedCornerShape(8.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, color.copy(0.3f)),
+        contentPadding = PaddingValues(0.dp)
+    ) {
+        Text(label, color = color, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ReplayDialog(snapshots: List<com.xscout.app.data.model.SessionSnapshot>, onDismiss: () -> Unit) {
+    var currentIndex by remember { mutableStateOf(0f) }
+    val currentSnapshot = snapshots[currentIndex.toInt().coerceIn(0, snapshots.size - 1)]
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xFF0F0518),
+        dragHandle = { BottomSheetDefaults.DragHandle(color = Color.White.copy(0.2f)) }
+    ) {
+        Column(modifier = Modifier.fillMaxSize().padding(20.dp)) {
+            Text("CINEMA MODE REPLAY", color = XScoutColors.NeonPurple, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            Text(currentSnapshot.file ?: "Active Editor", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            
+            Spacer(Modifier.height(20.dp))
+            
+            // Timeline
+            Slider(
+                value = currentIndex,
+                onValueChange = { currentIndex = it },
+                valueRange = 0f..(snapshots.size - 1).coerceAtLeast(0).toFloat(),
+                colors = SliderDefaults.colors(thumbColor = XScoutColors.NeonPurple, activeTrackColor = XScoutColors.NeonPurple)
+            )
+            
+            Spacer(Modifier.height(10.dp))
+            
+            // Code Viewer
+            Surface(
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+                color = Color.Black.copy(0.3f),
+                shape = RoundedCornerShape(12.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(0.05f))
+            ) {
+                LazyColumn(modifier = Modifier.padding(16.dp)) {
+                    item {
+                        Text(
+                            currentSnapshot.code ?: "// No code data at this timestamp",
+                            color = Color.White.copy(0.8f),
+                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TechStackDialog(tech: com.xscout.app.data.model.TechDetails, onDismiss: () -> Unit) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xFF0F0518)
+    ) {
+        Column(modifier = Modifier.padding(20.dp).fillMaxWidth()) {
+            Text("TECHNOLOGY STACK", color = XScoutColors.NeonCyan, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(20.dp))
+            
+            DetailSpec("AUTHOR", tech.author)
+            Spacer(Modifier.height(12.dp))
+            DetailSpec("REPOSITORY", tech.repository ?: "None Detected")
+            
+            Spacer(Modifier.height(24.dp))
+            
+            tech.categories.forEach { (category, techs) ->
+                if (techs.isNotEmpty()) {
+                    Text(category.uppercase(), color = Color.White.copy(0.3f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    Row(modifier = Modifier.padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        techs.forEach { name ->
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = Color.White.copy(0.05f),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(0.1f))
+                            ) {
+                                Text(name, color = Color.White, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(12.dp))
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ExplorerDialog(root: com.xscout.app.data.model.DirectoryItem, onDismiss: () -> Unit) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xFF0F0518)
+    ) {
+        Column(modifier = Modifier.fillMaxSize().padding(20.dp)) {
+            Text("WORKSPACE EXPLORER", color = Color(0xFFFACC15), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(20.dp))
+            
+            LazyColumn {
+                item { ExplorerItem(root, 0) }
+            }
+        }
+    }
+}
+
+@Composable
+fun ExplorerItem(item: com.xscout.app.data.model.DirectoryItem, depth: Int) {
+    var expanded by remember { mutableStateOf(depth == 0) }
+    
+    Column {
+        Row(
+            modifier = Modifier.clickable { expanded = !expanded }
+                .fillMaxWidth()
+                .padding(vertical = 4.dp)
+                .padding(start = (depth * 20).dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(if (item.type == "directory") "📂" else "📄", fontSize = 14.sp)
+            Spacer(Modifier.width(8.dp))
+            Text(item.name, color = if (item.type == "directory") Color.White else Color.White.copy(0.6f), fontSize = 14.sp)
+        }
+        
+        if (expanded && item.children.isNotEmpty()) {
+            item.children.forEach { child ->
+                ExplorerItem(child, depth + 1)
             }
         }
     }

@@ -52,7 +52,7 @@ class Project_Scanner {
 
         const item = {
             name: name,
-            type: 'folder',
+            type: 'directory',
             path: dirPath,
             children: []
         };
@@ -78,7 +78,7 @@ class Project_Scanner {
             // Sort: Folders first, then files
             item.children.sort((a, b) => {
                 if (a.type === b.type) return a.name.localeCompare(b.name);
-                return a.type === 'folder' ? -1 : 1;
+                return a.type === 'directory' ? -1 : 1;
             });
 
         } catch (e) {

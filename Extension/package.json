@@ -7,7 +7,7 @@
   },
   "displayName": "xScout",
   "description": "Advanced proctoring and forensic analysis ecosystem.",
-  "version": "1.0.1",
+  "version": "2.0.0",
   "icon": "resources/icon.png",
   "engines": {
     "vscode": "^1.80.0"
@@ -66,6 +66,11 @@
           "type": "number",
           "default": 8000,
           "description": "The port of your xScout Dashboard (e.g. 8000 for local, 443 for HTTPS)."
+        },
+        "xscout.studentId": {
+          "type": "string",
+          "default": "s2",
+          "description": "The Student ID for this machine (Auto-Pilot mode if UI fails)."
         }
       }
     }

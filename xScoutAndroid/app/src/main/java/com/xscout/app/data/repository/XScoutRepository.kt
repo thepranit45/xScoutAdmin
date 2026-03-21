@@ -12,6 +12,9 @@ import com.xscout.app.data.model.Biometrics
 import com.xscout.app.data.model.DashboardStats
 import com.xscout.app.data.model.StudentSession
 import com.xscout.app.data.model.SuspicionLevel
+import com.xscout.app.data.model.TechDetails
+import com.xscout.app.data.model.DirectoryItem
+import com.xscout.app.data.model.SessionSnapshot
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -233,6 +236,30 @@ class XScoutRepository @Inject constructor(
         awaitClose { listener.remove() }
     }
 
+    suspend fun getSnapshotHistory(sessionId: String): List<SessionSnapshot> {
+        return try {
+            val snapshot = firestore.collection("reports")
+                .document(sessionId)
+                .collection("history")
+                .orderBy("timestamp", Query.Direction.ASCENDING)
+                .get()
+                .await()
+            
+            snapshot.documents.map { doc ->
+                val data = doc.data ?: emptyMap<String, Any>()
+                SessionSnapshot(
+                    timestamp = (data["timestamp"] as? Number)?.toLong() ?: 0L,
+                    file = data["file"] as? String,
+                    code = data["code"] as? String,
+                    aiScore = (data["ai_score"] as? Number)?.toFloat() ?: 0f
+                )
+            }
+        } catch (e: Exception) {
+            Log.e("XScoutRepo", "getSnapshotHistory error", e)
+            emptyList()
+        }
+    }
+
     // ─── Mapping Helper ───────────────────────────────────────────────────────
     @Suppress("UNCHECKED_CAST")
     private fun mapDocToSession(id: String, data: Map<String, Any>): StudentSession {
@@ -248,6 +275,24 @@ class XScoutRepository @Inject constructor(
             pasteEvents   = (behaviorData["pasteEvents"] as? Number)?.toInt() ?: 0,
             idleTime      = (behaviorData["idleTime"] as? Number)?.toLong() ?: 0L
         )
+
+        // Parse Tech Stack
+        val techMap = data["tech"] as? Map<String, Any>
+        val techDetails = if (techMap != null) {
+            val meta = techMap["meta"] as? Map<String, Any> ?: emptyMap()
+            val cats = techMap["categories"] as? Map<String, List<String>> ?: emptyMap()
+            TechDetails(
+                author = meta["author"] as? String ?: "Unknown",
+                created = meta["created"] as? String ?: "Unknown",
+                repository = meta["repository"] as? String,
+                categories = cats
+            )
+        } else null
+
+        // Parse Project Structure (Recursive)
+        val projectMap = data["project"] as? Map<String, Any>
+        val projectStructure = if (projectMap != null) mapToDirectoryItem(projectMap) else null
+
         val suspicion = when {
             aiScore >= 80 -> SuspicionLevel.CRITICAL
             aiScore >= 60 -> SuspicionLevel.HIGH
@@ -267,7 +312,18 @@ class XScoutRepository @Inject constructor(
             suspicionLevel = suspicion,
             titleHistory   = (data["titleHistory"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
             biometrics     = biometrics,
-            isActive       = data["isActive"] as? Boolean ?: false
+            isActive       = data["isActive"] as? Boolean ?: false,
+            techDetails    = techDetails,
+            projectStructure = projectStructure
+        )
+    }
+
+    private fun mapToDirectoryItem(data: Map<String, Any>): com.xscout.app.data.model.DirectoryItem {
+        return com.xscout.app.data.model.DirectoryItem(
+            name = data["name"] as? String ?: "root",
+            type = data["type"] as? String ?: "file",
+            path = data["path"] as? String ?: "",
+            children = (data["children"] as? List<Map<String, Any>>)?.map { mapToDirectoryItem(it) } ?: emptyList()
         )
     }
 }

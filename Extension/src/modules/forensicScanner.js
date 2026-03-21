@@ -222,6 +222,7 @@ class Forensic_Scanner {
             snapshot: {
                 code: snapshot,
                 language: language,
+                file: (editor && editor.document) ? editor.document.fileName : 'Untitled',
                 timestamp: new Date().toISOString()
             }
         };

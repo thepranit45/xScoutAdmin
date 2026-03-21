@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="{% static 'css/explorer.css' %}">
 
     <script src="{% static 'js/forensics.js' %}" defer></script>
-    <script src="{% static 'js/app.js' %}" defer></script>
+    <script src="{% static 'js/app.js' %}?v={{ 720|default:'1' }}" defer></script>
     <style>
         .brand-x {
             font-size: 2.2rem;

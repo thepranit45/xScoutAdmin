@@ -5,6 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>xScout // Cinema Mode</title>
+    <!-- Prism.js for Syntax Highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    
     <style>
         :root {
             --neon-purple: #b026ff;
@@ -97,6 +103,17 @@
             line-height: 1.5;
         }
 
+        /* Custom Prism Overrides */
+        pre[class*="language-"] {
+            margin: 0 !important;
+            background: transparent !important;
+            padding: 0 !important;
+            overflow: visible !important;
+        }
+        code[class*="language-"] {
+            text-shadow: none !important;
+        }
+
         .meta-info {
             position: absolute;
             top: 20px;
@@ -177,11 +194,13 @@
                 const json = await res.json();
 
                 if (json.status === 'success' && json.data.length > 0) {
+                    console.log(`[PLAYBACK] Loaded ${json.data.length} snapshots for ${userId}`);
                     historyData = json.data;
                     setupPlayer();
                 } else {
+                    console.warn(`[PLAYBACK] No data found for user: ${userId}`);
                     alert("No history found for this user.");
-                    codeContent.innerText = "// No history data found.";
+                    codeContent.innerText = "// No history data found for this session.";
                 }
             } catch (e) {
                 console.error(e);
@@ -205,12 +224,23 @@
         function updateView(index) {
             if (index >= historyData.length) return;
             const entry = historyData[index];
+            
+            // Handle both flat and nested telemetry structures
             const forensic = entry.forensic || {};
-            const snapshot = forensic.snapshot;
+            const snapshot = forensic.snapshot || entry.snapshot || (entry.code ? entry : null);
+
+            // Detect Language
+            let lang = 'python'; // Default
+            if (snapshot && (snapshot.file || snapshot.filename)) {
+                const f = snapshot.file || snapshot.filename;
+                const ext = f.split('.').pop().toLowerCase();
+                const langMap = { 'py': 'python', 'js': 'javascript', 'html': 'markup', 'css': 'css', 'json': 'json' };
+                lang = langMap[ext] || 'clike';
+            }
 
             // Only update if we have a valid snapshot
-            if (snapshot && snapshot.code) {
-                lastCode = snapshot.code;
+            if (snapshot && (snapshot.code || entry.code)) {
+                lastCode = snapshot.code || entry.code;
                 lastFile = snapshot.file || snapshot.filename || "Active Editor";
             }
 
@@ -219,11 +249,25 @@
                 lastFile = snapshot.file;
             }
 
-            codeContent.innerText = lastCode;
+            codeContent.innerHTML = `<code class="language-${lang}">${escapeHtml(lastCode)}</code>`;
+            if (window.Prism) Prism.highlightElement(codeContent.querySelector('code'));
+            
             displayFilename.innerText = lastFile;
-            displayTime.innerText = new Date(entry.timestamp).toLocaleTimeString();
+            
+            const ts = entry.timestamp || (entry.snapshot && entry.snapshot.timestamp);
+            if (ts) {
+                displayTime.innerText = new Date(ts).toLocaleTimeString();
+            }
+            
             seekBar.value = index;
             currentIndex = index;
+        }
+
+        // Helper for highlighting safety
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
         function togglePlay() {
@@ -244,7 +288,7 @@
                 } else {
                     pause();
                 }
-            }, 1000); // 1 second per snapshot (five times speed of recording)
+            }, 1000); // 1 second per snapshot
         }
 
         function pause() {

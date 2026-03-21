@@ -1,6 +1,8 @@
 from django.contrib import admin
-from django.urls import path, re_path, include # Added include
+from django.urls import path, re_path, include
 from django.shortcuts import redirect
+from django.conf import settings
+from django.conf.urls.static import static
 from . import views
 
 urlpatterns = [
@@ -28,4 +30,11 @@ urlpatterns = [
     # Network Graph
     path('network/', views.network_view, name='network_graph'),
     path('api/network-data/', views.get_network_data, name='get_network_data'),
+
+    # History API for Analyze Modal
+    path('api/history/<str:user_id>/', views.get_playback_data, name='get_history_data'),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATICFILES_DIRS[0])
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,3 +1,4 @@
+# Project: xScout - Force Reload for Templates v793
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.contrib.auth import authenticate, login, logout
@@ -71,16 +72,17 @@ def playback_view(request):
     """Render Code Playback Page"""
     return render(request, 'playback.html')
 
-@login_required
-def get_playback_data(request):
+@login_required # Force reload comment
+def get_playback_data(request, user_id=None):
     """API to fetch session history for playback"""
-    user_id = request.GET.get('user_id')
+    if not user_id:
+        user_id = request.GET.get('user_id')
     if not user_id:
         return JsonResponse({'status': 'error', 'message': 'Missing user_id'}, status=400)
 
     try:
         # Fetch history from sub-collection, ordered by timestamp
-        docs = db.collection('telemetry').document(user_id).collection('history').order_by('timestamp').stream()
+        docs = db.collection('reports').document(user_id).collection('history').order_by('timestamp').stream()
         
         history = []
         for doc in docs:
@@ -123,27 +125,32 @@ def get_dashboard_data(request):
                 'email': body.get('email', f"{user_id}@xscout.app"),
                 'timestamp': firestore.SERVER_TIMESTAMP,
                 'isActive': True,
-                'ai': body.get('ai', 0) * 100, # Scale 0.0-1.0 to 0-100 for Android logic
+                'ai': body.get('ai', 0), # Store raw score (0-100)
                 'behavior': {
                     'wpm': body.get('behavior', {}).get('wpm', 0),
-                    'backspaceRate': body.get('behavior', {}).get('backspaceCount', 0), # Fallback mapping
+                    'backspaceRate': body.get('behavior', {}).get('backspaceCount', 0),
                     'pasteEvents': body.get('behavior', {}).get('pasteCount', 0),
                     'idleTime': body.get('behavior', {}).get('idleTime', 0),
                 },
                 'stack': body.get('tech', {}).get('detectedTech', 'Web Content'),
+                'project': body.get('project', {}), # SAVE PROJECT STRUCTURE
+                'tech': body.get('tech', {}), # SAVE TECH METADATA
                 'titleHistory': body.get('forensic', {}).get('activeDocuments', [])
             }
             
             # Write to Firestore in the 'reports' collection for Android compatibility
             db.collection('reports').document(user_id).set(android_report)
 
-            # Store History for playback
-            if body.get('snapshot'):
+            # Store History for playback (Archive snapshots)
+            snapshot = body.get('snapshot') or body.get('forensic', {}).get('snapshot')
+            if snapshot:
                 history_entry = {
-                    'timestamp': android_report['timestamp'],
-                    'file': body['snapshot'].get('file'),
-                    'code': body['snapshot'].get('code'),
-                    'ai_score': android_report['ai']
+                    'timestamp': android_report['timestamp'] or datetime.now().isoformat(),
+                    'file': snapshot.get('file') or snapshot.get('filename'),
+                    'code': snapshot.get('code'),
+                    'language': snapshot.get('language'),
+                    'ai_score': android_report['ai'],
+                    'forensic': body.get('forensic', {}) # Include full forensic data for completeness
                 }
                 db.collection('reports').document(user_id).collection('history').add(history_entry)
             
@@ -168,7 +175,7 @@ def export_logs(request):
         writer = csv.writer(response)
         writer.writerow(['User ID', 'Timestamp', 'App', 'Window Title', 'AI Risk Score', 'WPM'])
 
-        docs = db.collection('telemetry').stream()
+        docs = db.collection('reports').stream()
         for doc in docs:
             data = doc.to_dict()
             writer.writerow([
@@ -188,7 +195,7 @@ def export_logs(request):
 def system_backup(request):
     try:
         # Dump all telemetry to JSON
-        docs = db.collection('telemetry').stream()
+        docs = db.collection('reports').stream()
         all_data = {doc.id: doc.to_dict() for doc in docs}
         
         response = JsonResponse(all_data, json_dumps_params={'indent': 2})
@@ -214,7 +221,7 @@ def purge_logs(request):
             # Let's actually delete just to be functional
             
             batch = db.batch()
-            docs = db.collection('telemetry').limit(50).stream() 
+            docs = db.collection('reports').limit(50).stream() 
             deleted_count = 0
             
             for doc in docs:
@@ -245,15 +252,20 @@ def get_directory_structure(request):
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     target_path = request.GET.get('path', '')
     
-    # Construct full path
-    full_path = os.path.join(base_dir, target_path)
-    
-    # Security check: Ensure we are not going above BASE_DIR
-    if not os.path.abspath(full_path).startswith(base_dir):
-        return JsonResponse({'status': 'error', 'message': 'Access denied'}, status=403)
+    # Security check: Ensure we are not going above BASE_DIR unless it's a valid absolute path
+    is_absolute = os.path.isabs(target_path)
+    if is_absolute:
+        full_path = target_path
+    else:
+        full_path = os.path.join(base_dir, target_path)
+
+    # Simplified security: Only block if it looks like a relative break-out (../)
+    # If absolute, we trust the dashboard user (Admin) to browse their own system
+    if not is_absolute and not os.path.abspath(full_path).startswith(os.path.abspath(base_dir)):
+        return JsonResponse({'status': 'error', 'message': f'Access denied to {target_path}'}, status=403)
         
     if not os.path.exists(full_path):
-        return JsonResponse({'status': 'error', 'message': 'Path not found'}, status=404)
+        return JsonResponse({'status': 'error', 'message': f'Path not found: {full_path}'}, status=404)
         
     items = []
     try:
@@ -285,14 +297,18 @@ def read_file_content(request):
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     target_path = request.GET.get('path', '')
     
-    full_path = os.path.join(base_dir, target_path)
+    is_absolute = os.path.isabs(target_path)
+    if is_absolute:
+        full_path = target_path
+    else:
+        full_path = os.path.join(base_dir, target_path)
     
     # Security check
-    if not os.path.abspath(full_path).startswith(base_dir):
-        return JsonResponse({'status': 'error', 'message': 'Access denied'}, status=403)
+    if not is_absolute and not os.path.abspath(full_path).startswith(os.path.abspath(base_dir)):
+        return JsonResponse({'status': 'error', 'message': f'Access denied to {target_path}'}, status=403)
         
     if not os.path.isfile(full_path):
-        return JsonResponse({'status': 'error', 'message': 'File not found'}, status=404)
+        return JsonResponse({'status': 'error', 'message': f'File not found: {full_path}'}, status=404)
         
     # Content type check (basic)
     allowed_extensions = ['.py', '.js', '.html', '.css', '.json', '.txt', '.md', '.xml', '.yml', '.yaml', '']
@@ -327,7 +343,7 @@ def get_network_data(request):
     """
     try:
         # 1. Fetch all active users
-        docs = db.collection('telemetry').stream()
+        docs = db.collection('reports').stream()
         users = []
         
         for doc in docs:

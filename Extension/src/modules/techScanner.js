@@ -83,12 +83,22 @@ class Tech_Scanner {
             // Check for .git
             if (fs.existsSync(path.join(rootPath, '.git'))) {
                 result.meta.git = true;
-                // Try to read config for user
+                // Try to read config for user and repository
                 try {
                     const gitConfig = fs.readFileSync(path.join(rootPath, '.git', 'config'), 'utf8');
+                    
+                    // Extract Author
                     const userMatch = gitConfig.match(/name = (.*)/);
                     if (userMatch && result.meta.author === 'Unknown') {
                         result.meta.author = userMatch[1].trim();
+                    }
+
+                    // Extract Repository URL (e.g., GitHub, BitBucket)
+                    // Robust regex to handle tabs/spaces in .git/config
+                    const urlMatch = gitConfig.match(/url\s*=\s*(.*)/);
+                    if (urlMatch) {
+                        result.meta.repository = urlMatch[1].trim();
+                        console.log(`[TECH SCAN] Found repository: ${result.meta.repository}`);
                     }
                 } catch (e) { }
             }

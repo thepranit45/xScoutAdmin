@@ -2,7 +2,7 @@
 const POLLING_INTERVAL = 3000;
 
 function initDashboard() {
-    console.log("Initializing xScout Dashboard (API Mode)...");
+    console.log("Initializing xScout Dashboard (True Master Mode)...");
     fetchData();
     setInterval(fetchData, POLLING_INTERVAL);
 }
@@ -13,10 +13,9 @@ async function fetchData() {
         const json = await response.json();
 
         if (json.status === 'success') {
-            window.lastTelemetryData = json.data; // Store for modal access
+            window.lastTelemetryData = json.data;
             updateTable(json.data);
 
-            // Update 3D Graph
             if (window.networkGraph) {
                 window.networkGraph.updateData(json.data);
             }
@@ -28,157 +27,95 @@ async function fetchData() {
 
 function updateTable(dataList) {
     const tableBody = document.getElementById('student-table');
-    if (!tableBody) {
-        console.error("Critical: Student table body not found!");
-        return;
-    }
+    if (!tableBody) return;
 
-    tableBody.innerHTML = ''; // Clear current
-    let total = 0;
-
-    console.log(`Rendering table with ${dataList.length} items`);
-
-    dataList.forEach(data => {
-        total++;
-        renderRow(tableBody, data);
-    });
-
-    const totalEl = document.getElementById('total-monitored');
-    if (totalEl) totalEl.innerText = total;
-
-    // Update Active Threads (based on Online status)
-    const activeThreadsEl = document.getElementById('active-threads');
-    if (activeThreadsEl) {
-        const activeCount = dataList.filter(d => {
-            const lastTime = d.timestamp ? new Date(d.timestamp).getTime() : 0;
-            return (Date.now() - lastTime) < 10000;
-        }).length;
-        activeThreadsEl.innerText = activeCount;
-    }
+    tableBody.innerHTML = '';
+    dataList.forEach(data => renderRow(tableBody, data));
 }
 
 function renderRow(container, data) {
     try {
+        const lastActiveTime = data.timestamp;
+        const statusClass = (Date.now() - new Date(lastActiveTime).getTime() < 15000) ? 'online' : 'offline';
+        const statusText = (statusClass === 'online') ? 'Live' : 'Last Seen';
+        
+        let userName = data.studentId || data.user || data.id || 'Unknown';
+        const flowBadge = data.ai > 0.6 ? '<span style="background: rgba(255, 68, 68, 0.2); color: #ff6b6b; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; margin-left: 5px;">HIGH RISK</span>' : '';
+
         const row = document.createElement('tr');
-
-        // Parse timestamp (ISO String from Extension)
-        const lastActiveTime = data.timestamp ? new Date(data.timestamp).getTime() : 0;
-        const isOnline = (Date.now() - lastActiveTime) < 10000;
-        const statusClass = isOnline ? 'status-online' : 'status-offline';
-        const statusText = isOnline ? 'Online' : 'Offline';
-
-        // Use ID as user name if user not specified
-        let userName = data.user || data.id || 'Unknown';
-        if (typeof userName !== 'string') userName = String(userName);
-
-        // Flow State Logic
-        const flowState = data.behavior && data.behavior.flowState ? data.behavior.flowState : 'NORMAL';
-        let flowBadge = '';
-        if (flowState === 'FLOW') flowBadge = '<span style="background: #00ff88; color: #000; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px;">FLOW</span>';
-        else if (flowState === 'DISTRACTED') flowBadge = '<span style="background: #ffaa00; color: #000; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px;">DISTRACTED</span>';
-        else if (flowState === 'IDLE') flowBadge = '<span style="background: #555; color: #ccc; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px;">IDLE</span>';
-
         row.innerHTML = `
             <td>
-                <div style="display: flex; align-items: center;">
-                    <div style="width: 30px; height: 30px; background: #333; border-radius: 4px; display: flex; align-items: center; justify-content: center; margin-right: 10px;">${userName.charAt(0).toUpperCase()}</div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 30px; height: 30px; background: #333; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold;">
+                        ${String(userName).substring(0, 2).toUpperCase()}
+                    </div>
                     <div>
                         <strong>${userName}</strong>${flowBadge}<br>
                         <span style="font-size: 0.8rem; color: #888;">Student</span>
                     </div>
                 </div>
             </td>
+            <td>${data.stack || 'Web Content'}</td>
+            <td style="font-family: monospace; color: ${data.ai > 60 ? '#ff6b6b' : '#00ff88'}">${(data.ai || 0).toFixed(1)}%</td>
             <td>
-                <span style="color: var(--text-dim); font-size: 0.9em;">
-                    ${data.behavior && data.behavior.wpm ? `WPM: ${data.behavior.wpm}` : 'Active'}
-                </span>
-            </td>
-            <td>
-                <span style="color: ${data.ai > 0.5 ? 'red' : 'green'}; font-weight: bold;">
-                    ${(data.ai * 100).toFixed(0)}%
-                </span>
+                ${data.behavior && data.behavior.wpm > 0 ? `<span style="color: #00f3ff;">WPM: ${data.behavior.wpm}</span>` : '<span style="color: #666;">Idle</span>'}
             </td>
             <td>${lastActiveTime ? new Date(lastActiveTime).toLocaleTimeString() : '--'}</td>
             <td><span class="status-dot ${statusClass}"></span> ${statusText}</td>
-            <td><button onclick="openModal(${window.lastTelemetryData.indexOf(data)})" style="background: transparent; border: 1px solid var(--primary); color: white; padding: 5px 15px; border-radius: 20px; cursor: pointer;">Analyze</button></td>
+            <td><button onclick="openModal('${userName}')" style="background: var(--primary); border: none; color: white; padding: 5px 15px; border-radius: 20px; cursor: pointer; transition: 0.3s; font-weight: bold;">Analyze</button></td>
         `;
 
         container.appendChild(row);
     } catch (e) {
-        console.error("Error rendering row:", e, data);
-        const errorRow = document.createElement('tr');
-        errorRow.innerHTML = `<td colspan="6" style="background: rgba(255,0,0,0.1); border-left: 3px solid red; padding: 15px; color: #ff6b6b;">
-            <strong>Render Error:</strong> ${e.message}
-        </td>`;
-        container.appendChild(errorRow);
+        console.error("Row Render Error:", e);
     }
 }
 
-// Start
-initDashboard();
+let currentModalData = null;
 
+function openModal(userId) {
+    console.log(`[DEBUG] Analyzing student: ${userId}`);
+    
+    // Find correctly in our live data
+    const data = window.lastTelemetryData.find(d => 
+        (d.studentId === userId || d.user === userId || d.id === userId)
+    );
 
-// -- MODAL LOGIC --
-function openModal(dataIndex) {
-    const data = window.lastTelemetryData[dataIndex];
-    // Use the shared function from forensics.js
-    if (typeof openForensicModal === 'function') {
-        openForensicModal(data);
+    if (!data) {
+        console.error(`[ERROR] Data not found for ${userId}. Data might have refreshed.`);
+        return;
+    }
+    
+    currentModalData = data;
+    
+    // Switch to Forensics page/tab
+    if (typeof switchTab === 'function') {
+        switchTab('forensics');
     } else {
-        console.error("Forensic library not loaded");
+        // Fallback: If switchTab is missing, we populate the modal anyway
+        const modal = document.getElementById('forensic-modal');
+        if (modal) modal.style.display = 'block';
+    }
+
+    // Populate common fields
+    const nameEl = document.getElementById('modal-student-name');
+    if (nameEl) nameEl.innerText = userId;
+
+    // Trigger History Fetch
+    if (typeof fetchHistory === 'function') {
+        fetchHistory(userId);
     }
 }
 
+function switchTab(tabId) {
+    document.querySelectorAll('.dashboard-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
 
-// -- Tech Stack Analysis Logic --
-function analyzeStack() {
-    const data = currentModalData;
-    if (!data || !data.tech) {
-        alert("No technology data available for this session.");
-        return;
-    }
+    const targetTab = document.querySelector(`[onclick="switchTab('${tabId}')"]`);
+    if (targetTab) targetTab.classList.add('active');
 
-    const tech = data.tech;
-
-    // Populate Metadata
-    const meta = tech.meta || {}; // Safe access
-    document.getElementById('tech-author').innerText = meta.author || 'Unknown';
-    document.getElementById('tech-created').innerText = meta.created || 'Unknown';
-    document.getElementById('tech-git').innerHTML = meta.git ? '<span style="color:#00ff00">Active</span>' : '<span style="color:#555">None</span>';
-
-    // Populate Tags
-    const cats = tech.categories || {}; // Safe access
-    renderTags('tech-frontend', cats.frontend, '#00f3ff');
-    renderTags('tech-backend', cats.backend, '#B026FF');
-    renderTags('tech-database', cats.database, '#f1e05a');
-    renderTags('tech-devops', cats.devops, '#ff6b6b');
-
-    // Show Modal
-    const modal = document.getElementById('tech-stack-modal');
-    if (modal) modal.style.display = 'block';
+    const targetContent = document.getElementById(tabId);
+    if (targetContent) targetContent.style.display = 'block';
 }
 
-function renderTags(containerId, tags, color) {
-    const container = document.getElementById(containerId);
-    container.innerHTML = '';
-
-    if (!tags || tags.length === 0) {
-        container.innerHTML = '<span style="color: #555; font-size: 0.8rem; font-style: italic;">None Detected</span>';
-        return;
-    }
-
-    tags.forEach(tag => {
-        const span = document.createElement('span');
-        span.innerText = tag;
-        span.style.cssText = `
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid ${color};
-            color: white;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 0.8rem;
-            box-shadow: 0 0 5px ${color}40;
-        `;
-        container.appendChild(span);
-    });
-}
+initDashboard();

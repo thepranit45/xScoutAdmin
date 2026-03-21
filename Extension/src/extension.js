@@ -7,31 +7,17 @@ const { Tech_Scanner } = require('./modules/techScanner');
 const { ReportPanel } = require('./ui/reportPanel');
 const https = require('https');
 const http = require('http');
-// const admin = require('firebase-admin');
-// const serviceAccount = require('../serviceAccountKey.json');
 
 const config = vscode.workspace.getConfiguration('xscout');
 const DASHBOARD_HOST = config.get('dashboardHost') || '127.0.0.1';
 const DASHBOARD_PORT = config.get('dashboardPort') || 8000;
 const DASHBOARD_PATH = '/api/telemetry/';
 
-/*
-try {
-	admin.initializeApp({
-		credential: admin.credential.cert(serviceAccount)
-	});
-	console.log('Firebase Admin Initialized successfully');
-} catch (error) {
-	console.error('Error initializing Firebase Admin:', error);
-}
-const db = admin.firestore();
-*/
-
 /**
  * @param {vscode.ExtensionContext} context
  */
 function activate(context) {
-	console.log('xScout is now active!');
+	console.log('🚀 xScout Master Engine: ONLINE 🚀');
 
 	// Initialize Scanners
 	const aiScanner = new AI_Scanner();
@@ -40,17 +26,17 @@ function activate(context) {
 	const projectScanner = new Project_Scanner();
 	const techScanner = new Tech_Scanner();
 
-	let activeUser = null; // Default null until authorized
-	let activeEnvironment = ''; // Store environment code
+	let activeUser = config.get('studentId') || null; 
 	let telemetryInterval = null;
-	let lastSentContent = ''; // Track last sent code to avoid duplicates
 
-	// Listen for Login from UI
-	ReportPanel.onLogin = (user, inviteCode) => {
-		console.log(`Verifying User: ${user} for Env: ${inviteCode}`);
+	// AUTO-PILOT: Attempt to verify stored ID immediately
+	if (activeUser) {
+		console.log(`📡 Auto-Pilot: Connecting with ID: ${activeUser}`);
+		verifyUser(activeUser);
+	}
 
-		// CHECK AUTHORIZATION
-		const verifyData = JSON.stringify({ student_id: user, invite_code: inviteCode });
+	function verifyUser(user) {
+		const verifyData = JSON.stringify({ student_id: user });
 		const verifyOptions = {
 			hostname: DASHBOARD_HOST,
 			port: DASHBOARD_PORT,
@@ -65,40 +51,29 @@ function activate(context) {
 		const requestModule = DASHBOARD_PORT === 443 ? https : http;
 		const verifyReq = requestModule.request(verifyOptions, (res) => {
 			let data = '';
+			res.setEncoding('utf8');
 			res.on('data', chunk => data += chunk);
 			res.on('end', () => {
 				try {
 					const response = JSON.parse(data);
 					if (response.success) {
 						activeUser = user;
-						activeEnvironment = inviteCode || '';
-						vscode.window.showInformationMessage(`✅ xScout Authorized: Tracking active for ${user}`);
+						vscode.window.showInformationMessage(`✅ xScout Connected: ${user} (Final Ready Mode)`);
 						startTelemetryLoop();
 
-						// Notify Panel
 						if (ReportPanel.currentPanel) {
 							ReportPanel.currentPanel._panel.webview.postMessage({ command: 'loginSuccess', user: user });
 						}
 					} else {
-						vscode.window.showErrorMessage(`⛔ Access Denied: ID '${user}' is NOT authorized by Admin.`);
-						// Notify Panel
-						if (ReportPanel.currentPanel) {
-							ReportPanel.currentPanel._panel.webview.postMessage({ command: 'loginFailed', message: 'ID Not Authorized' });
-						}
+						console.error(`⛔ xScout Auth Error: ${response.message}`);
 					}
-				} catch (e) {
-					vscode.window.showErrorMessage('Server Error: Could not verify ID.');
-				}
+				} catch (e) { console.error('Verify JSON Error', e); }
 			});
 		});
-
-		verifyReq.on('error', (e) => {
-			vscode.window.showErrorMessage('Connection Failed: Dashboard unreachable.');
-		});
-
+		verifyReq.on('error', (e) => console.error('Verify Connect Error', e));
 		verifyReq.write(verifyData);
 		verifyReq.end();
-	};
+	}
 
 	function startTelemetryLoop() {
 		if (telemetryInterval) clearInterval(telemetryInterval);
@@ -106,20 +81,11 @@ function activate(context) {
 		telemetryInterval = setInterval(async () => {
 			if (!activeUser) return;
 
+			// Capture all forensic and behavior signals
 			const behavior = behaviorScanner.scan() || {};
 			const forensic = forensicScanner.scan() || {};
 			const project = await projectScanner.scan() || {};
 			const tech = await techScanner.scan() || {};
-
-			// Check for Code Changes (Snapshot)
-			let snapshotData = null;
-			if (behavior.content && behavior.content !== lastSentContent) {
-				snapshotData = {
-					file: behavior.activeFile,
-					code: behavior.content
-				};
-				lastSentContent = behavior.content;
-			}
 
 			const pulseData = {
 				timestamp: new Date().toISOString(),
@@ -128,19 +94,8 @@ function activate(context) {
 				project: project,
 				tech: tech,
 				ai: aiScanner.lastScanResult || 0,
-				environment: activeEnvironment, // Send Environment Code
-				snapshot: snapshotData // Send snapshot only if changed
+				user: activeUser
 			};
-
-			console.log('Telemetry Pulse:', pulseData);
-
-			// Detailed Log for User Verification
-			if (pulseData.forensic && pulseData.forensic.activeDocuments) {
-				console.log('User is accessing:', pulseData.forensic.activeDocuments);
-			}
-
-			// Send to Dashboard (via Native HTTP)
-			pulseData.user = activeUser;
 
 			const postData = JSON.stringify(pulseData);
 			const options = {
@@ -156,17 +111,14 @@ function activate(context) {
 
 			const requestModule = DASHBOARD_PORT === 443 ? https : http;
 			const req = requestModule.request(options, (res) => {
-				if (res.statusCode === 200) {
-					console.log('Telemetry sent to Dashboard API');
+				if (res.statusCode === 200 || res.statusCode === 201) {
+					console.log('📡 Telemetry Signal Sent');
 				} else {
-					console.error(`Dashboard API Error: ${res.statusCode}`);
+					console.error(`📡 SIGNAL FAILED: ${res.statusCode}`);
 				}
 			});
 
-			req.on('error', (e) => {
-				console.error(`Problem with request: ${e.message}`);
-			});
-
+			req.on('error', (e) => console.error(`Signal Transmission Error: ${e.message}`));
 			req.write(postData);
 			req.end();
 		}, 5000);
@@ -174,20 +126,22 @@ function activate(context) {
 		context.subscriptions.push({ dispose: () => clearInterval(telemetryInterval) });
 	}
 
+	// Listen for Login from UI (Manual override)
+	ReportPanel.onLogin = (user) => {
+		console.log(`Manual Override: Connecting ${user}`);
+		verifyUser(user);
+	};
+
 	// Register Commands
-	let loginDisposable = vscode.commands.registerCommand('xscout.login', function () {
-		vscode.window.showInformationMessage('xScout: Please log in via the Report Panel.');
+	context.subscriptions.push(vscode.commands.registerCommand('xscout.login', () => {
 		ReportPanel.createOrShow(context.extensionUri);
-	});
+	}));
 
-	let openReportDisposable = vscode.commands.registerCommand('xscout.openReport', function () {
+	context.subscriptions.push(vscode.commands.registerCommand('xscout.openReport', () => {
 		ReportPanel.createOrShow(context.extensionUri);
-	});
+	}));
 
-	context.subscriptions.push(loginDisposable);
-	context.subscriptions.push(openReportDisposable);
-
-	// Initial Trigger
+	// Initial UI Trigger
 	ReportPanel.createOrShow(context.extensionUri);
 }
 

@@ -1,0 +1,77 @@
+/* Explorer Sidebar Styles */
+/* Explorer Sidebar Styles */
+.explorer-sidebar {
+    position: fixed;
+    /* Fixed to viewport */
+    top: 0;
+    left: -350px;
+    /* Hidden by default */
+    width: 320px;
+    height: 100vh;
+    background: #0f0518;
+    /* Dark background */
+    border-right: 1px solid rgba(0, 243, 255, 0.3);
+    box-shadow: 10px 0 50px rgba(0, 0, 0, 0.8);
+    z-index: 2000;
+    /* Above everything */
+    transition: left 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    display: flex;
+    flex-direction: column;
+    backdrop-filter: blur(10px);
+}
+
+.explorer-sidebar.active {
+    left: 0;
+}
+
+.explorer-header {
+    padding: 15px 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-bottom: 1px solid rgba(0, 243, 255, 0.1);
+    color: #e0e0e0;
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+    font-weight: 600;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.close-explorer {
+    cursor: pointer;
+    font-size: 1.2rem;
+    color: #aaa;
+    transition: color 0.2s;
+}
+
+.close-explorer:hover {
+    color: #fff;
+}
+
+.explorer-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 10px 0;
+    /* Custom Scrollbar */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 243, 255, 0.3) transparent;
+}
+
+.explorer-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.explorer-content::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 243, 255, 0.3);
+    border-radius: 3px;
+}
+
+/* Ensure modal content handles the sidebar correctly */
+.modal-content {
+    position: relative;
+    /* Anchor for absolute sidebar */
+    overflow: hidden;
+    /* Clip the sidebar when hidden */
+}

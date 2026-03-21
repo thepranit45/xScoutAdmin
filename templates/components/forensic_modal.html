@@ -1,0 +1,118 @@
+<!-- Forensic Details Modal -->
+<div id="forensic-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Forensic Detail Analysis</h2>
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="student-info-header">
+                <div>
+                    <span class="label">STUDENT</span>
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <h1 id="modal-student-name">Student Name</h1>
+                        <!-- View Structure Shortcut -->
+                        <a href="#" onclick="viewStudentWorkspace(); return false;"
+                            style="color: #00f3ff; font-size: 0.8rem; text-decoration: none; border: 1px solid rgba(0, 243, 255, 0.3); padding: 4px 10px; border-radius: 4px; transition: all 0.3s; margin-top: 5px;">
+                            View Folder Structure
+                        </a>
+                        <a href="#" onclick="analyzeStack(); return false;"
+                            style="color: #B026FF; font-size: 0.8rem; text-decoration: none; border: 1px solid rgba(176, 38, 255, 0.3); padding: 4px 10px; border-radius: 4px; transition: all 0.3s; margin-top: 5px;">
+                            ⚡ Analyze Stack
+                        </a>
+                        <a href="#" onclick="openCinemaMode(); return false;"
+                            style="color: #00ff9d; font-size: 0.8rem; text-decoration: none; border: 1px solid rgba(0, 255, 157, 0.3); padding: 4px 10px; border-radius: 4px; transition: all 0.3s; margin-top: 5px;">
+                            🎥 Watch Replay
+                        </a>
+                    </div>
+                </div>
+                <div class="risk-score-panel">
+                    <span class="label">RISK SCORE</span>
+                    <h2 id="modal-risk-score" style="color: #00ff00;">0%</h2>
+                </div>
+            </div>
+
+            <h3 class="section-title">APP USAGE HISTORY</h3>
+            <div class="glass-panel">
+                <table class="forensic-table">
+                    <thead>
+                        <tr>
+                            <th>APP</th>
+                            <th>WINDOW TITLE</th>
+                            <th>CONTEXT</th>
+                            <th>TIME</th>
+                            <th>ACTION</th>
+                        </tr>
+                    </thead>
+                    <tbody id="forensic-history-body">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Time Travel Timeline -->
+            <div style="margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <label style="color: #aaa; font-size: 0.8rem;">TIMELINE REPLAY</label>
+                    <span id="timeline-current" style="color: #666; font-size: 0.8rem;">Waiting for
+                        history...</span>
+                </div>
+                <input type="range" id="time-travel-slider" min="0" max="100" value="100" disabled
+                    style="width: 100%; height: 6px; background: #333; border-radius: 5px; outline: none; -webkit-appearance: none; appearance: none; cursor: pointer;">
+                <style>
+                    #time-travel-slider::-webkit-slider-thumb {
+                        -webkit-appearance: none;
+                        width: 16px;
+                        height: 16px;
+                        border-radius: 50%;
+                        background: #B026FF;
+                        cursor: pointer;
+                        transition: all 0.2s;
+                    }
+
+                    #time-travel-slider::-webkit-slider-thumb:hover {
+                        transform: scale(1.2);
+                        box-shadow: 0 0 10px #B026FF;
+                    }
+                </style>
+            </div>
+
+            <!-- CODE SNAPSHOT (Shadow IDE) -->
+            <div style="margin-top: 20px;">
+                <h3 class="section-title">ACTIVE CODE SNAPSHOT</h3>
+                <div class="glass-panel" style="background: #1e1e1e; padding: 0; overflow: hidden; position: relative;">
+                    <div
+                        style="background: #252526; padding: 5px 15px; color: #ccc; font-size: 0.8rem; display: flex; justify-content: space-between;">
+                        <span id="snapshot-file">No active file</span>
+                        <span id="snapshot-lang">Unknown</span>
+                    </div>
+                    <pre id="snapshot-code"
+                        style="margin: 0; padding: 15px; color: #d4d4d4; font-family: 'Consolas', 'Monaco', monospace; font-size: 0.9rem; overflow-x: auto; max-height: 300px;">
+// Waiting for telemetry...
+                            </pre>
+                    <div id="paste-alert"
+                        style="display: none; position: absolute; top: 10px; right: 10px; background: rgba(255, 0, 0, 0.8); color: white; padding: 5px 10px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; animation: pulse 1s infinite;">
+                        ⚠️ PASTE DETECTED
+                    </div>
+                </div>
+            </div>
+
+            <style>
+                @keyframes pulse {
+                    0% {
+                        opacity: 1;
+                    }
+
+                    50% {
+                        opacity: 0.5;
+                    }
+
+                    100% {
+                        opacity: 1;
+                    }
+                }
+            </style>
+
+        </div>
+    </div>
+</div>

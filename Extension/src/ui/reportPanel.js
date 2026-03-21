@@ -14,7 +14,7 @@ class ReportPanel {
         }
 
         const panel = vscode.window.createWebviewPanel(
-            'xscoutReport',
+            'xscout-report-view',
             'xScout Nexus',
             column || vscode.ViewColumn.One,
             {

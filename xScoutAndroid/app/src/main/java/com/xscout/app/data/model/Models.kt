@@ -13,7 +13,30 @@ data class StudentSession(
     val suspicionLevel: SuspicionLevel = SuspicionLevel.LOW,
     val titleHistory: List<String> = emptyList(),
     val biometrics: Biometrics = Biometrics(),
-    val isActive: Boolean = false
+    val isActive: Boolean = false,
+    val techDetails: TechDetails? = null,
+    val projectStructure: DirectoryItem? = null
+)
+
+data class TechDetails(
+    val author: String = "Unknown",
+    val created: String = "Unknown",
+    val repository: String? = null,
+    val categories: Map<String, List<String>> = emptyMap()
+)
+
+data class DirectoryItem(
+    val name: String,
+    val type: String,
+    val path: String = "",
+    val children: List<DirectoryItem> = emptyList()
+)
+
+data class SessionSnapshot(
+    val timestamp: Long = 0L,
+    val file: String? = null,
+    val code: String? = null,
+    val aiScore: Float = 0f
 )
 
 enum class SuspicionLevel { LOW, MEDIUM, HIGH, CRITICAL }
