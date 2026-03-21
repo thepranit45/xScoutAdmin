@@ -37,7 +37,7 @@ Once you are logged into the Ubuntu server, run these commands one by one:
 sudo apt update && sudo apt install -y python3-pip python3-venv git nginx
 
 # 2. Clone the xScout repository
-git clone https://github.com/thepranit/xScoutAdmin.git xscout
+git clone https://github.com/thepranit45/xScoutAdmin.git xscout
 cd xscout
 
 # 3. Create a Virtual Environment
@@ -70,16 +70,47 @@ You need to move your `db.sqlite3` and your **Firebase JSON** to the server.
 ---
 
 ## 🚀 Phase 5: Go Live (Persistent)
-To keep the server running even after you close your terminal, use **Gunicorn**:
+To keep the server running securely on port 80, use **Gunicorn + Nginx**:
 
+### 1. Simple Run (Gunicorn Only)
 ```bash
-# Run in the background
+# Run in the background on port 8000
 gunicorn --bind 0.0.0.0:8000 dashboard.wsgi &
 ```
 
+### 2. Professional Run (Nginx Reverse Proxy)
+Recommended for stability and using Port 80 without `:8000`:
+
+1.  **Configure Nginx**:
+    ```bash
+    sudo nano /etc/nginx/sites-available/xscout
+    ```
+    Paste this in (replace `YOUR_SERVER_IP`):
+    ```nginx
+    server {
+        listen 80;
+        server_name YOUR_SERVER_IP;
+
+        location / {
+            include proxy_params;
+            proxy_pass http://localhost:8000;
+        }
+    }
+    ```
+2.  **Enable & Restart**:
+    ```bash
+    sudo ln -s /etc/nginx/sites-available/xscout /etc/nginx/sites-enabled
+    sudo nginx -t
+    sudo systemctl restart nginx
+    ```
+3.  **Start Gunicorn**:
+    ```bash
+    gunicorn --bind 127.0.0.1:8000 dashboard.wsgi &
+    ```
+
 ### 🌍 Access your Dashboard:
 Open your browser and go to:
-`http://YOUR_SERVER_IP:8000`
+`http://YOUR_SERVER_IP` (No port needed!)
 
 ---
 
