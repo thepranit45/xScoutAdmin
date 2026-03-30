@@ -202,8 +202,10 @@ def get_dashboard_data(request):
                         'forensic': body.get('forensic', {}) # Include full forensic data for completeness
                     }
                     db.collection('reports').document(user_id).collection('history').add(history_entry)
-            
-            return JsonResponse({'status': 'saved'})
+                
+                return JsonResponse({'status': 'saved'})
+            else:
+                return JsonResponse({'status': 'error', 'message': 'Firebase Dashboard Engine Offline (No DB)'}, status=503)
         except json.JSONDecodeError:
             print("Error: Invalid JSON in Telemetry POST")
             return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
