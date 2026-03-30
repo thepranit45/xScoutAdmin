@@ -174,13 +174,10 @@
                                 <th class="p-4 jetbrains-mono text-[10px] text-on-surface-variant uppercase tracking-widest font-bold text-right">Action</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <!-- Dummy Data for Now -->
+                        <tbody id="student-table">
+                            <!-- Live Telemetry Injected Here -->
                             <tr class="border-b border-white/5">
-                                <td class="p-4 font-bold text-sm">s1</td>
-                                <td class="p-4 text-sm text-on-surface-variant">Default Monitoring Target</td>
-                                <td class="p-4"><span class="text-[#27c93f] text-xs font-bold">Active</span></td>
-                                <td class="p-4 text-right"><button class="text-xs px-3 py-1 border border-white/20 rounded hover:bg-white/10">Revoke</button></td>
+                                <td colspan="6" class="p-12 text-center text-on-surface-variant/40 italic text-sm">AWAITING TELEMETRY SYNC...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -241,7 +238,7 @@
         }
 
         function updateDashboard(nodes) {
-            const tableBody = document.querySelector('tbody');
+            const tableBody = document.getElementById('student-table');
             const totalMonitoredEl = document.getElementById('stat-total-monitored');
             const sidebarActiveEl = document.getElementById('sidebar-active');
 
@@ -249,8 +246,8 @@
                 if (tableBody) {
                     tableBody.innerHTML = '<tr><td colspan="6" class="p-12 text-center text-on-surface-variant/40 italic text-sm">NO ACTIVE SESSIONS DETECTED</td></tr>';
                 }
-                totalMonitoredEl.innerText = '0';
-                sidebarActiveEl.innerText = '0';
+                if (totalMonitoredEl) totalMonitoredEl.innerText = '0';
+                if (sidebarActiveEl) sidebarActiveEl.innerText = '0';
                 return;
             }
             
