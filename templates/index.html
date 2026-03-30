@@ -241,10 +241,21 @@
         }
 
         function updateDashboard(nodes) {
-            if(!nodes || !nodes.length) return;
+            const tableBody = document.querySelector('tbody');
+            const totalMonitoredEl = document.getElementById('stat-total-monitored');
+            const sidebarActiveEl = document.getElementById('sidebar-active');
+
+            if (!nodes || nodes.length === 0) {
+                if (tableBody) {
+                    tableBody.innerHTML = '<tr><td colspan="6" class="p-12 text-center text-on-surface-variant/40 italic text-sm">NO ACTIVE SESSIONS DETECTED</td></tr>';
+                }
+                totalMonitoredEl.innerText = '0';
+                sidebarActiveEl.innerText = '0';
+                return;
+            }
             
-            document.getElementById('stat-total-monitored').innerText = nodes.length;
-            document.getElementById('sidebar-active').innerText = nodes.length;
+            totalMonitoredEl.innerText = nodes.length;
+            sidebarActiveEl.innerText = nodes.length;
 
             let threats = 0;
             let htmlTable = '';
