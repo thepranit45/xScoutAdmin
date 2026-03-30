@@ -40,7 +40,11 @@ if not firebase_admin._apps:
     except Exception as e:
         print(f"Firebase Init Warning: {e}. Ensure GOOGLE_APPLICATION_CREDENTIALS is set if .json is missing.")
 
-db = firestore.client()
+try:
+    db = firestore.client()
+except Exception as e:
+    print(f"CRITICAL: Firebase Firestore failed to initialize. Missing credentials? Error: {e}")
+    db = None
 
 def home(request):
     """Landing page - public access"""
