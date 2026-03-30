@@ -97,20 +97,20 @@ def get_playback_data(request, user_id=None):
 
     try:
         # Fetch history from sub-collection, ordered by timestamp
-        docs = db.collection('reports').document(user_id).collection('history').order_by('timestamp').stream()
-        
         history = []
-        for doc in docs:
-            data = doc.to_dict()
-            # Manual serialization for Firestore datetimes
-            for key, value in data.items():
-                if isinstance(value, datetime):
-                    data[key] = value.isoformat()
-                elif isinstance(value, dict):
-                    for k2, v2 in value.items():
-                        if isinstance(v2, datetime):
-                            value[k2] = v2.isoformat()
-            history.append(data)
+        if db:
+            docs = db.collection('reports').document(user_id).collection('history').order_by('timestamp').stream()
+            for doc in docs:
+                data = doc.to_dict()
+                # Manual serialization for Firestore datetimes
+                for key, value in data.items():
+                    if isinstance(value, datetime):
+                        data[key] = value.isoformat()
+                    elif isinstance(value, dict):
+                        for k2, v2 in value.items():
+                            if isinstance(v2, datetime):
+                                value[k2] = v2.isoformat()
+                history.append(data)
             
         return JsonResponse({'status': 'success', 'data': history})
     except Exception as e:
@@ -125,27 +125,28 @@ def get_dashboard_data(request):
     if request.method == 'GET':
         try:
             # Android expects data in 'reports' collection
-            docs = db.collection('reports').stream()
             data = []
-            for doc in docs:
-                try:
-                    doc_data = doc.to_dict()
-                    doc_data['id'] = doc.id
-                    
-                    # Manual serialization check for ALL nested levels (basic)
-                    def serialize_datetimes(item):
-                        if isinstance(item, list):
-                            return [serialize_datetimes(i) for i in item]
-                        if isinstance(item, dict):
-                            return {k: serialize_datetimes(v) for k, v in item.items()}
-                        if isinstance(item, datetime):
-                            return item.isoformat()
-                        return item
+            if db:
+                docs = db.collection('reports').stream()
+                for doc in docs:
+                    try:
+                        doc_data = doc.to_dict()
+                        doc_data['id'] = doc.id
+                        
+                        # Manual serialization check for ALL nested levels (basic)
+                        def serialize_datetimes(item):
+                            if isinstance(item, list):
+                                return [serialize_datetimes(i) for i in item]
+                            if isinstance(item, dict):
+                                return {k: serialize_datetimes(v) for k, v in item.items()}
+                            if isinstance(item, datetime):
+                                return item.isoformat()
+                            return item
 
-                    doc_data = serialize_datetimes(doc_data)
-                    data.append(doc_data)
-                except Exception as doc_err:
-                    print(f"Error processing document {doc.id}: {doc_err}")
+                        doc_data = serialize_datetimes(doc_data)
+                        data.append(doc_data)
+                    except Exception as doc_err:
+                        print(f"Error processing document {doc.id}: {doc_err}")
                 
             return JsonResponse({'status': 'success', 'data': data})
         except Exception as e:
@@ -186,20 +187,21 @@ def get_dashboard_data(request):
             }
             
             # Write to Firestore in the 'reports' collection for Android compatibility
-            db.collection('reports').document(user_id).set(android_report)
+            if db:
+                db.collection('reports').document(user_id).set(android_report)
 
-            # Store History for playback (Archive snapshots)
-            snapshot = body.get('snapshot') or (body.get('forensic') or {}).get('snapshot')
-            if snapshot:
-                history_entry = {
-                    'timestamp': firestore.SERVER_TIMESTAMP,
-                    'file': snapshot.get('file') or snapshot.get('filename') or 'unknown',
-                    'code': snapshot.get('code', ''),
-                    'language': snapshot.get('language', 'text'),
-                    'ai_score': android_report['ai'],
-                    'forensic': body.get('forensic', {}) # Include full forensic data for completeness
-                }
-                db.collection('reports').document(user_id).collection('history').add(history_entry)
+                # Store History for playback (Archive snapshots)
+                snapshot = body.get('snapshot') or (body.get('forensic') or {}).get('snapshot')
+                if snapshot:
+                    history_entry = {
+                        'timestamp': firestore.SERVER_TIMESTAMP,
+                        'file': snapshot.get('file') or snapshot.get('filename') or 'unknown',
+                        'code': snapshot.get('code', ''),
+                        'language': snapshot.get('language', 'text'),
+                        'ai_score': android_report['ai'],
+                        'forensic': body.get('forensic', {}) # Include full forensic data for completeness
+                    }
+                    db.collection('reports').document(user_id).collection('history').add(history_entry)
             
             return JsonResponse({'status': 'saved'})
         except json.JSONDecodeError:
@@ -225,17 +227,18 @@ def export_logs(request):
         writer = csv.writer(response)
         writer.writerow(['User ID', 'Timestamp', 'App', 'Window Title', 'AI Risk Score', 'WPM'])
 
-        docs = db.collection('reports').stream()
-        for doc in docs:
-            data = doc.to_dict()
-            writer.writerow([
-                doc.id,
-                data.get('timestamp', 'N/A'),
-                data.get('forensic', {}).get('activeApp', 'N/A'),
-                data.get('forensic', {}).get('activeWindow', 'N/A'),
-                data.get('ai', 0),
-                data.get('behavior', {}).get('wpm', 0)
-            ])
+        if db:
+            docs = db.collection('reports').stream()
+            for doc in docs:
+                data = doc.to_dict()
+                writer.writerow([
+                    doc.id,
+                    data.get('timestamp', 'N/A'),
+                    data.get('forensic', {}).get('activeApp', 'N/A'),
+                    data.get('forensic', {}).get('activeWindow', 'N/A'),
+                    data.get('ai', 0),
+                    data.get('behavior', {}).get('wpm', 0)
+                ])
 
         return response
     except Exception as e:
@@ -245,8 +248,10 @@ def export_logs(request):
 def system_backup(request):
     try:
         # Dump all telemetry to JSON
-        docs = db.collection('reports').stream()
-        all_data = {doc.id: doc.to_dict() for doc in docs}
+        all_data = {}
+        if db:
+            docs = db.collection('reports').stream()
+            all_data = {doc.id: doc.to_dict() for doc in docs}
         
         response = JsonResponse(all_data, json_dumps_params={'indent': 2})
         response['Content-Disposition'] = f'attachment; filename="xscout_backup_{datetime.now().strftime("%Y%m%d")}.json"'
@@ -270,21 +275,22 @@ def purge_logs(request):
             # Simple implementation: Delete everything for cleanup demo or just return success simulation
             # Let's actually delete just to be functional
             
-            batch = db.batch()
-            docs = db.collection('reports').limit(50).stream() 
             deleted_count = 0
-            
-            for doc in docs:
-                # In a real scenario: if doc.create_time < 30_days_ago:
-                # db.collection('telemetry').document(doc.id).delete()
-                # For safety in this demo, let's NOT wipe the DB, but return success 
-                # or maybe delete strictly 'unknown' users
-                if 'user' in doc.id and 'test' in doc.id.lower():
-                     batch.delete(doc.reference)
-                     deleted_count += 1
-            
-            if deleted_count > 0:
-                batch.commit()
+            if db:
+                batch = db.batch()
+                docs = db.collection('reports').limit(50).stream() 
+                
+                for doc in docs:
+                    # In a real scenario: if doc.create_time < 30_days_ago:
+                    # db.collection('telemetry').document(doc.id).delete()
+                    # For safety in this demo, let's NOT wipe the DB, but return success 
+                    # or maybe delete strictly 'unknown' users
+                    if 'user' in doc.id and 'test' in doc.id.lower():
+                         batch.delete(doc.reference)
+                         deleted_count += 1
+                
+                if deleted_count > 0:
+                    batch.commit()
 
             return JsonResponse({'status': 'success', 'message': f'Purged {deleted_count} old records.'})
         except Exception as e:
@@ -393,27 +399,27 @@ def get_network_data(request):
     """
     try:
         # 1. Fetch all active users
-        docs = db.collection('reports').stream()
         users = []
-        
-        for doc in docs:
-            data = doc.to_dict()
-            uid = doc.id
-            # Extract code snapshot
-            code = ""
-            if 'snapshot' in data and 'code' in data['snapshot']:
-                code = data['snapshot']['code']
-            
-            # Skip empty code
-            if not code or len(code.strip()) < 10:
-                continue
+        if db:
+            docs = db.collection('reports').stream()
+            for doc in docs:
+                data = doc.to_dict()
+                uid = doc.id
+                # Extract code snapshot
+                code = ""
+                if 'snapshot' in data and 'code' in data['snapshot']:
+                    code = data['snapshot']['code']
+                
+                # Skip empty code
+                if not code or len(code.strip()) < 10:
+                    continue
 
-            users.append({
-                'id': uid,
-                'label': uid, 
-                'code': code,
-                'last_seen': data.get('timestamp', 'Unknown')
-            })
+                users.append({
+                    'id': uid,
+                    'label': uid, 
+                    'code': code,
+                    'last_seen': data.get('timestamp', 'Unknown')
+                })
 
         # 2. Pairwise Comparison
         edges = []
