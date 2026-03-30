@@ -22,6 +22,7 @@ class FirestoreEncoder(json.JSONEncoder):
 
 # Initialize Firebase (Singleton)
 db = None
+init_error = "Not Attempted"
 try:
     if not firebase_admin._apps:
         current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -34,14 +35,18 @@ try:
             firebase_admin.initialize_app(cred)
             db = firestore.client()
             print(f"✅ Firebase Dashboard: INITIALIZED from {json_file}")
+            init_error = "Success"
         else:
             # Final fallback
             firebase_admin.initialize_app()
             db = firestore.client()
+            init_error = "Success (Fallback Default)"
     else:
         db = firestore.client()
+        init_error = "Success (Used Existing App)"
 except Exception as e:
-    print(f"❌ Firebase Dashboard Error: {e}")
+    init_error = str(e)
+    print(f"❌ Firebase Dashboard Error: {init_error}")
     db = None
 
 def home(request):
@@ -203,7 +208,10 @@ def get_dashboard_data(request):
                 
                 return JsonResponse({'status': 'saved'})
             else:
-                return JsonResponse({'status': 'error', 'message': 'Firebase Dashboard Engine Offline (No DB)'}, status=503)
+                return JsonResponse({
+                    'status': 'error', 
+                    'message': f'Cloud Engine Offline: {init_error}'
+                }, status=503)
         except json.JSONDecodeError:
             print("Error: Invalid JSON in Telemetry POST")
             return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
