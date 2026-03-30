@@ -11,9 +11,12 @@ const https = require('https');
 const http = require('http');
 
 const config = vscode.workspace.getConfiguration('xscout');
-const DASHBOARD_HOST = config.get('dashboardHost') || '127.0.0.1';
-const DASHBOARD_PORT = config.get('dashboardPort') || 8000;
+// --- HARDCORE OVERRIDE: Forcing AWS Connection ---
+const DASHBOARD_HOST = '13.126.202.124'; 
+const DASHBOARD_PORT = 80;
 const DASHBOARD_PATH = '/api/telemetry/';
+
+console.log(`📡 xScout FORCE LINK: http://${DASHBOARD_HOST}:${DASHBOARD_PORT}${DASHBOARD_PATH}`);
 
 /**
  * @param {vscode.ExtensionContext} context

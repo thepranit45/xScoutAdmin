@@ -59,12 +59,12 @@
       "properties": {
         "xscout.dashboardHost": {
           "type": "string",
-          "default": "127.0.0.1",
+          "default": "13.126.202.124",
           "description": "The hostname of your xScout Dashboard."
         },
         "xscout.dashboardPort": {
           "type": "number",
-          "default": 8000,
+          "default": 80,
           "description": "The port of your xScout Dashboard (e.g. 8000 for local, 443 for HTTPS)."
         },
         "xscout.studentId": {
