@@ -1,13 +1,24 @@
 # Project: xScout - Force Reload for Templates v793
 from django.shortcuts import render, redirect
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.views.decorators.csrf import csrf_exempt
 import firebase_admin
 from firebase_admin import credentials, firestore
 import os
 import difflib # For similarity checking
+import json
+import csv
+from datetime import datetime, timedelta
+
+# Custom JSON encoder to handle Firestore datetime objects
+class FirestoreEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        return super().default(obj)
 
 # Initialize Firebase (Singleton)
 if not firebase_admin._apps:
@@ -87,36 +98,66 @@ def get_playback_data(request, user_id=None):
         history = []
         for doc in docs:
             data = doc.to_dict()
+            # Manual serialization for Firestore datetimes
+            for key, value in data.items():
+                if isinstance(value, datetime):
+                    data[key] = value.isoformat()
+                elif isinstance(value, dict):
+                    for k2, v2 in value.items():
+                        if isinstance(v2, datetime):
+                            value[k2] = v2.isoformat()
             history.append(data)
             
         return JsonResponse({'status': 'success', 'data': history})
     except Exception as e:
+        print(f"GET Playback Error: {e}")
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
-from django.views.decorators.csrf import csrf_exempt
-import json
+
 
 @csrf_exempt
 def get_dashboard_data(request):
+    print(f"DEBUG: Telemetry Request - Method: {request.method}")
     if request.method == 'GET':
         try:
             # Android expects data in 'reports' collection
             docs = db.collection('reports').stream()
             data = []
             for doc in docs:
-                doc_data = doc.to_dict()
-                doc_data['id'] = doc.id
-                data.append(doc_data)
+                try:
+                    doc_data = doc.to_dict()
+                    doc_data['id'] = doc.id
+                    
+                    # Manual serialization check for ALL nested levels (basic)
+                    def serialize_datetimes(item):
+                        if isinstance(item, list):
+                            return [serialize_datetimes(i) for i in item]
+                        if isinstance(item, dict):
+                            return {k: serialize_datetimes(v) for k, v in item.items()}
+                        if isinstance(item, datetime):
+                            return item.isoformat()
+                        return item
+
+                    doc_data = serialize_datetimes(doc_data)
+                    data.append(doc_data)
+                except Exception as doc_err:
+                    print(f"Error processing document {doc.id}: {doc_err}")
                 
             return JsonResponse({'status': 'success', 'data': data})
         except Exception as e:
+            print(f"GET Telemetry BIG Error: {e}")
+            import traceback
+            traceback.print_exc()
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
             
     elif request.method == 'POST':
         try:
+            if not request.body:
+                 return JsonResponse({'status': 'error', 'message': 'Empty Body'}, status=400)
+                 
             body = json.loads(request.body)
             # Use user ID from body or fall back to 'unknown'
-            user_id = body.get('user', 'user_001')
+            user_id = body.get('user', body.get('student_id', 'user_001'))
             
             # Map Extension data to Android 'StudentSession' model
             android_report = {
@@ -135,35 +176,40 @@ def get_dashboard_data(request):
                 'stack': body.get('tech', {}).get('detectedTech', 'Web Content'),
                 'project': body.get('project', {}), # SAVE PROJECT STRUCTURE
                 'tech': body.get('tech', {}), # SAVE TECH METADATA
-                'titleHistory': body.get('forensic', {}).get('activeDocuments', [])
+                'terminal': body.get('terminal', {}), # SAVE TERMINAL HISTORY
+                'integrity': body.get('integrity', {}), # SAVE SECURITY ALERTS
+                'titleHistory': (body.get('forensic') or {}).get('activeDocuments', [])
             }
             
             # Write to Firestore in the 'reports' collection for Android compatibility
             db.collection('reports').document(user_id).set(android_report)
 
             # Store History for playback (Archive snapshots)
-            snapshot = body.get('snapshot') or body.get('forensic', {}).get('snapshot')
+            snapshot = body.get('snapshot') or (body.get('forensic') or {}).get('snapshot')
             if snapshot:
                 history_entry = {
-                    'timestamp': android_report['timestamp'] or datetime.now().isoformat(),
-                    'file': snapshot.get('file') or snapshot.get('filename'),
-                    'code': snapshot.get('code'),
-                    'language': snapshot.get('language'),
+                    'timestamp': firestore.SERVER_TIMESTAMP,
+                    'file': snapshot.get('file') or snapshot.get('filename') or 'unknown',
+                    'code': snapshot.get('code', ''),
+                    'language': snapshot.get('language', 'text'),
                     'ai_score': android_report['ai'],
                     'forensic': body.get('forensic', {}) # Include full forensic data for completeness
                 }
                 db.collection('reports').document(user_id).collection('history').add(history_entry)
             
             return JsonResponse({'status': 'saved'})
+        except json.JSONDecodeError:
+            print("Error: Invalid JSON in Telemetry POST")
+            return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
         except Exception as e:
-            print(f"Error saving telemetry: {e}")
+            print(f"POST Telemetry BIG Error: {e}")
+            import traceback
+            traceback.print_exc()
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
             
     return JsonResponse({'status': 'method_not_allowed'}, status=405)
 
-import csv
-from django.http import HttpResponse
-from datetime import datetime, timedelta
+# Removed redundant imports moved to top
 
 @login_required
 def export_logs(request):

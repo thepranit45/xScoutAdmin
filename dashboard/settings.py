@@ -28,20 +28,8 @@ SECRET_KEY = 'django-insecure--4m7rsb!&k7uvzmkt_nqg9q&q=)9@es8gz083hee#^o0hwg2br
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = 'RENDER' not in os.environ and 'RAILWAY_ENVIRONMENT' not in os.environ
 
-ALLOWED_HOSTS = []
-
-# Generic environment variable for hostname (Render or Railway)
-EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME') or os.environ.get('RAILWAY_PUBLIC_DOMAIN')
-if EXTERNAL_HOSTNAME:
-    ALLOWED_HOSTS.append(EXTERNAL_HOSTNAME)
-
-# Handle CSRF Trust for Railway (HTTPS)
-CSRF_TRUSTED_ORIGINS = ['https://*.pythonanywhere.com']
-if EXTERNAL_HOSTNAME:
-    CSRF_TRUSTED_ORIGINS.append(f'https://{EXTERNAL_HOSTNAME}')
-
-# Allow PythonAnywhere and local development
-ALLOWED_HOSTS.extend(['.pythonanywhere.com', 'localhost', '127.0.0.1'])
+ALLOWED_HOSTS = ['*']
+CSRF_TRUSTED_ORIGINS = ['https://*.pythonanywhere.com', 'http://*.compute-1.amazonaws.com']
 
 
 

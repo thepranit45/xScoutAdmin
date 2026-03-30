@@ -16,15 +16,27 @@ import difflib  # For similarity checking
 import random
 import string
 
-# Initialize Firebase (Singleton)
-if not firebase_admin._apps:
-    current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    cred_path = os.path.join(current_dir, "serviceAccountKey.json")
-    cred = credentials.Certificate(cred_path)
-    firebase_admin.initialize_app(cred)
+# Initialize Firebase (Singleton with Safety Shield)
+db = None
+try:
+    if not firebase_admin._apps:
+        current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        # Search for any valid firebase json
+        json_file = next((f for f in os.listdir(current_dir) if f.endswith('.json') and 'firebase-adminsdk' in f), 'serviceAccountKey.json')
+        cred_path = os.path.join(current_dir, json_file)
+        
+        if os.path.exists(cred_path):
+            cred = credentials.Certificate(cred_path)
+            firebase_admin.initialize_app(cred)
+            db = firestore.client()
+        else:
+            print("⚠️ Firebase credentials not found - using local mode only")
+    else:
+        db = firestore.client()
+except Exception as e:
+    print(f"❌ Firebase Engine Error: {e}")
 
-db = firestore.client()
-
+LOCAL_TELEMETRY = {}  # Local cache for dashboard when cloud is down
 
 def home(request):
     """Landing page - public access"""
@@ -104,48 +116,95 @@ def get_playback_data(request):
 
 @csrf_exempt
 def get_dashboard_data(request):
+    print(f"DEBUG [ADMIN]: Telemetry Request - Method: {request.method}")
     if request.method == "GET":
+        data = []
         try:
-            # Return latest state for all users
-            docs = db.collection("telemetry").stream()
-            data = []
-            for doc in docs:
-                doc_data = doc.to_dict()
-                doc_data["id"] = doc.id
-                data.append(doc_data)
+            # 1. Start with Cloud Data if available
+            if db:
+                docs = db.collection("telemetry").stream()
+                for doc in docs:
+                    try:
+                        doc_data = doc.to_dict()
+                        doc_data["id"] = doc.id
+                        
+                        # Use a recursive serializer to handle datetimes
+                        def serialize_datetimes(item):
+                            if isinstance(item, list):
+                                return [serialize_datetimes(i) for i in item]
+                            if isinstance(item, dict):
+                                return {k: serialize_datetimes(v) for k, v in item.items()}
+                            if isinstance(item, datetime):
+                                return item.isoformat()
+                            return item
 
+                        doc_data = serialize_datetimes(doc_data)
+                        data.append(doc_data)
+                    except Exception as doc_err:
+                        print(f"Error processing document {doc.id}: {doc_err}")
+                        
+        except Exception as e:
+            print(f"⚠️ Cloud retrieval BIG ERROR: {e}")
+            import traceback
+            traceback.print_exc()
+
+        # 2. Merge/Overwrite with Local Cache (Always freshest)
+        seen_ids = [d.get("id") or d.get("user") for d in data]
+        for user_id, telemetry in LOCAL_TELEMETRY.items():
+            if user_id not in seen_ids:
+                data.append(telemetry)
+            else:
+                # Update existing record in 'data' list if local is newer
+                for i, d in enumerate(data):
+                    if (d.get("id") or d.get("user")) == user_id:
+                        data[i] = telemetry
+                        break
+
+        try:
             return JsonResponse({"status": "success", "data": data})
         except Exception as e:
-            return JsonResponse(
-                {"status": "error", "message": str(e)}, status=500
-            )
+            print(f"🚨 JSON Response Final Error: {e}")
+            return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
     elif request.method == "POST":
         try:
+            if not request.body:
+                 return JsonResponse({"status": "error", "message": "Empty Body"}, status=400)
+                 
             body = json.loads(request.body)
             # Use user ID from body or fall back to 'unknown'
-            user_id = body.get("user", "user_001")
+            user_id = body.get("user", body.get("student_id", "user_001"))
+            body["id"] = user_id  # Ensure ID is present for dashboard
 
-            # Debug Log
-            if "environment" in body:
-                print(
-                    f"DEBUG Telemetry: Rec'd env {body['environment']} for {user_id}"
-                )
+            # 1. Update Local Cache (Instant availability)
+            LOCAL_TELEMETRY[user_id] = body
 
-            # 1. Update Latest State (Fast Read)
-            doc_ref = db.collection("telemetry").document(user_id)
-            doc_ref.set(body)
+            # 2. Update Latest State (Cloud Sync if available)
+            if db:
+                try:
+                    doc_ref = db.collection("telemetry").document(user_id)
+                    # For cloud storage, we might want to ensure it has a real timestamp object
+                    # but body already has strings. To be compatible with Android, we add SERVER_TIMESTAMP.
+                    # Copy body to avoid mutating the local cache version
+                    cloud_payload = body.copy()
+                    cloud_payload['timestamp'] = firestore.SERVER_TIMESTAMP
+                    
+                    doc_ref.set(cloud_payload)
+                    
+                    # Append Snapshot to History
+                    doc_ref.collection("history").add(cloud_payload)
+                    
+                except Exception as fe:
+                    print(f"⚠️ Telemetry Cloud Sync Error: {fe}")
 
-            # 2. Append to History (Time Travel)
-            # timestamp is ISO string. We can use it as ID or let auto-ID.
-            # Using subcollection for organization
-            timestamp = body.get("timestamp", datetime.now().isoformat())
-            safe_ts = timestamp.replace(":", "-").replace(".", "-")
-            doc_ref.collection("history").document(safe_ts).set(body)
-
-            return JsonResponse({"status": "saved"})
+            return JsonResponse({"status": "saved", "cloud": db is not None})
+        except json.JSONDecodeError:
+            print("Error: Invalid JSON in Telemetry POST")
+            return JsonResponse({"status": "error", "message": "Invalid JSON"}, status=400)
         except Exception as e:
             print(f"Error saving telemetry: {e}")
+            import traceback
+            traceback.print_exc()
             return JsonResponse(
                 {"status": "error", "message": str(e)}, status=500
             )

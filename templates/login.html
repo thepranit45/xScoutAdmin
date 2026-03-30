@@ -5,186 +5,205 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>xScout Admin | Login</title>
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+    <!-- Fonts: Space Grotesk & Noto Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Noto+Sans:wght@300;400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <script>
+        // Immediate Theme Check
+        (function() {
+            const currentTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', currentTheme);
+        })();
+    </script>
+
     <style>
+        :root {
+            /* STITCH LIGHT MODE */
+            --bg: #f6f6f8;
+            --card-bg: rgba(255, 255, 255, 0.82);
+            --text-main: #101622;
+            --text-dim: #525f7f;
+            --primary: #135bec;
+            --border: rgba(0, 0, 0, 0.05);
+            --font-display: 'Space Grotesk', system-ui, sans-serif;
+            --font-main: 'Noto Sans', system-ui, sans-serif;
+            --shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="dark"] {
+            /* STITCH COSMIC DARK MODE */
+            --bg: #101622;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --text-main: #ffffff;
+            --text-dim: #94a3b8;
+            --primary: #135bec;
+            --border: rgba(255, 255, 255, 0.08);
+            --shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.5);
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
         }
 
         body {
-            background-color: #f6f9fc;
-            color: #0a2540;
+            font-family: var(--font-main);
+        }
+
+        h1, h2, .logo-text, .brand-x {
+            font-family: var(--font-display);
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
             height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            background-image:
-                radial-gradient(circle at 10% 20%, rgba(99, 91, 255, 0.05) 0%, transparent 20%),
-                radial-gradient(circle at 90% 80%, rgba(0, 212, 255, 0.05) 0%, transparent 20%);
+            transition: background-color 0.3s ease;
         }
 
-        /* Clean Stripe Slanted Background Gradient */
+        /* Ambient background glow */
         body::before {
             content: '';
             position: absolute;
-            top: -50%;
-            left: -10%;
-            width: 120%;
-            height: 90vh;
-            background: linear-gradient(135deg, rgba(99,91,255,0.05) 0%, rgba(0,212,255,0) 100%);
-            transform: skewY(-10deg);
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 10% 20%, rgba(19, 91, 236, 0.08), transparent 30%),
+                radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.08), transparent 30%);
             z-index: -1;
             pointer-events: none;
         }
 
         .login-card {
             width: 100%;
-            max-width: 400px;
-            background: #ffffff;
-            border-radius: 8px;
-            padding: 40px;
-            box-shadow: 0 50px 100px -20px rgba(50,50,93,0.25), 0 30px 60px -30px rgba(0,0,0,0.3);
+            max-width: 420px;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 32px;
+            padding: 48px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
             animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
         }
 
         @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .logo-section {
             text-align: center;
-            margin-bottom: 32px;
+            margin-bottom: 40px;
         }
 
         .brand-x {
             font-size: 2.2rem;
-            color: #635bff;
-            font-weight: 800;
-            margin-right: 2px;
+            color: var(--primary);
+            font-weight: 700;
             letter-spacing: -0.05em;
         }
 
         .logo-text {
             font-size: 2.2rem;
             font-weight: 700;
-            color: #0a2540;
+            color: var(--text-main);
             letter-spacing: -0.05em;
         }
 
         .subtitle {
-            color: #425466;
-            font-size: 0.95rem;
+            color: var(--text-dim);
+            font-size: 1rem;
             margin-top: 4px;
+            font-weight: 500;
         }
 
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 24px;
         }
 
         .label {
             display: block;
             margin-bottom: 8px;
-            color: #425466;
+            color: var(--text-dim);
             font-size: 0.85rem;
-            font-weight: 600;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
         .input-field {
             width: 100%;
             padding: 12px 16px;
-            background: #ffffff;
-            border: 1px solid #e3e8ee;
-            border-radius: 6px;
-            color: #0a2540;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-main);
             font-size: 1rem;
             outline: none;
             transition: all 0.2s ease;
-            box-shadow: 0 1px 3px rgba(50,50,93,0.1), 0 1px 0 rgba(0,0,0,0.02);
         }
 
         .input-field:focus {
-            border-color: #635bff;
-            box-shadow: 0 0 0 3px rgba(99, 91, 255, 0.2);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 91, 255, 0.1);
         }
 
-        .input-field::placeholder {
-            color: #8f9eb0;
-        }
-
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            margin-bottom: 24px;
-        }
-
-        .checkbox-group input {
-            accent-color: #635bff;
-            margin-right: 10px;
-            width: 16px;
-            height: 16px;
-            cursor: pointer;
-        }
-
-        .checkbox-group label {
-            color: #425466;
-            font-size: 0.9rem;
-            cursor: pointer;
+        [data-theme="dark"] .input-field:focus {
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1);
         }
 
         .login-btn {
             width: 100%;
-            padding: 12px 24px;
-            background: #0a2540;
+            padding: 16px 24px;
+            background: var(--primary);
             color: white;
             font-weight: 600;
             font-size: 1rem;
             border: none;
-            border-radius: 20px; /* Stripe-style pill */
+            border-radius: 12px;
             cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 6px rgba(50,50,93,0.11), 0 1px 3px rgba(0,0,0,0.08);
+            transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+            box-shadow: 0 4px 20px rgba(19, 91, 236, 0.2);
         }
 
         .login-btn:hover {
-            transform: translateY(-1px);
-            background: #32325d;
-            box-shadow: 0 7px 14px rgba(50,50,93,0.1), 0 3px 6px rgba(0,0,0,0.08);
-        }
-
-        .login-btn:active {
-            transform: scale(0.98);
+            transform: translateY(-2px) scale(1.02);
+            filter: brightness(1.1);
+            box-shadow: 0 10px 30px rgba(19, 91, 236, 0.4);
         }
 
         .footer {
             text-align: center;
-            margin-top: 24px;
-            color: #8f9eb0;
-            font-size: 0.8rem;
+            margin-top: 32px;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            font-weight: 500;
+            opacity: 0.6;
         }
 
         .error-banner {
-            background: #fcf1f2;
-            border: 1px solid #f6d1d4;
-            color: #cd3d64;
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 20px;
+            background: var(--error-bg, rgba(223, 27, 65, 0.1));
+            border: 1px solid rgba(223, 27, 65, 0.2);
+            color: #df1b41;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
             font-size: 0.9rem;
+            font-weight: 600;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
         }
     </style>
 </head>
@@ -192,8 +211,8 @@
 <body>
     <div class="login-card">
         <div class="logo-section">
-            <div><span class="brand-x">x</span><span class="logo-text">Scout</span></div>
-            <div class="subtitle">Secure Admin Dashboard</div>
+            <div><span class="brand-x">x</span><span class="logo-text">Scout</span><span style="font-weight: 400; font-size: 0.9rem; margin-left: 8px; opacity: 0.7; font-family: var(--font-main);">BETA</span></div>
+            <div class="subtitle">Secure Admin Control Hub</div>
         </div>
 
         {% if messages %}
@@ -207,27 +226,22 @@
         <form method="POST" action="{% url 'login' %}">
             {% csrf_token %}
             <div class="form-group">
-                <label class="label" for="username">Username</label>
-                <input type="text" id="username" name="username" class="input-field" placeholder="admin" required
+                <label class="label" for="username">Access Identity</label>
+                <input type="text" id="username" name="username" class="input-field" placeholder="Admin UID" required
                     autofocus>
             </div>
 
             <div class="form-group">
-                <label class="label" for="password">Password</label>
+                <label class="label" for="password">Security Key</label>
                 <input type="password" id="password" name="password" class="input-field" placeholder="••••••••"
                     required>
             </div>
 
-            <div class="checkbox-group">
-                <input type="checkbox" id="remember" name="remember">
-                <label for="remember">Remember me</label>
-            </div>
-
-            <button type="submit" class="login-btn">Sign In</button>
+            <button type="submit" class="login-btn">Authenticate & Enter</button>
         </form>
 
         <div class="footer">
-            &copy; 2026 xScout Inc. System Secure.
+            &copy; 2026 xScout Intelligence. All systems operational.
         </div>
     </div>
 </body>

@@ -7,103 +7,93 @@
     <title>xScout Admin | Login</title>
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+    
+    <script>
+        // Immediate Theme Check
+        (function() {
+            const currentTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', currentTheme);
+        })();
+    </script>
+
     <style>
         :root {
-            /* DEFAULT: Light Theme */
-            --bg-page: #f6f9fc;
-            --bg-card: #ffffff;
+            --bg: #f6f9fc;
+            --card-bg: #ffffff;
             --text-main: #0a2540;
             --text-dim: #425466;
-            --border: #e3e8ee;
             --primary: #635bff;
+            --border: #e3e8ee;
             --shadow: 0 50px 100px -20px rgba(50,50,93,0.25), 0 30px 60px -30px rgba(0,0,0,0.3);
-            --input-bg: #ffffff;
-            --btn-bg: #0a2540;
         }
 
         [data-theme="dark"] {
-            /* Dark Theme */
-            --bg-page: #0f0518;
-            --bg-card: rgba(255, 255, 255, 0.03);
-            --text-main: #ffffff;
-            --text-dim: #a0a0a0;
-            --border: rgba(176, 38, 255, 0.2);
-            --primary: #B026FF;
-            --shadow: 0 0 30px rgba(176, 38, 255, 0.1);
-            --input-bg: rgba(255, 255, 255, 0.05);
-            --btn-bg: #B026FF;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --primary: #38bdf8;
+            --border: rgba(148, 163, 184, 0.1);
+            --shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
         body {
-            background-color: var(--bg-page);
+            background-color: var(--bg);
             color: var(--text-main);
             height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            position: relative;
-            transition: all 0.3s ease;
+            transition: background-color 0.3s ease;
         }
 
-        /* Diagonal Mesh background */
+        /* Ambient background glow */
         body::before {
             content: '';
             position: absolute;
-            top: -50%;
-            left: -10%;
-            width: 120%;
-            height: 100vh;
-            background: linear-gradient(135deg, rgba(99,91,255,0.05) 0%, rgba(0,212,255,0) 100%);
-            transform: skewY(-10deg);
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 10% 20%, rgba(99, 91, 255, 0.05) 0%, transparent 25%),
+                radial-gradient(circle at 90% 80%, rgba(0, 212, 255, 0.05) 0%, transparent 25%);
             z-index: -1;
             pointer-events: none;
         }
 
-        [data-theme="dark"] body::before {
-            background: radial-gradient(circle at 10% 10%, rgba(176, 38, 255, 0.05) 0%, transparent 40%);
-            transform: none;
-            top: 0; left: 0; width: 100%;
-        }
-
         .login-card {
             width: 100%;
-            max-width: 400px;
-            background: var(--bg-card);
-            backdrop-filter: blur(20px);
+            max-width: 420px;
+            background: var(--card-bg);
             border-radius: 12px;
-            padding: 40px;
-            border: 1px solid var(--border);
+            padding: 48px;
             box-shadow: var(--shadow);
+            border: 1px solid var(--border);
             animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-            z-index: 10;
+            position: relative;
         }
 
         @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .logo-section {
             text-align: center;
-            margin-bottom: 32px;
+            margin-bottom: 40px;
         }
 
         .brand-x {
-            font-size: 2.22rem;
+            font-size: 2.2rem;
             color: var(--primary);
             font-weight: 800;
             margin-right: 2px;
@@ -111,21 +101,21 @@
         }
 
         .logo-text {
-            font-size: 2.22rem;
-            font-weight: 700;
+            font-size: 2.2rem;
+            font-weight: 800;
             color: var(--text-main);
             letter-spacing: -0.05em;
         }
 
         .subtitle {
             color: var(--text-dim);
-            font-size: 0.95rem;
+            font-size: 1rem;
             margin-top: 4px;
-            font-weight: 510;
+            font-weight: 500;
         }
 
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 24px;
         }
 
         .label {
@@ -133,108 +123,82 @@
             margin-bottom: 8px;
             color: var(--text-dim);
             font-size: 0.85rem;
-            font-weight: 610;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
         .input-field {
             width: 100%;
             padding: 12px 16px;
-            background: var(--input-bg);
+            background: var(--bg);
             border: 1px solid var(--border);
-            border-radius: 6px;
+            border-radius: 8px;
             color: var(--text-main);
             font-size: 1rem;
             outline: none;
             transition: all 0.2s ease;
-            box-shadow: 0 1px 3px rgba(50,50,93,0.1), 0 1px 0 rgba(0,0,0,0.02);
         }
 
         .input-field:focus {
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(99, 91, 255, 0.2);
+            box-shadow: 0 0 0 3px rgba(99, 91, 255, 0.1);
         }
 
-        .input-field::placeholder {
-            color: #8f9eb0;
-        }
-
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            margin-bottom: 24px;
-        }
-
-        .checkbox-group input {
-            accent-color: #635bff;
-            margin-right: 10px;
-            width: 16px;
-            height: 16px;
-            cursor: pointer;
-        }
-
-        .checkbox-group label {
-            color: var(--text-dim);
-            font-size: 0.9rem;
-            cursor: pointer;
+        [data-theme="dark"] .input-field:focus {
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1);
         }
 
         .login-btn {
             width: 100%;
-            padding: 12px 24px;
-            background: var(--btn-bg);
+            padding: 14px 24px;
+            background: var(--primary);
             color: white;
-            font-weight: 600;
+            font-weight: 700;
             font-size: 1rem;
             border: none;
-            border-radius: 8px; 
+            border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s ease;
-            box-shadow: 0 4px 6px rgba(50,50,93,0.11), 0 1px 3px rgba(0,0,0,0.08);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
 
         .login-btn:hover {
             transform: translateY(-1px);
-            background: #32325d;
-            box-shadow: 0 7px 14px rgba(50,50,93,0.1), 0 3px 6px rgba(0,0,0,0.08);
-        }
-
-        .login-btn:active {
-            transform: scale(0.98);
+            filter: brightness(1.1);
+            box-shadow: 0 7px 14px rgba(0,0,0,0.15);
         }
 
         .footer {
             text-align: center;
-            margin-top: 24px;
-            color: var(--text-light);
-            font-size: 0.8rem;
+            margin-top: 32px;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            font-weight: 500;
+            opacity: 0.6;
         }
 
         .error-banner {
-            background: rgba(205, 61, 100, 0.1);
-            border: 1px solid var(--border);
-            color: var(--error);
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 20px;
+            background: var(--error-bg, rgba(223, 27, 65, 0.1));
+            border: 1px solid rgba(223, 27, 65, 0.2);
+            color: #df1b41;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
             font-size: 0.9rem;
+            font-weight: 600;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
         }
     </style>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const currentTheme = localStorage.getItem('theme') || 'light';
-            document.documentElement.setAttribute('data-theme', currentTheme);
-        });
-    </script>
 </head>
 
 <body>
     <div class="login-card">
         <div class="logo-section">
-            <div style="display: flex; justify-content: center; align-items: center;"><span class="brand-x">x</span><span class="logo-text">Scout</span></div>
-            <div class="subtitle">Secure Admin Dashboard</div>
+            <div><span class="brand-x">x</span><span class="logo-text">Scout</span></div>
+            <div class="subtitle">Secure Admin Control Hub</div>
         </div>
 
         {% if messages %}
@@ -248,27 +212,22 @@
         <form method="POST" action="{% url 'login' %}">
             {% csrf_token %}
             <div class="form-group">
-                <label class="label" for="username">Username</label>
-                <input type="text" id="username" name="username" class="input-field" placeholder="admin" required
+                <label class="label" for="username">Access Identity</label>
+                <input type="text" id="username" name="username" class="input-field" placeholder="Admin UID" required
                     autofocus>
             </div>
 
             <div class="form-group">
-                <label class="label" for="password">Password</label>
+                <label class="label" for="password">Security Key</label>
                 <input type="password" id="password" name="password" class="input-field" placeholder="••••••••"
                     required>
             </div>
 
-            <div class="checkbox-group">
-                <input type="checkbox" id="remember" name="remember">
-                <label for="remember">Remember me</label>
-            </div>
-
-            <button type="submit" class="login-btn">Sign In</button>
+            <button type="submit" class="login-btn">Authenticate & Enter</button>
         </form>
 
         <div class="footer">
-            &copy; 2026 xScout Inc. System Secure.
+            &copy; 2026 xScout Intelligence. All systems operational.
         </div>
     </div>
 </body>

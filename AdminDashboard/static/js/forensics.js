@@ -119,6 +119,34 @@ function updateModalView(data) {
             pasteAlert.style.display = 'none';
         }
     }
+
+    // Populate Terminal Log
+    const termLogEl = document.getElementById('modal-terminal-log');
+    const termStatusEl = document.getElementById('terminal-status');
+    const termErrorEl = document.getElementById('terminal-error-alert');
+    const terminal = data.terminal || {};
+
+    if (termLogEl) {
+        if (terminal.history && terminal.history.length > 0) {
+            termLogEl.innerHTML = terminal.history.map(h => 
+                `<div style="margin-bottom: 4px; color: ${h.isError ? '#ff3b3b' : '#00ff88'};">
+                    <span style="color: #666;">[${h.timestamp}]</span> ${h.activity}
+                </div>`
+            ).join('');
+            
+            // Auto-scroll to bottom
+            termLogEl.scrollTop = termLogEl.scrollHeight;
+            
+            if (termStatusEl) termStatusEl.innerText = "ONLINE";
+        } else {
+            termLogEl.innerHTML = '<span style="color: #444;">// Awaiting terminal telemetry...</span>';
+            if (termStatusEl) termStatusEl.innerText = "IDLE";
+        }
+
+        if (termErrorEl) {
+            termErrorEl.style.display = terminal.lastError ? 'block' : 'none';
+        }
+    }
 }
 
 function populateForensicDetails(data, showAll = false) {

@@ -4,6 +4,8 @@ const { Behavior_Scanner } = require('./modules/behaviorScanner');
 const { Forensic_Scanner } = require('./modules/forensicScanner');
 const { Project_Scanner } = require('./modules/projectScanner');
 const { Tech_Scanner } = require('./modules/techScanner');
+const { Integrity_Scanner } = require('./modules/integrityScanner');
+const { Terminal_Scanner } = require('./modules/terminalScanner');
 const { ReportPanel } = require('./ui/reportPanel');
 const https = require('https');
 const http = require('http');
@@ -17,7 +19,7 @@ const DASHBOARD_PATH = '/api/telemetry/';
  * @param {vscode.ExtensionContext} context
  */
 function activate(context) {
-	console.log('🚀 xScout Master Engine: ONLINE 🚀');
+	console.log('🚀 xScout Master Engine: ONLINE (LOCAL DEV) 🚀');
 
 	// Initialize Scanners
 	const aiScanner = new AI_Scanner();
@@ -25,6 +27,8 @@ function activate(context) {
 	const forensicScanner = new Forensic_Scanner();
 	const projectScanner = new Project_Scanner();
 	const techScanner = new Tech_Scanner();
+	const integrityScanner = new Integrity_Scanner();
+	const terminalScanner = new Terminal_Scanner();
 
 	let activeUser = config.get('studentId') || null; 
 	let telemetryInterval = null;
@@ -66,26 +70,48 @@ function activate(context) {
 						}
 					} else {
 						console.error(`⛔ xScout Auth Error: ${response.message}`);
+						if (ReportPanel.currentPanel) {
+							ReportPanel.currentPanel._panel.webview.postMessage({ command: 'loginFailed', message: response.message });
+						}
 					}
-				} catch (e) { console.error('Verify JSON Error', e); }
+				} catch (e) { 
+					console.error('Verify JSON Error', e); 
+					if (ReportPanel.currentPanel) {
+						ReportPanel.currentPanel._panel.webview.postMessage({ command: 'loginFailed', message: 'Server Internal Error (Check Console)' });
+					}
+				}
 			});
 		});
-		verifyReq.on('error', (e) => console.error('Verify Connect Error', e));
+		verifyReq.on('error', (e) => {
+			console.error('Verify Connect Error', e);
+			if (ReportPanel.currentPanel) {
+				ReportPanel.currentPanel._panel.webview.postMessage({ command: 'loginFailed', message: 'Connection Refused (Server Down?)' });
+			}
+		});
 		verifyReq.write(verifyData);
 		verifyReq.end();
 	}
 
-	function startTelemetryLoop() {
+	async function startTelemetryLoop() {
 		if (telemetryInterval) clearInterval(telemetryInterval);
 
-		telemetryInterval = setInterval(async () => {
+		const sendPulse = async () => {
 			if (!activeUser) return;
+			console.log(`📡 [LOCAL] Sending Heartbeat for ${activeUser}...`);
 
 			// Capture all forensic and behavior signals
 			const behavior = behaviorScanner.scan() || {};
 			const forensic = forensicScanner.scan() || {};
 			const project = await projectScanner.scan() || {};
 			const tech = await techScanner.scan() || {};
+			const integrity = await integrityScanner.scan() || {};
+			const terminal = await terminalScanner.scan() || {};
+
+			// Perform real AI analysis on the current code snapshot
+			let aiScore = 0;
+			if (forensic.snapshot && forensic.snapshot.code) {
+				aiScore = aiScanner.analyzeCode(forensic.snapshot.code);
+			}
 
 			const pulseData = {
 				timestamp: new Date().toISOString(),
@@ -93,11 +119,19 @@ function activate(context) {
 				forensic: forensic,
 				project: project,
 				tech: tech,
-				ai: aiScanner.lastScanResult || 0,
+				integrity: integrity,
+				terminal: terminal,
+				ai: aiScore,
 				user: activeUser
 			};
 
 			const postData = JSON.stringify(pulseData);
+			
+			// Update local UI
+			if (ReportPanel.currentPanel) {
+				ReportPanel.currentPanel.update(pulseData);
+			}
+
 			const options = {
 				hostname: DASHBOARD_HOST,
 				port: DASHBOARD_PORT,
@@ -112,16 +146,22 @@ function activate(context) {
 			const requestModule = DASHBOARD_PORT === 443 ? https : http;
 			const req = requestModule.request(options, (res) => {
 				if (res.statusCode === 200 || res.statusCode === 201) {
-					console.log('📡 Telemetry Signal Sent');
+					console.log('✅ Heartbeat Received by Local Server');
 				} else {
-					console.error(`📡 SIGNAL FAILED: ${res.statusCode}`);
+					console.error(`❌ SIGNAL FAILED: ${res.statusCode}`);
 				}
 			});
 
 			req.on('error', (e) => console.error(`Signal Transmission Error: ${e.message}`));
 			req.write(postData);
 			req.end();
-		}, 5000);
+		};
+
+		// Initial immediate pulse
+		await sendPulse();
+
+		// Schedule periodic pulses every 5 seconds
+		telemetryInterval = setInterval(sendPulse, 5000);
 
 		context.subscriptions.push({ dispose: () => clearInterval(telemetryInterval) });
 	}

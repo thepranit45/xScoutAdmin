@@ -90,8 +90,24 @@ class ReportPanel {
     <div id="dashboard-view" class="container" style="display: none;">
         <h2 style="color: #00ff00;">Monitoring Active</h2>
         <p>Session ID: <span id="session-id">...</span></p>
-        <div style="margin-top:20px; font-size: 2em;" id="wpm">--</div>
-        <div style="color: #888; font-size: 0.8em;">WPM Activity</div>
+        <div style="font-size: 2em; margin-top:10px;" id="wpm">--</div>
+        <div style="color: #888; font-size: 0.8em; margin-bottom: 20px;">WPM ACTIVITY</div>
+        
+        <div style="margin: 15px 0; border-top: 1px solid #333; padding-top: 15px;">
+            <div style="color: #ff6b6b; font-size: 0.8em; font-weight: bold; margin-bottom: 5px;">AI PROBABILITY</div>
+            <div style="font-size: 1.5em; color: #ff6b6b;" id="ai-score">0.00</div>
+        </div>
+
+        <div style="margin: 15px 0; border-top: 1px solid #333; padding-top: 15px; text-align: left;">
+            <div style="color: #4CAF50; font-size: 0.8em; font-weight: bold; margin-bottom: 5px;">TERMINAL MONITOR</div>
+            <div style="font-family: monospace; font-size: 0.7em; height: 60px; overflow-y: auto; background: #000; padding: 5px; border-radius: 4px;" id="terminal-log">Waiting for activity...</div>
+            <div id="terminal-error" style="color: #ff0000; font-size: 0.7em; margin-top: 5px; display: none;">Error: Cmd Failed</div>
+        </div>
+
+        <div id="integrity-alert" style="margin-top: 10px; background: #3d0000; border: 1px solid #ff0000; padding: 10px; border-radius: 6px; display: none;">
+            <div style="color: #ff0000; font-size: 0.8em; font-weight: bold;">SECURITY ALERT</div>
+            <div style="color: white; font-size: 0.7em;" id="integrity-tools">Unauthorized tools detected</div>
+        </div>
     </div>
 
     <script>
@@ -116,7 +132,32 @@ class ReportPanel {
                  err.innerText = msg.message;
                  err.style.display = 'block';
             } else if(msg.command === 'updateData') {
-                if(msg.data.behavior) document.getElementById('wpm').innerText = msg.data.behavior.wpm || 0;
+                const data = msg.data;
+                if(data.behavior) document.getElementById('wpm').innerText = data.behavior.wpm || 0;
+                if(data.ai !== undefined) document.getElementById('ai-score').innerText = data.ai;
+                
+                if(data.terminal && data.terminal.history) {
+                    const log = document.getElementById('terminal-log');
+                    const err = document.getElementById('terminal-error');
+                    
+                    log.innerHTML = data.terminal.history.slice(-3).map(h => 
+                        \`<div style="color: \${h.isError ? '#ff6b6b' : '#00ff00'}">[\${h.timestamp}] \${h.activity}</div>\`
+                    ).join('');
+                    
+                    if(data.terminal.lastError) {
+                        err.style.display = 'block';
+                        err.innerText = \`Error: \${data.terminal.lastError.command}\`;
+                    } else {
+                        err.style.display = 'none';
+                    }
+                }
+
+                if(data.integrity && data.integrity.unauthorizedTools && data.integrity.unauthorizedTools.length > 0) {
+                    document.getElementById('integrity-alert').style.display = 'block';
+                    document.getElementById('integrity-tools').innerText = 'Detected: ' + data.integrity.unauthorizedTools.join(', ');
+                } else {
+                    document.getElementById('integrity-alert').style.display = 'none';
+                }
             }
         });
     </script>

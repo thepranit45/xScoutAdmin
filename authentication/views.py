@@ -8,61 +8,80 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 import os
 
-# Initialize Firebase (Singleton)
-if not firebase_admin._apps:
-    try:
+# Robust Firebase Initialization
+db = None
+try:
+    if not firebase_admin._apps:
         current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        cred_path = os.path.join(current_dir, 'xscout-68489-firebase-adminsdk-fbsvc-71d744a27c.json')
-        if not os.path.exists(cred_path):
-             cred_path = os.path.join(current_dir, 'serviceAccountKey.json')
+        # Search for any valid firebase json
+        json_file = next((f for f in os.listdir(current_dir) if f.endswith('.json') and 'firebase-adminsdk' in f), 'serviceAccountKey.json')
+        cred_path = os.path.join(current_dir, json_file)
 
         if os.path.exists(cred_path):
             cred = credentials.Certificate(cred_path)
             firebase_admin.initialize_app(cred)
+            db = firestore.client()
+            print("✅ Firebase Auth Engine: INITIALIZED")
         else:
-            firebase_admin.initialize_app()
-    except Exception as e:
-        print(f"Firebase Auth Init Warning: {e}")
-
-db = firestore.client()
+            print("⚠️ Firebase Credentials not found - Cloud Sync Disabled")
+    else:
+        db = firestore.client()
+except Exception as e:
+    print(f"❌ Firebase Init Error: {e}")
+    db = None
 
 @csrf_exempt
 @require_POST
 def verify_student_id(request):
     try:
-        data = json.loads(request.body)
-        student_id = data.get('student_id')
+        data = json.loads(request.body.decode('utf-8'))
+        student_id = data.get('student_id', '').strip()
         
         if not student_id:
-            return JsonResponse({'success': False, 'message': 'Student ID is required'}, status=400)
-            
-        # 1. Check Firestore (Cloud Source of Truth)
+            return JsonResponse({'success': False, 'message': 'ID Required'}, status=400)
+
+        print(f"🔍 Verifying Student ID: {student_id}")
+
+        # --- OPTIMIZATION: Check Local Ledger FIRST (Instant) ---
         try:
-            doc = db.collection('authorized_students').document(student_id).get()
-            if doc.exists:
-                # Firestore existence is enough for authorization in this flow
+            local_user = AuthorizedID.objects.get(student_id=student_id)
+            if local_user.is_active:
+                print(f"✅ Auth Success: {student_id} (Local Ledger)")
                 return JsonResponse({
                     'success': True, 
-                    'message': 'Connection Authorized (Cloud Sync)', 
-                    'source': 'firestore',
+                    'message': 'Authorized (Local Mode)', 
                     'redirect': '/dashboard/'
                 })
-        except Exception as fe:
-            print(f"Firestore check failed: {fe}")
-
-        # 2. Fallback: Check local Database
-        try:
-            auth_id = AuthorizedID.objects.get(student_id=student_id, is_active=True)
-            return JsonResponse({
-                'success': True, 
-                'message': 'Connection Authorized (Local Engine)', 
-                'source': 'local',
-                'redirect': '/dashboard/'
-            })
+            else:
+                return JsonResponse({'success': False, 'message': 'ID Suspended Locally'}, status=403)
         except AuthorizedID.DoesNotExist:
-            return JsonResponse({'success': False, 'message': 'Access Denied: ID not authorized'}, status=403)
+            print(f"ℹ️ ID {student_id} not found locally, checking cloud...")
+
+        # --- FALLBACK: Check Cloud (Firestore) ---
+        if db:
+            try:
+                # Check authorized_students with a short logic timeout check is not built-in, 
+                # but we handle exceptions.
+                doc_ref = db.collection('authorized_students').document(student_id)
+                doc = doc_ref.get()
+                if doc.exists:
+                    user_data = doc.to_dict()
+                    if user_data.get('isActive', True):
+                        # Cache to local for next time
+                        AuthorizedID.objects.get_or_create(student_id=student_id, defaults={'description': 'Cloud Synced User'})
+                        print(f"✅ Auth Success: {student_id} (Cloud Sync)")
+                        return JsonResponse({
+                            'success': True, 
+                            'message': 'Authorized (Cloud Sync)', 
+                            'redirect': '/dashboard/'
+                        })
+            except Exception as fe:
+                print(f"❌ Cloud Check Failed: {fe}")
+
+        return JsonResponse({'success': False, 'message': 'ID Not Authorized'}, status=403)
             
     except Exception as e:
+        print(f"❌ Server Error in Verify: {e}")
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 @csrf_exempt
@@ -72,35 +91,25 @@ def add_authorized_user(request):
     try:
         data = json.loads(request.body)
         student_id = data.get('student_id')
-        name = data.get('name', 'Admin Added User')
-        description = data.get('description', '')
+        if not student_id: return JsonResponse({'success': False, 'message': 'ID Required'}, status=400)
+            
+        AuthorizedID.objects.get_or_create(student_id=student_id, defaults={'description': data.get('description', '')})
         
-        if not student_id:
-            return JsonResponse({'success': False, 'message': 'Student ID is required'}, status=400)
+        if db:
+            try:
+                db.collection('authorized_students').document(student_id).set({
+                    'studentId': student_id,
+                    'isActive': True,
+                    'authorizedAt': firestore.SERVER_TIMESTAMP
+                })
+            except: pass
             
-        # 1. Sync to Firestore
-        try:
-            db.collection('authorized_students').document(student_id).set({
-                'studentId': student_id,
-                'studentName': name,
-                'description': description,
-                'authorizedAt': firestore.SERVER_TIMESTAMP,
-                'isActive': True
-            })
-        except Exception as fe:
-            print(f"Firestore sync failed: {fe}")
-
-        # 2. Keep local DB for redundancy
-        if not AuthorizedID.objects.filter(student_id=student_id).exists():
-            AuthorizedID.objects.create(student_id=student_id, description=description)
-            
-        return JsonResponse({'success': True, 'message': 'User authorized and synced to cloud'})
+        return JsonResponse({'success': True, 'message': 'User authorized'})
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 @login_required
 def get_authorized_users(request):
-    # Merge local and firestore? For simplicity, we'll return local but notes it might be lagging
     users = AuthorizedID.objects.all().order_by('-created_at').values('student_id', 'description', 'is_active', 'created_at')
     return JsonResponse({'success': True, 'users': list(users)})
 
@@ -114,14 +123,9 @@ def toggle_user_status(request):
         user = AuthorizedID.objects.get(student_id=student_id)
         user.is_active = not user.is_active
         user.save()
-        
-        # Sync to Firestore
-        try:
-            db.collection('authorized_students').document(student_id).update({
-                'isActive': user.is_active
-            })
-        except: pass
-            
+        if db:
+            try: db.collection('authorized_students').document(student_id).update({'isActive': user.is_active})
+            except: pass
         return JsonResponse({'success': True, 'active': user.is_active})
     except Exception as e:
         return JsonResponse({'success': False, 'message': str(e)}, status=500)

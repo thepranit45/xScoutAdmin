@@ -1,275 +1,297 @@
+{% load static %}
 <!DOCTYPE html>
-<html lang="en">
-
+<html class="dark" lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>xScout | Forensic Command</title>
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-    <link rel="stylesheet" href="{% static 'css/tree.css' %}">
-    <link rel="stylesheet" href="{% static 'css/explorer.css' %}">
-
-    <script src="{% static 'js/forensics.js' %}?v=1035" defer></script>
-    <script src="{% static 'js/app.js' %}?v=1035" defer></script>
-
-    <!-- Prism.js for Syntax Highlighting -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup-templating.min.js"></script>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>xScout | Command Center</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&amp;family=JetBrains+Mono:wght@400;500&amp;family=Space+Grotesk:wght@300;400;500&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    
     <style>
-        /* Custom Prism Overrides to match Dashboard */
-        pre[class*="language-"] {
-            margin: 0 !important;
-            background: transparent !important;
-            padding: 0 !important;
-        }
-        code[class*="language-"] {
-            text-shadow: none !important;
-            font-family: 'Consolas', 'Monaco', monospace !important;
-        }
+        body { font-family: 'Inter', sans-serif; overflow-x: hidden; color: #e2e1ef; }
+        .jetbrains-mono { font-family: 'JetBrains Mono', monospace; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        
+        .stitch-video-overlay { position: fixed; inset: 0; background-color: rgba(3, 4, 11, 0.6); z-index: -10; }
+        .stitch-grid { position: fixed; inset: 0; background-image: radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px); background-size: 32px 32px; z-index: -5; mask-image: radial-gradient(ellipse at top, black 20%, transparent 80%); -webkit-mask-image: radial-gradient(ellipse at top, black 20%, transparent 80%); }
+        .stitch-video-bg { position: fixed; inset: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: -20; opacity: 0.95; filter: hue-rotate(60deg) saturate(1.4); mix-blend-mode: screen; }
+        
+        .android-wobble { animation: wobble 2s infinite ease-in-out; transform-origin: bottom center; }
+        @keyframes wobble { 0%, 100% { transform: translateY(0) rotate(0); filter: drop-shadow(0 0 5px rgba(61, 220, 132, 0.2)); } 25% { transform: translateY(-4px) rotate(-6deg); filter: drop-shadow(0 0 8px rgba(61, 220, 132, 0.6)); } 75% { transform: translateY(-4px) rotate(6deg); filter: drop-shadow(0 0 8px rgba(61, 220, 132, 0.6)); } }
     </style>
-    <style>
-        .brand-x {
-            font-size: 2.2rem;
-            color: #635bff;
-            font-weight: 800;
-            margin-right: 2px;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            letter-spacing: -0.05em;
+    <script>
+        tailwind.config = {
+          darkMode: "class",
+          theme: { extend: { colors: { "background": "#11131c", "primary": "#ffb4ab", "primary-container": "#dc2626", "secondary": "#d2bbff", "on-surface": "#e2e1ef", "on-surface-variant": "#e6bdb8" } } }
         }
-    </style>
+    </script>
 </head>
+<body class="bg-[#03040B]">
+    <!-- VIDEO BACKGROUND -->
+    <div class="stitch-grid"></div>
+    <div class="stitch-video-overlay"></div>
+    <video class="stitch-video-bg" autoplay loop muted playsinline>
+        <source src="https://storage.googleapis.com/gweb-gemini-cdn/gemini/uploads/89e9004d716a7803fc7c9aab18c985af783f5a36.mp4" type="video/mp4">
+    </video>
 
-<body>
-    <!-- Neural Network Animation Background -->
-    <canvas id="neuralNetwork"></canvas>
-
-    <div class="sidebar">
-        <div class="logo">
-            <h2 style="font-family: sans-serif; font-size: 1.8rem; display: flex; align-items: center;"><span
-                    class="brand-x">x</span>Scout</h2>
+    <!-- SIDEBAR -->
+    <aside class="h-screen w-64 fixed left-0 top-0 border-r border-white/10 bg-[#11131c]/80 backdrop-blur-xl flex flex-col p-4 z-50">
+        <div class="mb-10 px-2 flex items-center gap-2">
+            <h1 class="text-2xl font-black tracking-tighter text-[#e2e1ef] uppercase"><span class="text-primary">x</span>Scout</h1>
         </div>
-        <div class="nav">
-            <button class="nav-item active" onclick="switchTab('overview')">Overview</button>
-            <button class="nav-item" onclick="switchTab('forensics')">Forensics</button>
-            <button class="nav-item" onclick="window.location.href='/network/'">Network Graph</button>
-            <button class="nav-item" onclick="switchTab('add-users')">Add Users</button>
-            <button class="nav-item" onclick="switchTab('settings')">Settings</button>
-        </div>
-        <div class="monitor-status">
-            Active Threads: <span id="active-threads">0</span>
-        </div>
-    </div>
-
-    <main>
-        <header>
-            <div class="search-bar">
-                <input type="text" placeholder="Search Session / Student ID..." />
-            </div>
-            <div class="user-info" style="display: flex; align-items: center;">
-                <a href="{% static 'xScoutApp.apk' %}" download
-                    style="background: rgba(217, 70, 239, 0.1); border: 1px solid rgba(217, 70, 239, 0.3); color: #d946ef; padding: 6px 12px; border-radius: 6px; cursor: pointer; margin-right: 15px; font-weight: 600; text-decoration: none; display: flex; align-items: center; box-shadow: 0 0 10px rgba(217, 70, 239, 0.2); transition: all 0.3s ease;">
-                    📱 Get Mobile App
-                </a>
-                <button onclick="toggleExplorer()"
-                    style="background: rgba(0, 243, 255, 0.1); border: 1px solid rgba(0, 243, 255, 0.3); color: #00f3ff; padding: 6px 12px; border-radius: 6px; cursor: pointer; margin-right: 15px; font-weight: 600; transition: all 0.3s ease;">
-                    📂 Explorer
-                </button>
-                <span class="username">👤 {{ user.username }}</span>
-                <a href="{% url 'logout' %}" class="logout-btn">Logout</a>
-            </div>
-            <div class="stats-panel">
-                <div class="stat-card">
-                    <h3>Active Threats</h3>
-                    <div class="stat-value error">0</div>
-                </div>
-                <div class="stat-card">
-                    <h3>Total Monitored</h3>
-                    <div class="stat-value secondary" id="total-monitored">1</div>
+        <nav class="flex-1 flex flex-col gap-1">
+            <a class="flex items-center gap-3 px-4 py-3 text-[#d2bbff] bg-white/10 backdrop-blur-md rounded-lg border-l-2 border-[#dc2626] scale-[0.98] brightness-125 transition-all cursor-pointer" onclick="switchTab('overview')">
+                <span class="material-symbols-outlined text-xl">analytics</span>
+                <span class="text-sm font-medium">Overview</span>
+            </a>
+            <a class="flex items-center gap-3 px-4 py-3 text-[#e6bdb8] hover:text-[#e2e1ef] transition-all cursor-pointer" onclick="switchTab('forensics')">
+                <span class="material-symbols-outlined text-xl">search</span>
+                <span class="text-sm font-medium">Forensics</span>
+            </a>
+            <a class="flex items-center gap-3 px-4 py-3 text-[#e6bdb8] hover:text-[#e2e1ef] transition-all cursor-pointer" href="{% url 'network_graph' %}">
+                <span class="material-symbols-outlined text-xl">account_tree</span>
+                <span class="text-sm font-medium">Network Graph</span>
+            </a>
+            <a class="flex items-center gap-3 px-4 py-3 text-[#e6bdb8] hover:text-[#e2e1ef] transition-all cursor-pointer" onclick="switchTab('add-users')">
+                <span class="material-symbols-outlined text-xl">person_add</span>
+                <span class="text-sm font-medium">Add Users</span>
+            </a>
+            <a class="flex items-center gap-3 px-4 py-3 text-[#e6bdb8] hover:text-[#e2e1ef] transition-all cursor-pointer" onclick="switchTab('settings')">
+                <span class="material-symbols-outlined text-xl">settings</span>
+                <span class="text-sm font-medium">Settings</span>
+            </a>
+        </nav>
+        <div class="mt-auto border-t border-white/5 pt-4">
+            <div class="px-4 py-2 mb-4">
+                <p class="jetbrains-mono text-[9px] text-on-surface-variant uppercase tracking-widest">Monitor Status</p>
+                <div class="flex items-center gap-2 mt-2">
+                    <div class="w-1.5 h-1.5 rounded-full bg-[#00ff9d] animate-pulse"></div>
+                    <p class="jetbrains-mono text-[10px] text-on-surface">Active Sessions: <span id="sidebar-active" class="font-bold">0</span></p>
                 </div>
             </div>
-        </header>
+        </div>
+    </aside>
 
-        <!-- OVERVIEW TAB -->
-        <section id="tab-overview" class="dashboard-grid tab-content">
-            <h2>Priority Alerts</h2>
-            <div class="glass-panel table-container">
-                <table>
+    <!-- TOP NAV -->
+    <header class="fixed top-0 right-0 left-64 h-16 z-40 border-b border-white/5 bg-[#03040B]/50 backdrop-blur-2xl flex justify-between items-center px-8">
+        <div class="flex-1 flex items-center">
+            <div class="relative w-96">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-white/30 text-sm">search</span>
+                <input type="text" placeholder="Search Session / Student ID..." class="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-2 text-xs font-mono text-white focus:outline-none focus:border-primary/50 transition-colors">
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <a href="{% static 'xScoutApp.apk' %}" download class="flex items-center gap-2 px-3 py-1.5 rounded border border-[#3ddc84]/30 bg-[#3ddc84]/10 hover:bg-[#3ddc84]/20 transition-colors text-[10px] font-bold text-[#3ddc84] uppercase tracking-wider">
+                <svg class="android-wobble" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="#3ddc84">
+                    <path d="M17.5 7.5l1.5-2.6a.6.6 0 10-1-1l-1.5 2.5A9.5 9.5 0 0012 5a9.5 9.5 0 00-4.5 1.4L6 3.9a.6.6 0 10-1 1l1.5 2.6c-2.3 1.3-3.9 3.5-4.4 6H21.9c-.5-2.5-2.1-4.7-4.4-6zM8 10a1 1 0 110-2 1 1 0 010 2zm8 0a1 1 0 110-2 1 1 0 010 2zM3 14h18v4a3 3 0 01-3 3H6a3 3 0 01-3-3v-4z"></path>
+                </svg>
+                Mobile App
+            </a>
+            <button class="flex items-center gap-2 px-3 py-1.5 rounded border border-[#ffbd2e]/30 bg-[#ffbd2e]/10 hover:bg-[#ffbd2e]/20 transition-colors text-[10px] font-bold text-[#ffbd2e] uppercase tracking-wider">
+                <span class="material-symbols-outlined text-[14px]">folder_open</span> Explorer
+            </button>
+            <div class="flex items-center gap-2 pl-4 border-l border-white/10 ml-2">
+                <span class="material-symbols-outlined text-[16px] text-[#d2bbff]">person</span>
+                <span class="font-bold text-xs">{{ user.username|default:"admin" }}</span>
+                <a href="{% url 'logout' %}" class="ml-4 px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-500 transition-colors text-[10px] font-bold text-white uppercase tracking-wider">Logout</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="pl-64 pt-16 min-h-screen">
+        <div id="tab-overview" class="p-8 max-w-[1600px] mx-auto min-h-full tab-section">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <!-- Stat: Active Threats -->
+                <div class="bg-white/5 backdrop-blur-xl p-6 rounded-xl border border-white/10 relative overflow-hidden">
+                    <div class="absolute inset-0 bg-primary/5 pointer-events-none"></div>
+                    <p class="jetbrains-mono text-[10px] text-on-surface-variant uppercase tracking-widest mb-2 font-bold">Active Threats</p>
+                    <span id="stat-active-threats" class="text-4xl font-black text-primary">0</span>
+                </div>
+                <!-- Stat: Total Monitored -->
+                <div class="bg-white/5 backdrop-blur-xl p-6 rounded-xl border border-white/10 relative overflow-hidden">
+                    <div class="absolute inset-0 bg-blue-500/5 pointer-events-none"></div>
+                    <p class="jetbrains-mono text-[10px] text-on-surface-variant uppercase tracking-widest mb-2 font-bold">Total Monitored</p>
+                    <span id="stat-total-monitored" class="text-4xl font-black text-blue-400">0</span>
+                </div>
+            </div>
+
+            <h3 class="font-bold text-lg mb-4 tracking-tight">Priority Alerts</h3>
+            <div class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden">
+                <table class="w-full text-left border-collapse">
                     <thead>
-                        <tr>
-                            <th>Student</th>
-                            <th>Activity</th>
-                            <th>AI Risk</th>
-                            <th>Last Activity</th>
-                            <th>Status</th>
-                            <th>Action</th>
+                        <tr class="border-b border-white/10 bg-white/5">
+                            <th class="p-4 jetbrains-mono text-[10px] text-on-surface-variant uppercase tracking-widest font-bold">Student</th>
+                            <th class="p-4 jetbrains-mono text-[10px] text-on-surface-variant uppercase tracking-widest font-bold">Activity</th>
+                            <th class="p-4 jetbrains-mono text-[10px] text-on-surface-variant uppercase tracking-widest font-bold">AI Risk</th>
+                            <th class="p-4 jetbrains-mono text-[10px] text-on-surface-variant uppercase tracking-widest font-bold">Last Activity</th>
+                            <th class="p-4 jetbrains-mono text-[10px] text-on-surface-variant uppercase tracking-widest font-bold">Status</th>
+                            <th class="p-4 jetbrains-mono text-[10px] text-on-surface-variant uppercase tracking-widest font-bold text-right">Action</th>
                         </tr>
                     </thead>
-                    <tbody id="student-table">
+                    <tbody id="student-table" class="divide-y divide-white/5 text-sm">
                         <!-- Populated by JS -->
+                        <tr><td colspan="6" class="p-8 text-center text-on-surface-variant text-xs font-mono animate-pulse">Awaiting Telemetry Sync...</td></tr>
                     </tbody>
                 </table>
             </div>
-        </section>
+        </div>
 
-        <!-- FORENSICS TAB -->
-        <section id="tab-forensics" class="tab-content"
-            style="display: none; height: 70vh; flex-direction: column; justify-content: center; align-items: center; color: var(--text-secondary);">
-            <div style="font-size: 3rem; margin-bottom: 20px; opacity: 0.5;">🔍</div>
-            <h3>Forensic Analysis</h3>
-            <p>Select a student from the <a href="#" onclick="switchTab('overview')"
-                    style="color: var(--accent-color);">Overview</a> tab to view detailed forensic reports.</p>
-        </section>
+        <div id="tab-forensics" class="hidden p-8 max-w-[1600px] mx-auto min-h-full tab-section flex-col items-center justify-center text-center mt-32">
+            <span class="material-symbols-outlined text-[80px] text-white/10 mb-6">search</span>
+            <h3 class="text-2xl font-bold mb-2">Forensic Analysis</h3>
+            <p class="text-on-surface-variant max-w-md mx-auto">Select a student from the Priority Alerts table to start reconstructing granular behavioral events.</p>
+        </div>
 
-        {% include 'components/forensic_modal.html' %}
-        {% include 'components/tech_modal.html' %}
-        {% include 'components/file_viewer_modal.html' %}
-
-        <!-- ADD USERS TAB -->
-        <section id="tab-add-users" class="tab-content dashboard-grid" style="display: none;">
-            <h2>Authorized User Management</h2>
-            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-                <div class="glass-panel" style="flex: 1; min-width: 300px; padding: 24px;">
-                    <h3 style="margin-bottom: 20px; color: var(--accent-text);">Authorize New ID</h3>
-                    <div class="form-group" style="margin-bottom: 16px;">
-                        <label style="display: block; margin-bottom: 8px; color: #aaa;">Student ID</label>
-                        <input type="text" id="new-student-id" placeholder="e.g. STU-2024-001"
-                            style="width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 8px;">
+        <div id="tab-add-users" class="hidden p-8 max-w-[1600px] mx-auto min-h-full tab-section">
+            <h3 class="font-bold text-lg mb-6 tracking-tight">User Access Management</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Add User Form -->
+                <div class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-6 h-fit">
+                    <h4 class="font-bold mb-6">Authorize New Identity</h4>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-mono text-on-surface-variant mb-2">STUDENT ID</label>
+                            <input type="text" placeholder="e.g. STU-2024-001" class="w-full bg-white/5 border border-white/10 rounded p-3 text-sm focus:border-primary/50 outline-none transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-mono text-on-surface-variant mb-2">FULL NAME / DESCRIPTION</label>
+                            <input type="text" placeholder="e.g. John Doe - Science Lab" class="w-full bg-white/5 border border-white/10 rounded p-3 text-sm focus:border-primary/50 outline-none transition-colors">
+                        </div>
+                        <button class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded text-xs uppercase tracking-widest transition-colors mt-4">Add Authorized User</button>
                     </div>
-                    <div class="form-group" style="margin-bottom: 24px;">
-                        <label style="display: block; margin-bottom: 8px; color: #aaa;">Description / Name</label>
-                        <input type="text" id="new-student-desc" placeholder="e.g. John Doe - Lab 3"
-                            style="width: 100%; padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 8px;">
-                    </div>
-                    <button onclick="addAuthorizedUser()"
-                        style="width: 100%; padding: 12px; background: var(--accent-color); border: none; border-radius: 8px; color: white; font-weight: 600; cursor: pointer;">Add User</button>
-                    <div id="add-user-msg" style="margin-top: 10px; font-size: 0.9rem;"></div>
                 </div>
-
-                <div class="glass-panel table-container" style="flex: 2; min-width: 400px;">
-                    <table>
+                <!-- Authorized Users Table -->
+                <div class="md:col-span-2 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden">
+                    <table class="w-full text-left">
                         <thead>
-                            <tr>
-                                <th>Student ID</th>
-                                <th>Description</th>
-                                <th>Status</th>
-                                <th>Action</th>
+                            <tr class="border-b border-white/10 bg-white/5">
+                                <th class="p-4 jetbrains-mono text-[10px] text-on-surface-variant uppercase tracking-widest font-bold">Student ID</th>
+                                <th class="p-4 jetbrains-mono text-[10px] text-on-surface-variant uppercase tracking-widest font-bold">Description</th>
+                                <th class="p-4 jetbrains-mono text-[10px] text-on-surface-variant uppercase tracking-widest font-bold">Status</th>
+                                <th class="p-4 jetbrains-mono text-[10px] text-on-surface-variant uppercase tracking-widest font-bold text-right">Action</th>
                             </tr>
                         </thead>
-                        <tbody id="authorized-users-list">
-                            <!-- Populated by JS -->
+                        <tbody>
+                            <!-- Dummy Data for Now -->
+                            <tr class="border-b border-white/5">
+                                <td class="p-4 font-bold text-sm">s1</td>
+                                <td class="p-4 text-sm text-on-surface-variant">Default Monitoring Target</td>
+                                <td class="p-4"><span class="text-[#27c93f] text-xs font-bold">Active</span></td>
+                                <td class="p-4 text-right"><button class="text-xs px-3 py-1 border border-white/20 rounded hover:bg-white/10">Revoke</button></td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
-        </section>
+        </div>
 
-        <!-- SETTINGS TAB -->
-        <section id="tab-settings" class="tab-content dashboard-grid" style="display: none;">
-            <h2>System Configuration</h2>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;">
-                <div class="glass-panel" style="padding: 30px;">
-                    <h3 style="margin: 0; color: white;">🛡️ Global Monitoring</h3>
-                    <div style="margin-top: 20px;">
-                        <button class="settings-btn" onclick="performAction('export')" style="width: 100%; padding: 12px; margin-bottom: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 8px; cursor: pointer; text-align: left;">📄 Export All Activity Logs</button>
-                        <button class="settings-btn" onclick="performAction('backup')" style="width: 100%; padding: 12px; margin-bottom: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 8px; cursor: pointer; text-align: left;">☁️ Create System Backup</button>
-                        <button class="settings-btn" onclick="performAction('purge')" style="width: 100%; padding: 12px; background: rgba(255, 38, 38, 0.1); border: 1px solid rgba(255, 38, 38, 0.3); color: #ff6b6b; border-radius: 8px; cursor: pointer; text-align: left;">🗑️ Purge Old Records (>30 Days)</button>
-                    </div>
+        <div id="tab-settings" class="hidden p-8 max-w-[1600px] mx-auto min-h-full tab-section">
+            <h3 class="font-bold text-lg mb-6 tracking-tight">System Governance</h3>
+            <div class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-6 max-w-sm">
+                <h4 class="font-bold mb-4 flex items-center gap-2"><span class="material-symbols-outlined text-primary">shield</span> Data Compliance</h4>
+                <div class="space-y-3 flex flex-col">
+                    <button class="text-left px-4 py-3 bg-white/5 hover:bg-white/10 rounded border border-white/5 text-sm transition-colors flex items-center gap-3"><span class="material-symbols-outlined text-sm">download</span> Export Audit Trail (.CSV)</button>
+                    <button class="text-left px-4 py-3 bg-white/5 hover:bg-white/10 rounded border border-white/5 text-sm transition-colors flex items-center gap-3"><span class="material-symbols-outlined text-sm">cloud_sync</span> Manual System Snapshot</button>
+                    <button class="text-left px-4 py-3 bg-primary/10 hover:bg-primary/20 text-primary rounded border border-primary/20 text-sm transition-colors flex items-center gap-3"><span class="material-symbols-outlined text-sm">delete</span> Flush Compliance Data</button>
                 </div>
             </div>
-        </section>
+        </div>
     </main>
 
-    <!-- EXPLORER SIDEBAR -->
-    <div id="explorer-sidebar" class="explorer-sidebar">
-        <div class="explorer-header">
-            <h3>EXPLORER</h3>
-            <span class="close-sidebar" onclick="toggleExplorer()">&times;</span>
-        </div>
-        <div id="project-tree-view" class="explorer-content">
-            <!-- Content loaded via API -->
-        </div>
-    </div>
-
     <script>
-        async function performAction(action) {
-            if (action === 'export') window.location.href = '/api/export-logs/';
-            else if (action === 'backup') window.location.href = '/api/system-backup/';
-            else if (action === 'purge') {
-                if (!confirm('Are you sure you want to delete records relative to testing?')) return;
-                try {
-                    const res = await fetch('/api/purge-logs/', { method: 'POST' });
-                    const data = await res.json();
-                    alert(data.message);
-                } catch (e) { alert('Error purging logs'); }
-            }
-        }
-
         function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(tab => tab.style.display = 'none');
-            const selectedTab = document.getElementById('tab-' + tabId);
-            if (selectedTab) {
-                selectedTab.style.display = (tabId === 'forensics') ? 'flex' : 'block';
-            }
-            document.querySelectorAll('.nav-item').forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.innerText.toLowerCase().includes(tabId.replace('-', ' '))) btn.classList.add('active');
+            document.querySelectorAll('.tab-section').forEach(el => {
+                if(el.id === 'tab-' + tabId) {
+                    el.classList.remove('hidden');
+                    if(tabId === 'forensics') el.classList.add('flex');
+                } else {
+                    el.classList.add('hidden');
+                    el.classList.remove('flex');
+                }
+            });
+            
+            // Adjust sidebar styling (simple toggle approach for now)
+            const links = document.querySelectorAll('aside nav a');
+            links.forEach(link => {
+                const isSelected = link.innerText.toLowerCase().includes(tabId.replace('-', ' '));
+                if(isSelected && !link.classList.contains('border-l-2')) {
+                    link.classList.add('text-[#d2bbff]', 'bg-white/10', 'border-l-2', 'border-[#dc2626]', 'scale-[0.98]', 'brightness-125');
+                    link.classList.remove('text-[#e6bdb8]');
+                } else if (!isSelected && link.classList.contains('border-l-2')) {
+                    link.classList.remove('text-[#d2bbff]', 'bg-white/10', 'border-l-2', 'border-[#dc2626]', 'scale-[0.98]', 'brightness-125');
+                    link.classList.add('text-[#e6bdb8]');
+                }
             });
         }
 
-        async function addAuthorizedUser() {
-            const id = document.getElementById('new-student-id').value;
-            const desc = document.getElementById('new-student-desc').value;
-            if (!id) return alert('ID Required');
+        async function fetchTelemetry() {
             try {
-                const response = await fetch('/auth/api/add-user/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ student_id: id, description: desc })
-                });
-                const data = await response.json();
-                if (data.success) {
-                    document.getElementById('new-student-id').value = '';
-                    document.getElementById('new-student-desc').value = '';
-                    loadUsers();
+                const response = await fetch('/api/telemetry/');
+                const json = await response.json();
+                
+                if (json.status === 'success') {
+                    updateDashboard(json.data);
                 }
-            } catch (e) { alert('Error adding user'); }
+            } catch (e) {
+                console.error("Telemetry Endpoint Error:", e);
+            }
         }
 
-        async function loadUsers() {
-            try {
-                const response = await fetch('/auth/api/list-users/');
-                const data = await response.json();
-                if (data.success) {
-                    const tbody = document.getElementById('authorized-users-list');
-                    tbody.innerHTML = '';
-                    data.users.forEach(user => {
-                        tbody.innerHTML += `<tr>
-                            <td>${user.student_id}</td>
-                            <td>${user.description}</td>
-                            <td><span style="color: ${user.is_active ? '#00ff00' : '#F87171'};">${user.is_active ? 'Active' : 'Inactive'}</span></td>
-                            <td><button onclick="toggleUser('${user.student_id}')" class="analyze-btn" style="background: rgba(255,255,255,0.1); color: white;">${user.is_active ? 'Revoke' : 'Activate'}</button></td>
-                        </tr>`;
-                    });
-                }
-            } catch (e) { console.error(e); }
+        function updateDashboard(nodes) {
+            if(!nodes || !nodes.length) return;
+            
+            document.getElementById('stat-total-monitored').innerText = nodes.length;
+            document.getElementById('sidebar-active').innerText = nodes.length;
+
+            let threats = 0;
+            let htmlTable = '';
+
+            nodes.forEach(node => {
+                const risk = node.ai?.risk_score || 0;
+                if (risk > 20) threats++;
+
+                const isHighRisk = risk > 20;
+                const activityTxt = node.forensic?.activeApp || 'Web Content';
+                const timeStr = new Date().toLocaleTimeString('en-US', {hour12: false});
+                const userColor = isHighRisk ? 'bg-primary-container text-white' : 'bg-blue-600 text-white';
+
+                htmlTable += `
+                <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
+                    <td class="p-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full ${userColor} flex items-center justify-center font-bold text-xs uppercase shadow-lg shadow-${isHighRisk ? 'primary' : 'blue-500'}/20">${node.id.substring(0,2)}</div>
+                            <div>
+                                <p class="font-bold text-sm text-white">${node.id}</p>
+                                <p class="text-[9px] font-mono text-on-surface-variant tracking-wider opacity-60">ID: ${node.id}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="p-4 text-sm text-on-surface-variant">${activityTxt}</td>
+                    <td class="p-4">
+                        <span class="font-mono text-xs ${isHighRisk ? 'text-primary font-bold' : 'text-[#27c93f]'}">${risk}%</span>
+                    </td>
+                    <td class="p-4 font-mono text-xs text-on-surface-variant">${timeStr}</td>
+                    <td class="p-4">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full ${isHighRisk ? 'bg-primary animate-pulse' : 'bg-on-surface-variant'}"></span>
+                            <span class="text-xs text-on-surface-variant uppercase tracking-wider">Recent</span>
+                        </div>
+                    </td>
+                    <td class="p-4 text-right">
+                        <a href="/monitor/${node.id}/" class="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded font-bold text-xs transition-colors inline-block text-white">Analyze</a>
+                    </td>
+                </tr>`;
+            });
+
+            document.getElementById('student-table').innerHTML = htmlTable;
+            document.getElementById('stat-active-threats').innerText = threats;
         }
 
-        async function toggleUser(studentId) {
-            try {
-                await fetch('/auth/api/toggle-status/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ student_id: studentId })
-                });
-                await loadUsers();
-            } catch (e) { alert('Error updating status'); }
-        }
-
-        document.addEventListener('DOMContentLoaded', loadUsers);
+        setInterval(fetchTelemetry, 2000);
+        fetchTelemetry();
     </script>
 </body>
 </html>

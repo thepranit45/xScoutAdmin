@@ -1,308 +1,401 @@
 <!DOCTYPE html>
-<html lang="en">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>xScout // Cinema Mode</title>
-    <!-- Prism.js for Syntax Highlighting -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
-    
-    <style>
-        :root {
-            --neon-purple: #b026ff;
-            --neon-green: #00ff9d;
-            --bg-dark: #050510;
-            --panel-bg: rgba(20, 20, 30, 0.8);
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>xScout | Live Playback</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&amp;family=JetBrains+Mono:wght@400;500&amp;family=Space+Grotesk:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "background": "#11131c",
+                "on-primary": "#690005",
+                "surface-container-high": "#282933",
+                "on-error-container": "#ffdad6",
+                "surface-container-highest": "#33343e",
+                "on-secondary-fixed-variant": "#5a00c6",
+                "secondary-fixed-dim": "#d2bbff",
+                "inverse-primary": "#bf0715",
+                "surface-container-lowest": "#0c0e17",
+                "secondary-fixed": "#eaddff",
+                "inverse-surface": "#e2e1ef",
+                "on-primary-fixed-variant": "#93000b",
+                "surface": "#11131c",
+                "primary": "#ffb4ab",
+                "on-tertiary-fixed": "#100069",
+                "on-secondary-fixed": "#25005a",
+                "on-surface": "#e2e1ef",
+                "error": "#ffb4ab",
+                "surface-bright": "#373943",
+                "tertiary-fixed": "#e3dfff",
+                "on-tertiary-fixed-variant": "#372abf",
+                "tertiary-container": "#655dec",
+                "error-container": "#93000a",
+                "surface-dim": "#11131c",
+                "primary-container": "#dc2626",
+                "on-surface-variant": "#e6bdb8",
+                "inverse-on-surface": "#2e303a",
+                "tertiary": "#c3c0ff",
+                "surface-tint": "#ffb4ab",
+                "surface-variant": "#33343e",
+                "outline-variant": "#5c403c",
+                "outline": "#ac8884",
+                "on-tertiary-container": "#faf6ff",
+                "primary-fixed-dim": "#ffb4ab",
+                "on-secondary-container": "#c9aeff",
+                "primary-fixed": "#ffdad6",
+                "tertiary-fixed-dim": "#c3c0ff",
+                "on-secondary": "#3f008e",
+                "on-primary-container": "#fff6f5",
+                "on-tertiary": "#1f00a4",
+                "secondary-container": "#6001d1",
+                "on-primary-fixed": "#410002",
+                "on-background": "#e2e1ef",
+                "secondary": "#d2bbff",
+                "surface-container-low": "#191b24",
+                "on-error": "#690005",
+                "surface-container": "#1d1f29"
+              },
+              fontFamily: {
+                "headline": ["Inter"],
+                "body": ["Inter"],
+                "label": ["Space Grotesk"],
+                "mono": ["JetBrains Mono"]
+              },
+              borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+            },
+          },
         }
-
-        body {
-            background-color: var(--bg-dark);
-            color: #fff;
-            font-family: 'Consolas', 'Monaco', monospace;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
+      </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
         }
-
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--neon-purple);
-            padding-bottom: 10px;
-            margin-bottom: 20px;
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
         }
-
-        h1 {
-            color: var(--neon-purple);
-            margin: 0;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            text-shadow: 0 0 10px var(--neon-purple);
+        .cosmic-bg {
+            background-color: #03040B;
+            background-image: radial-gradient(circle at 50% 50%, rgba(220, 38, 38, 0.05) 0%, transparent 50%),
+                              radial-gradient(circle at 80% 20%, rgba(96, 1, 209, 0.08) 0%, transparent 40%);
         }
-
-        .controls {
-            display: flex;
-            gap: 10px;
-            align-items: center;
+        /* STITCH CINEMATIC BACKGROUND */
+        .stitch-video-overlay {
+            position: fixed; inset: 0;
+            background-color: rgba(3, 4, 11, 0.6);
+            z-index: -10;
         }
-
-        button {
-            background: transparent;
-            border: 1px solid var(--neon-purple);
-            color: var(--neon-purple);
-            padding: 5px 15px;
-            cursor: pointer;
-            font-family: inherit;
-            text-transform: uppercase;
-            transition: all 0.3s;
+        .stitch-grid {
+            position: fixed; inset: 0;
+            background-image: radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px);
+            background-size: 32px 32px;
+            z-index: -5;
+            mask-image: radial-gradient(ellipse at top, black 20%, transparent 80%);
+            -webkit-mask-image: radial-gradient(ellipse at top, black 20%, transparent 80%);
         }
-
-        button:hover {
-            background: var(--neon-purple);
-            color: #000;
-            box-shadow: 0 0 15px var(--neon-purple);
+        .stitch-video-bg {
+            position: fixed; inset: 0;
+            width: 100vw; height: 100vh;
+            object-fit: cover;
+            z-index: -20;
+            opacity: 0.95;
+            filter: hue-rotate(60deg) saturate(1.4);
+            mix-blend-mode: screen;
         }
-
-        #timeline-container {
-            margin-bottom: 20px;
-            position: relative;
-        }
-
-        input[type="range"] {
-            width: 100%;
-            background: #333;
-            height: 5px;
-            border-radius: 5px;
-            outline: none;
-            accent-color: var(--neon-purple);
-        }
-
-        #code-viewer {
-            flex: 1;
-            background: #1e1e1e;
-            border: 1px solid #333;
-            padding: 20px;
-            overflow: auto;
-            position: relative;
-            box-shadow: inset 0 0 20px #000;
-        }
-
-        pre {
-            margin: 0;
-            white-space: pre-wrap;
-            color: #d4d4d4;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-
-        /* Custom Prism Overrides */
-        pre[class*="language-"] {
-            margin: 0 !important;
-            background: transparent !important;
-            padding: 0 !important;
-            overflow: visible !important;
-        }
-        code[class*="language-"] {
-            text-shadow: none !important;
-        }
-
-        .meta-info {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            text-align: right;
-            border-left: 2px solid var(--neon-green);
-            padding-left: 10px;
-        }
-
-        .timestamp {
-            color: #888;
-            margin-bottom: 5px;
-        }
-
-        .filename {
-            color: #bdc3c7;
-            font-size: 0.9rem;
-            font-family: 'Consolas', 'Monaco', monospace;
-        }
-    </style>
+      </style>
 </head>
+<body class="text-on-surface font-body min-h-screen overflow-hidden bg-[#03040B]">
+    <!-- STITCH VIDEO BACKGROUND Engine -->
+    <div class="stitch-grid"></div>
+    <div class="stitch-video-overlay"></div>
+    <video class="stitch-video-bg" autoplay loop muted playsinline>
+        <source src="https://storage.googleapis.com/gweb-gemini-cdn/gemini/uploads/89e9004d716a7803fc7c9aab18c985af783f5a36.mp4" type="video/mp4">
+    </video>
+<!-- SideNavBar Anchor -->
+<aside class="h-screen w-64 fixed left-0 top-0 border-r border-white/10 bg-[#11131c]/80 backdrop-blur-xl flex flex-col p-4 z-50">
+<div class="mb-8 px-4">
+<h1 class="text-2xl font-black tracking-tighter text-[#e2e1ef] uppercase">xScout</h1>
+<p class="font-mono text-[10px] text-on-surface-variant tracking-[0.2em] opacity-60">Orbital Observer</p>
+</div>
+<nav class="flex-1 flex flex-col gap-1">
+<!-- Active Navigation -->
+<a class="flex items-center gap-3 px-4 py-3 text-[#d2bbff] bg-white/10 backdrop-blur-md rounded-lg border-l-2 border-[#dc2626] scale-[0.98] brightness-125 transition-all" href="{% url 'playback_view' %}">
+<span class="material-symbols-outlined" data-icon="play_circle">play_circle</span>
+<span class="font-headline font-semibold text-sm">Live Playback</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#e6bdb8] hover:text-[#e2e1ef] hover:bg-white/5 transition-all duration-300" href="{% url 'dashboard' %}">
+<span class="material-symbols-outlined" data-icon="sensors">sensors</span>
+<span class="font-headline font-semibold text-sm">Node Monitor</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#e6bdb8] hover:text-[#e2e1ef] hover:bg-white/5 transition-all duration-300" href="{% url 'network_graph' %}">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="font-headline font-semibold text-sm">Student Details</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#e6bdb8] hover:text-[#e2e1ef] hover:bg-white/5 transition-all duration-300" href="#">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+<span class="font-headline font-semibold text-sm">System Logs</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-[#e6bdb8] hover:text-[#e2e1ef] hover:bg-white/5 transition-all duration-300" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-headline font-semibold text-sm">Settings</span>
+</a>
+</nav>
+<div class="mt-auto border-t border-white/5 pt-4">
+<div class="flex items-center gap-3 px-4 py-2 mb-4">
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-[10px] font-bold">A1</div>
+<div>
+<p class="text-xs font-bold text-on-surface">Admin-01</p>
+<p class="text-[10px] text-primary uppercase tracking-tighter">System Integrity: Optimal</p>
+</div>
+</div>
+<a class="flex items-center gap-3 px-4 py-2 text-[#e6bdb8] hover:text-white transition-colors text-xs font-mono uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined text-sm" data-icon="help">help</span>
+                Support
+            </a>
+<a class="flex items-center gap-3 px-4 py-2 text-[#e6bdb8] hover:text-[#dc2626] transition-colors text-xs font-mono uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined text-sm" data-icon="logout">logout</span>
+                Sign Out
+            </a>
+</div>
+</aside>
+<!-- TopAppBar Anchor -->
+<header class="fixed top-0 right-0 left-64 h-16 z-40 bg-[#03040B]/50 backdrop-blur-2xl flex justify-between items-center px-8 w-auto border-b border-white/5">
+<div class="flex items-center gap-8">
+<nav class="flex gap-6">
+<a class="text-[#d2bbff] border-b-2 border-[#dc2626] pb-1 font-mono text-[10px] uppercase tracking-widest" href="#">Telemetry</a>
+<a class="text-[#e6bdb8] font-mono text-[10px] uppercase tracking-widest hover:text-white transition-opacity" href="#">Forensics</a>
+<a class="text-[#e6bdb8] font-mono text-[10px] uppercase tracking-widest hover:text-white transition-opacity" href="#">Archive</a>
+</nav>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-on-surface-variant text-sm" data-icon="search">search</span>
+<input class="bg-surface-container-lowest border-none text-xs font-mono pl-10 pr-4 py-2 w-64 rounded focus:ring-1 focus:ring-primary-container" placeholder="NODE_ID SEARCH..." type="text"/>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary cursor-pointer transition-shadow" data-icon="rss_feed">rss_feed</span>
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary cursor-pointer transition-shadow" data-icon="security">security</span>
+<div class="w-8 h-8 rounded-lg overflow-hidden border border-white/10">
+<img alt="Admin Avatar" class="w-full h-full object-cover" data-alt="professional male portrait with minimalist lighting and dark background representing a system administrator profile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCnTs8yIaz38Ocpc9aRK14wxbBTCE5ou0b2WKs74S17vUvwCM0sazCkGuCNmecR1Kle22DZjqwWwOamAqaYdeUuMgiSeXBBq-0qzATQtxLW6g25Fr4YdE7JxArOTfLwXGm2DIpOG6WzcIP3nD1NobYlNIy4dbCSPQg5sdACZuUIkvwtzAsd23cPR6BIauXEIroCce5VrBhoHsZ8gDLmyCWsQsdQhCP2hGmFTgsnKxtnBucDmRBelLVJSEL-3mBVJht6APxTj8-b5Xcx"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="pl-64 pt-16 h-screen flex flex-col">
+<div class="flex-1 flex overflow-hidden">
+<!-- Left: Behavioral Playback Area -->
+<section class="flex-1 relative flex flex-col p-6 overflow-hidden">
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+<h2 class="text-xl font-headline font-black tracking-tight text-white uppercase">Live Playback</h2>
+<span class="font-mono text-[10px] px-2 py-0.5 bg-secondary-container text-white rounded">SESSION: X-8922</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-mono text-xs text-on-surface-variant">00:10:42 / 01:24:00</span>
+</div>
+</div>
+<!-- Main Player Display -->
+<div class="flex-1 glass-panel rounded-xl overflow-hidden border border-white/5 relative group">
+<img alt="Cybersecurity Dashboard View" class="w-full h-full object-cover opacity-80 mix-blend-screen" data-alt="high-tech digital security interface with glowing circuit lines and abstract data visualization in deep blue and neon red tones" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBxyRV2X7XJwrJO2p5M_1B2b2X_InwpSZM4XmRyqEye0PLQyoteMoDvrlXcNkuzXZvS1y9GhWwj_2wQ6X-LVGGPxtUx0DgpiWN64e-G5uI9eOAd2e3bJSE9ARicSXEtDV1SnDYCZWl2YvDLxI177QxfEGQ-xQ5vI75g-g01vDJ8Xj9a6drYb0rio-xqxMiKotyEnvqGWqE2G7gKm8S7B-eC2-fpiYIk7NPhPBSs9_FHgRMPJonVY1BopqllP5Kvo_nLOpG3QjbWPtjf"/>
+<!-- HUD Overlays -->
+<div class="absolute inset-0 p-8 flex flex-col justify-between pointer-events-none">
+<div class="flex justify-between items-start">
+<div class="glass-panel p-4 rounded border border-white/10">
+<p class="font-mono text-[10px] text-primary uppercase mb-1">Cursor Tracking</p>
+<p id="active-coords" class="font-mono text-lg text-white">X: 1242.02 Y: 892.45</p>
+</div>
+<div class="glass-panel p-4 rounded border border-white/10 text-right">
+<p class="font-mono text-[10px] text-tertiary uppercase mb-1">Active Element</p>
+<p id="active-element-display" class="font-mono text-sm text-white">input#secure_auth_token</p>
+</div>
+</div>
+<div class="flex justify-center">
+<div class="glass-panel px-6 py-4 rounded-full border border-white/10 flex items-center gap-8 pointer-events-auto">
+<span class="material-symbols-outlined text-white hover:text-primary cursor-pointer" data-icon="skip_previous">skip_previous</span>
+<span class="material-symbols-outlined text-white text-4xl hover:text-primary cursor-pointer" data-icon="pause_circle">pause_circle</span>
+<span class="material-symbols-outlined text-white hover:text-primary cursor-pointer" data-icon="skip_next">skip_next</span>
+</div>
+</div>
+</div>
+<!-- Scan Line Overlay -->
+<div class="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent h-20 w-full top-0 pointer-events-none opacity-20"></div>
+</div>
+<!-- Timeline Scrubber -->
+<div class="mt-6 glass-panel p-4 rounded-xl border border-white/10 relative">
+<div class="h-1.5 bg-surface-container-highest rounded-full w-full relative overflow-visible">
+<!-- Progress -->
+<div class="absolute h-full bg-primary-container w-1/3 rounded-full shadow-[0_0_10px_rgba(220,38,38,0.5)]"></div>
+<!-- Forensic Markers -->
+<div class="absolute top-1/2 -translate-y-1/2 left-[15%] group">
+<div class="w-3 h-3 bg-tertiary rounded-full border-2 border-background cursor-pointer hover:scale-125 transition-transform"></div>
+<div class="absolute bottom-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-surface-container-high px-2 py-1 rounded text-[10px] font-mono whitespace-nowrap">Focus Shift</div>
+</div>
+<div class="absolute top-1/2 -translate-y-1/2 left-[45%] group">
+<div class="w-3 h-3 bg-secondary rounded-full border-2 border-background cursor-pointer hover:scale-125 transition-transform"></div>
+<div class="absolute bottom-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-surface-container-high px-2 py-1 rounded text-[10px] font-mono whitespace-nowrap">Clipboard Access</div>
+</div>
+<div class="absolute top-1/2 -translate-y-1/2 left-[62%] group">
+<div class="w-3 h-3 bg-primary-container rounded-full border-2 border-background cursor-pointer hover:scale-125 transition-transform animate-pulse"></div>
+<div class="absolute bottom-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-error-container px-2 py-1 rounded text-[10px] font-mono whitespace-nowrap">Anomaly Detected</div>
+</div>
+<!-- Scrubber Handle -->
+<div class="absolute top-1/2 -translate-y-1/2 left-1/3 glass-panel w-4 h-4 rounded-full border border-white flex items-center justify-center cursor-grab active:cursor-grabbing">
+<div class="w-1 h-1 bg-white rounded-full"></div>
+</div>
+</div>
+<div class="flex justify-between mt-3">
+<span class="font-mono text-[9px] text-on-surface-variant tracking-tighter">00:00:00</span>
+<div class="flex gap-4">
+<span class="font-mono text-[9px] text-tertiary">MARKER: FOCUS_CHANGE @ 04:12</span>
+<span class="font-mono text-[9px] text-primary">MARKER: ANOMALY_X @ 18:44</span>
+</div>
+<span class="font-mono text-[9px] text-on-surface-variant tracking-tighter">01:24:00</span>
+</div>
+</div>
+</section>
+<!-- Right Sidebar Panel: Forensic Logs -->
+<aside class="w-80 bg-surface-container-lowest/50 border-l border-white/5 flex flex-col">
+<div class="p-6 border-b border-white/5">
+<h3 class="font-headline font-bold text-sm text-white flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-sm" data-icon="analytics">analytics</span>
+                        FORENSIC READOUT
+                    </h3>
+</div>
+<div class="flex-1 overflow-y-auto p-6 space-y-6">
+<!-- Integrity Status -->
+<div>
+<p class="font-mono text-[10px] text-on-surface-variant uppercase mb-3">Structural Integrity</p>
+<div class="space-y-4">
+<div class="flex justify-between items-center">
+<span class="text-xs font-mono">DOM STABILITY</span>
+<span class="text-xs font-mono text-primary">98.2%</span>
+</div>
+<div class="h-1 bg-white/5 w-full rounded-full">
+<div class="h-full bg-primary-container w-[98%]"></div>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-xs font-mono">JS EXECUTION</span>
+<span class="text-xs font-mono text-secondary">OPTIMAL</span>
+</div>
+<div class="h-1 bg-white/5 w-full rounded-full">
+<div class="h-full bg-secondary-container w-full"></div>
+</div>
+</div>
+</div>
+<!-- Forensic Alerts -->
+<div class="pt-6 border-t border-white/5">
+<p class="font-mono text-[10px] text-on-surface-variant uppercase mb-4">Event Stream</p>
+<div id="event-stream" class="space-y-4">
+<!-- Alert Item -->
+<div class="glass-panel p-3 rounded border-l-2 border-primary-container">
+<p class="font-mono text-[10px] text-on-surface-variant mb-1">10:42 AM</p>
+<p class="text-xs font-mono text-on-surface mb-2">XSC-8091: Focus Shift</p>
+<p class="font-mono text-[9px] text-on-surface-variant opacity-60">Source: browser_events.cpp</p>
+</div>
+<div class="glass-panel p-3 rounded border-l-2 border-secondary-container">
+<p class="font-mono text-[10px] text-on-surface-variant mb-1">10:43 AM</p>
+<p class="text-xs font-mono text-on-surface mb-2">Clipboard Content Captured</p>
+<p class="font-mono text-[9px] text-secondary truncate">HASH: 0x82f9...2a11</p>
+</div>
+<div class="glass-panel p-3 rounded border-l-2 border-error-container bg-error-container/10">
+<p class="font-mono text-[10px] text-primary mb-1">10:45 AM</p>
+<p class="text-xs font-mono text-white mb-2">TechScanner.js: Anomaly</p>
+<p class="font-mono text-[9px] text-on-surface-variant">Unexpected input pattern detected in Auth Field</p>
+</div>
+<div class="glass-panel p-3 rounded border-l-2 border-white/20">
+<p class="font-mono text-[10px] text-on-surface-variant mb-1">10:48 AM</p>
+<p class="text-xs font-mono text-on-surface mb-2">Viewport Resize Event</p>
+<p class="font-mono text-[9px] text-on-surface-variant">DIM: 1920x1080 -&gt; 1440x900</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Footer -->
+<div class="p-6 border-t border-white/5 glass-panel">
+<button class="w-full bg-primary-container text-on-primary-container py-3 rounded font-headline font-bold text-xs uppercase tracking-widest hover:brightness-110 transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="file_download">file_download</span>
+                        Export Evidence Packet
+                    </button>
+</div>
+</aside>
+</div>
+</main>
+<!-- Floating Action Button - Only if relevant to core task -->
+<button class="fixed bottom-8 right-8 w-14 h-14 bg-secondary-container text-white rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(96,1,209,0.3)] hover:scale-110 transition-transform z-50">
+<span class="material-symbols-outlined" data-icon="add_notes">add_notes</span>
+</button>
 
-<body>
-
-    <header>
-        <h1>xScout Cinema Mode</h1>
-        <div class="controls">
-            <input type="text" id="user-id-input" placeholder="User ID (e.g. user_001)" value="user_001"
-                style="background:#000; color:#fff; border:1px solid #555; padding:5px;">
-            <button onclick="loadSession()">Load Session</button>
-            <button onclick="window.location.href='/dashboard/'">Back to Dashboard</button>
-        </div>
-    </header>
-
-    <div id="timeline-container">
-        <input type="range" id="seek-bar" min="0" max="100" value="0" disabled>
-        <div style="display:flex; justify-content:space-between; margin-top:5px;">
-            <button id="play-btn" onclick="togglePlay()" disabled>Play</button>
-            <span id="current-time">00:00</span>
-        </div>
-        <div class="filename" id="display-filename" style="margin-top: 15px;">No File</div>
-    </div>
-
-    <div id="code-viewer">
-        <div class="meta-info">
-            <div class="timestamp" id="display-time">--:--</div>
-        </div>
-        <pre><code id="code-content">// Select a user and click Load Session to begin playback...</code></pre>
-    </div>
-
-    <script>
-        let historyData = [];
-        let isPlaying = false;
-        let currentIndex = 0;
-        let playInterval;
-        const seekBar = document.getElementById('seek-bar');
-        const codeContent = document.getElementById('code-content');
-        const displayFilename = document.getElementById('display-filename');
-        const displayTime = document.getElementById('display-time');
-        const playBtn = document.getElementById('play-btn');
-
-        // Check for URL param on load
-        window.addEventListener('DOMContentLoaded', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const userId = urlParams.get('user_id');
-            if (userId) {
-                document.getElementById('user-id-input').value = userId;
-                loadSession();
+<!-- Playback Sync Engine -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const eventStream = document.getElementById('event-stream');
+    const activeElementTarget = document.getElementById('active-element-display');
+    const activeCoords = document.getElementById('active-coords');
+    
+    async function fetchPlaybackData() {
+        try {
+            const res = await fetch('/api/telemetry/');
+            const json = await res.json();
+            if (json.status === 'success' && json.data && json.data.length > 0) {
+                // Focus on the most risky node for playback illustration
+                json.data.sort((a,b) => (b.ai?.risk_score || 0) - (a.ai?.risk_score || 0));
+                const user = json.data[0];
+                updatePlayback(user);
             }
-        });
-
-        async function loadSession() {
-            const userId = document.getElementById('user-id-input').value;
-            if (!userId) return alert("Enter User ID");
-
-            try {
-                const res = await fetch(`/api/playback-data/?user_id=${userId}`);
-                const json = await res.json();
-
-                if (json.status === 'success' && json.data.length > 0) {
-                    console.log(`[PLAYBACK] Loaded ${json.data.length} snapshots for ${userId}`);
-                    historyData = json.data;
-                    setupPlayer();
-                } else {
-                    console.warn(`[PLAYBACK] No data found for user: ${userId}`);
-                    alert("No history found for this user.");
-                    codeContent.innerText = "// No history data found for this session.";
-                }
-            } catch (e) {
-                console.error(e);
-                alert("Error loading session.");
-            }
+        } catch (e) {
+            console.error(e);
         }
-
-        function setupPlayer() {
-            seekBar.disabled = false;
-            playBtn.disabled = false;
-            seekBar.max = historyData.length - 1;
-            seekBar.value = 0;
-            currentIndex = 0;
-            updateView(0);
+    }
+    
+    function updatePlayback(user) {
+        if(activeElementTarget) {
+            activeElementTarget.innerText = user.forensic?.activeWindow || 'System Window';
         }
-
-        // State persistence
-        let lastCode = "// Waiting for code...";
-        let lastFile = "No File";
-
-        function updateView(index) {
-            if (index >= historyData.length) return;
-            const entry = historyData[index];
-            
-            // Handle both flat and nested telemetry structures
-            const forensic = entry.forensic || {};
-            const snapshot = forensic.snapshot || entry.snapshot || (entry.code ? entry : null);
-
-            // Detect Language
-            let lang = 'python'; // Default
-            if (snapshot && (snapshot.file || snapshot.filename)) {
-                const f = snapshot.file || snapshot.filename;
-                const ext = f.split('.').pop().toLowerCase();
-                const langMap = { 'py': 'python', 'js': 'javascript', 'html': 'markup', 'css': 'css', 'json': 'json' };
-                lang = langMap[ext] || 'clike';
-            }
-
-            // Only update if we have a valid snapshot
-            if (snapshot && (snapshot.code || entry.code)) {
-                lastCode = snapshot.code || entry.code;
-                lastFile = snapshot.file || snapshot.filename || "Active Editor";
-            }
-
-            // Custom Path Formatting
-            if (snapshot && snapshot.file) {
-                lastFile = snapshot.file;
-            }
-
-            codeContent.innerHTML = `<code class="language-${lang}">${escapeHtml(lastCode)}</code>`;
-            if (window.Prism) Prism.highlightElement(codeContent.querySelector('code'));
-            
-            displayFilename.innerText = lastFile;
-            
-            const ts = entry.timestamp || (entry.snapshot && entry.snapshot.timestamp);
-            if (ts) {
-                displayTime.innerText = new Date(ts).toLocaleTimeString();
-            }
-            
-            seekBar.value = index;
-            currentIndex = index;
+        if(activeCoords) {
+            const wpm = user.behavior?.wpm || 0;
+            activeCoords.innerText = `WPM: ${wpm} | Risk: ${user.ai?.risk_score || 0}%`;
         }
+        
+        let time = new Date().toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+        const isAnomaly = (user.ai?.risk_score || 0) > 40;
+        let eventType = isAnomaly ? 'Anomaly Detected' : 'Window Shift';
+        
+        const newEvent = `
+<div class="glass-panel p-3 rounded border-l-2 ${isAnomaly ? 'border-error-container bg-error-container/10' : 'border-primary-container'} relative transition-all duration-300">
+<p class="font-mono text-[10px] text-on-surface-variant mb-1">${time}</p>
+<p class="text-xs font-mono text-white mb-2">${user.id}: ${eventType}</p>
+<p class="font-mono text-[9px] ${isAnomaly ? 'text-primary' : 'text-on-surface-variant'} truncate">URL/App: ${user.browser_url || user.forensic?.activeApp}</p>
+</div>`;
 
-        // Helper for highlighting safety
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
+        if (eventStream && !eventStream.innerHTML.includes('10:42 AM')) {
+             eventStream.insertAdjacentHTML('afterbegin', newEvent);
+             if(eventStream.children.length > 8) {
+                 eventStream.removeChild(eventStream.lastChild);
+             }
+        } else if (eventStream) {
+            eventStream.innerHTML = '';
+            eventStream.insertAdjacentHTML('afterbegin', newEvent);
         }
-
-        function togglePlay() {
-            if (isPlaying) {
-                pause();
-            } else {
-                play();
-            }
-        }
-
-        function play() {
-            isPlaying = true;
-            playBtn.innerText = "Pause";
-            playInterval = setInterval(() => {
-                if (currentIndex < historyData.length - 1) {
-                    currentIndex++;
-                    updateView(currentIndex);
-                } else {
-                    pause();
-                }
-            }, 1000); // 1 second per snapshot
-        }
-
-        function pause() {
-            isPlaying = false;
-            playBtn.innerText = "Play";
-            clearInterval(playInterval);
-        }
-
-        seekBar.addEventListener('input', (e) => {
-            pause();
-            updateView(parseInt(e.target.value));
-        });
-
-    </script>
-</body>
-
-</html>
+    }
+    
+    setInterval(fetchPlaybackData, 3000);
+});
+</script>
+</body></html>
