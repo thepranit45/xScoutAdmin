@@ -34,6 +34,10 @@ jobs:
           docker-compose build
           docker-compose up -d
           
+          # Wait securely for app to boot and dump error logs to GitHub
+          sleep 5
+          docker logs xscout_web
+          
           # Run Django migrations and collect static files
           docker-compose exec -T web python manage.py migrate --noinput
           docker-compose exec -T web python manage.py collectstatic --noinput
