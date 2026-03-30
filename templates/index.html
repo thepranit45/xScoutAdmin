@@ -258,38 +258,44 @@
             let htmlTable = '';
 
             nodes.forEach(node => {
-                const risk = node.ai?.risk_score || 0;
-                if (risk > 20) threats++;
+                const lastSeen = new Date(node.timestamp);
+                const now = new Date();
+                const diffMinutes = Math.floor((now - lastSeen) / 60000);
+                const isLive = diffMinutes < 2; // Active in last 2 mins
 
-                const isHighRisk = risk > 20;
-                const activityTxt = node.forensic?.activeApp || 'Web Content';
-                const timeStr = new Date().toLocaleTimeString('en-US', {hour12: false});
-                const userColor = isHighRisk ? 'bg-primary-container text-white' : 'bg-blue-600 text-white';
+                const aiVariance = Math.round((node.ai || 0) * 100);
+                const isHighRisk = aiVariance > 70;
+                if (isHighRisk) threats++;
+                
+                const timeStr = diffMinutes < 1 ? 'Just now' : diffMinutes + 'm ago';
+                const activityTxt = node.forensic ? (node.forensic.activeApp || 'Idle') : 'Idle';
 
                 htmlTable += `
-                <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
+                <tr class="border-b border-white/5 hover:bg-white/[0.02] transition-colors group">
                     <td class="p-4">
                         <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-full ${userColor} flex items-center justify-center font-bold text-xs uppercase shadow-lg shadow-${isHighRisk ? 'primary' : 'blue-500'}/20">${node.id.substring(0,2)}</div>
+                            <div class="w-8 h-8 rounded bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
+                                ${node.id.substring(0,2).toUpperCase()}
+                            </div>
                             <div>
-                                <p class="font-bold text-sm text-white">${node.id}</p>
-                                <p class="text-[9px] font-mono text-on-surface-variant tracking-wider opacity-60">ID: ${node.id}</p>
+                                <div class="font-bold text-sm text-white">${node.id}</div>
+                                <div class="text-[10px] text-on-surface-variant uppercase tracking-widest">Quantum Node</div>
                             </div>
                         </div>
                     </td>
                     <td class="p-4 text-sm text-on-surface-variant">${activityTxt}</td>
                     <td class="p-4">
-                        <span class="font-mono text-xs ${isHighRisk ? 'text-primary font-bold' : 'text-[#27c93f]'}">${risk}%</span>
+                        <span class="font-mono text-xs ${isHighRisk ? 'text-primary font-bold' : 'text-[#27c93f]'}">${aiVariance}%</span>
                     </td>
                     <td class="p-4 font-mono text-xs text-on-surface-variant">${timeStr}</td>
                     <td class="p-4">
                         <div class="flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full ${isHighRisk ? 'bg-primary animate-pulse' : 'bg-on-surface-variant'}"></span>
-                            <span class="text-xs text-on-surface-variant uppercase tracking-wider">Recent</span>
+                            <span class="w-2 h-2 rounded-full ${isLive ? 'bg-[#3ddc84] animate-pulse' : 'bg-on-surface-variant/30'}"></span>
+                            <span class="text-xs ${isLive ? 'text-[#3ddc84]' : 'text-on-surface-variant/40'} uppercase tracking-wider font-bold">${isLive ? 'Live' : 'Offline'}</span>
                         </div>
                     </td>
                     <td class="p-4 text-right">
-                        <a href="/monitor/${node.id}/" class="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded font-bold text-xs transition-colors inline-block text-white">Analyze</a>
+                        <a href="/playback/?user_id=${node.id}" class="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded font-bold text-xs transition-colors inline-block text-white">Analyze</a>
                     </td>
                 </tr>`;
             });
