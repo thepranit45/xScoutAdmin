@@ -20,34 +20,38 @@ class FirestoreEncoder(json.JSONEncoder):
             return obj.isoformat()
         return super().default(obj)
 
-# Initialize Firebase (Singleton)
+# Initialize Firebase (Universal Singleton)
 db = None
-init_error = "Not Attempted"
+init_error = "Success"
 try:
+    # 1. Check if ANY app exists, if not, try searching for credentials
     if not firebase_admin._apps:
-        current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        # Search for any valid firebase json (matching our known production naming)
-        json_file = next((f for f in os.listdir(current_dir) if f.endswith('.json') and ('firebase-adminsdk' in f or 'serviceAccountKey' in f)), None)
+        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        # Robustly search for any potential json
+        json_file = next((f for f in os.listdir(root_dir) if f.endswith('.json') and ('firebase' in f.lower() or 'service' in f.lower())), None)
         
         if json_file:
-            cred_path = os.path.join(current_dir, json_file)
+            cred_path = os.path.join(root_dir, json_file)
             cred = credentials.Certificate(cred_path)
             firebase_admin.initialize_app(cred)
-            db = firestore.client()
-            print(f"✅ Firebase Dashboard: INITIALIZED from {json_file}")
-            init_error = "Success"
+            print(f"✅ Firebase Dashboard: Initialized via NEW APP from {json_file}")
         else:
-            # Final fallback
+            # Fallback to defaults
             firebase_admin.initialize_app()
-            db = firestore.client()
-            init_error = "Success (Fallback Default)"
-    else:
-        db = firestore.client()
-        init_error = "Success (Used Existing App)"
+            print("✅ Firebase Dashboard: Initialized via DEFAULT Fallback")
+    
+    # 2. Extract Firestore Client from the active app
+    db = firestore.client()
 except Exception as e:
     init_error = str(e)
-    print(f"❌ Firebase Dashboard Error: {init_error}")
-    db = None
+    # If the app already exists, just get the client
+    try:
+        db = firestore.client()
+        init_error = f"Recovered Client after Init Error: {e}"
+        print(f"✅ Firebase Dashboard: Recovered Client: {init_error}")
+    except:
+        print(f"❌ Firebase Dashboard CRITICAL Failure: {init_error}")
+        db = None
 
 def home(request):
     """Landing page - public access"""
