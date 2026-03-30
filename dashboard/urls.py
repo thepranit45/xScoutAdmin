@@ -33,6 +33,9 @@ urlpatterns = [
 
     # History API for Analyze Modal
     path('api/history/<str:user_id>/', views.get_playback_data, name='get_history_data'),
+    
+    # SYSTEM DIAGNOSTIC
+    path('api/debug-server/', views.debug_server_view, name='debug_server'),
 ]
 
 if settings.DEBUG:

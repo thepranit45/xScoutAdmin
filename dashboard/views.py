@@ -478,3 +478,27 @@ def get_network_data(request):
         })
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@csrf_exempt
+def debug_server_view(request):
+    """PUBLIC: Diagnostic view to help find out why telemetry isn't saved"""
+    try:
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        files = os.listdir(base_dir)
+        
+        # Search for any valid firebase json (matching our known production naming)
+        json_file = next((f for f in files if f.endswith('.json') and ('firebase' in f.lower() or 'service' in f.lower())), "NOT FOUND")
+
+        status_data = {
+            'status': 'diagnostic',
+            'dashboard_db': str(db),
+            'init_error': init_error,
+            'base_dir_on_server': base_dir,
+            'root_files': files,
+            'found_json': json_file,
+            'apps_count': len(firebase_admin._apps),
+            'method': request.method
+        }
+        return JsonResponse(status_data, json_dumps_params={'indent': 2})
+    except Exception as e:
+        return JsonResponse({'status': 'crash', 'error': str(e)}, status=500)
