@@ -26,7 +26,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure--4m7rsb!&k7uvzmkt_nqg9q&q=)9@es8gz083hee#^o0hwg2br'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
 
 ALLOWED_HOSTS = ['*']
 CSRF_TRUSTED_ORIGINS = ['https://*.pythonanywhere.com', 'http://*.compute-1.amazonaws.com', 'http://13.126.202.124']
@@ -139,6 +139,9 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 # Turn on WhiteNoise storage backend that takes care of compressing static files
 # Downgraded from Manifest to prevent 500 errors if a template requests a missing static file
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 
 # Default primary key field type
