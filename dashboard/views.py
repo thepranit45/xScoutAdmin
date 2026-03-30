@@ -21,29 +21,27 @@ class FirestoreEncoder(json.JSONEncoder):
         return super().default(obj)
 
 # Initialize Firebase (Singleton)
-if not firebase_admin._apps:
-    try:
+db = None
+try:
+    if not firebase_admin._apps:
         current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        # Priority 1: Specific JSON file
-        # Priority 2: Service Account Key
-        # Priority 3: Environment Variable
-        cred_path = os.path.join(current_dir, 'xscout-68489-firebase-adminsdk-fbsvc-71d744a27c.json')
-        if not os.path.exists(cred_path):
-             cred_path = os.path.join(current_dir, 'serviceAccountKey.json')
-             
-        if os.path.exists(cred_path):
+        # Search for any valid firebase json (matching our known production naming)
+        json_file = next((f for f in os.listdir(current_dir) if f.endswith('.json') and ('firebase-adminsdk' in f or 'serviceAccountKey' in f)), None)
+        
+        if json_file:
+            cred_path = os.path.join(current_dir, json_file)
             cred = credentials.Certificate(cred_path)
             firebase_admin.initialize_app(cred)
+            db = firestore.client()
+            print(f"✅ Firebase Dashboard: INITIALIZED from {json_file}")
         else:
-            # Fallback to default credentials (useful for production envs like Google Cloud/Render)
+            # Final fallback
             firebase_admin.initialize_app()
-    except Exception as e:
-        print(f"Firebase Init Warning: {e}. Ensure GOOGLE_APPLICATION_CREDENTIALS is set if .json is missing.")
-
-try:
-    db = firestore.client()
+            db = firestore.client()
+    else:
+        db = firestore.client()
 except Exception as e:
-    print(f"CRITICAL: Firebase Firestore failed to initialize. Missing credentials? Error: {e}")
+    print(f"❌ Firebase Dashboard Error: {e}")
     db = None
 
 def home(request):
