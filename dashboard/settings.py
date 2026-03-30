@@ -49,8 +49,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
-
+    
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -137,8 +136,7 @@ STATICFILES_DIRS = [
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Turn on WhiteNoise storage backend that takes care of compressing static files
-# Downgraded from Manifest to prevent 500 errors if a template requests a missing static file
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+# Nginx serves static files natively in production at scale!
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
