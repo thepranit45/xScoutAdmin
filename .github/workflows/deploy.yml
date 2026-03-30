@@ -28,7 +28,9 @@ jobs:
           git reset --hard origin/main
           
           # Rebuild and restart the Docker containers
-          docker-compose down
+          sudo systemctl stop nginx || true
+          docker-compose down --remove-orphans
+          docker rm -f xscout_web xscout_nginx || true
           docker-compose build
           docker-compose up -d
           
