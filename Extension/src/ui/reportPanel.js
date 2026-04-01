@@ -42,7 +42,7 @@ class ReportPanel {
                 switch (message.command) {
                     case 'login':
                         if (ReportPanel.onLogin) {
-                            ReportPanel.onLogin(message.user, message.inviteCode);
+                            ReportPanel.onLogin(message.user, message.nodeCode);
                         }
                         return;
                 }
@@ -69,144 +69,137 @@ class ReportPanel {
     <title>xScout Nexus</title>
     <style>
         :root {
-            --bg-color: #03040B;
-            --accent-primary: #1275e2;
-            --accent-secondary: #a855f7;
-            --accent-tertiary: #00c9ff;
-            --text-main: #f8fafc;
-            --text-dim: #94a3b8;
-            --border: rgba(255, 255, 255, 0.08);
-            --glass-bg: rgba(255, 255, 255, 0.03);
-            --glass-blur: blur(28px);
+            --accent-primary: #06b6d4;
+            --accent-secondary: #8b5cf6;
+            --glass-bg: rgba(12, 14, 25, 0.45);
+            --border-glow: rgba(6, 182, 212, 0.3);
+            --text-main: #ffffff;
+            --text-dim: rgba(255, 255, 255, 0.4);
+        }
+
+        @font-face {
+            font-family: 'JetBrains Mono';
+            src: url('https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono/web/woff2/JetBrainsMono-Bold.woff2') format('woff2');
         }
 
         body { 
-            background-color: var(--bg-color); 
-            color: var(--text-main); 
-            font-family: 'Inter', -apple-system, sans-serif; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            min-height: 100vh; 
-            margin: 0; 
-            overflow: hidden;
-            background-attachment: fixed;
+            margin: 0; padding: 0; min-height: 100vh; overflow: hidden;
+            background-color: #03040B; color: var(--text-main);
+            font-family: 'Inter', -apple-system, sans-serif;
+            display: flex; align-items: center; justify-content: center;
         }
 
-        /* STITCH CINEMATIC EFFECTS */
-        .grid-bg {
-            position: fixed; inset: 0;
-            background-image: radial-gradient(rgba(18, 117, 226, 0.1) 1px, transparent 1px);
+        /* CINEMATIC ENGINE */
+        .video-bg {
+            position: fixed; inset: 0; width: 100vw; height: 100vh; 
+            object-fit: cover; z-index: -20; opacity: 0.6;
+            filter: saturate(1.4) contrast(1.1) brightness(0.8);
+        }
+        .video-overlay {
+            position: fixed; inset: 0; z-index: -10;
+            background: radial-gradient(circle at center, transparent 30%, #03040B 100%);
+        }
+        .grid-mesh {
+            position: fixed; inset: 0; z-index: -5;
+            background-image: radial-gradient(rgba(6, 182, 212, 0.1) 1px, transparent 1px);
             background-size: 30px 30px;
-            z-index: -5;
-            opacity: 0.8;
-            mask-image: radial-gradient(circle at center, black 30%, transparent 90%);
-        }
-
-        .wave-bg {
-            position: fixed; inset: 0;
-            background: radial-gradient(circle at 50% -20%, rgba(168, 85, 247, 0.15) 0%, transparent 60%);
-            z-index: -4;
         }
 
         .container { 
-            background: var(--glass-bg); 
-            padding: 40px; 
-            border-radius: 24px; 
-            text-align: center; 
-            border: 1px solid var(--border); 
-            width: 85%;
-            max-width: 320px; 
-            backdrop-filter: var(--glass-blur);
-            -webkit-backdrop-filter: var(--glass-blur);
-            box-shadow: 0 40px 100px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);
-            position: relative;
-            z-index: 10;
+            width: 380px; padding: 50px 40px; border-radius: 28px;
+            background: var(--glass-bg); backdrop-filter: blur(40px);
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 50px 100px rgba(0,0,0,0.8), inset 0 0 40px rgba(6, 182, 212, 0.05);
+            text-align: center; position: relative;
         }
 
-        .brand-logo {
-            font-size: 2.2rem;
-            font-weight: 800;
-            letter-spacing: -0.05em;
-            background: linear-gradient(to right, #fff, var(--text-dim));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 8px;
+        .logo-area { margin-bottom: 40px; }
+        .brand-name { font-size: 2.8rem; font-weight: 900; letter-spacing: -2px; margin: 0; }
+        .brand-sub { font-size: 0.7rem; color: var(--accent-primary); font-weight: 800; letter-spacing: 4px; text-transform: uppercase; margin-top: 5px; }
+
+        .form-group { text-align: left; margin-bottom: 25px; }
+        .field-label { 
+            font-size: 10px; font-weight: 900; color: var(--text-dim); text-transform: uppercase; 
+            letter-spacing: 2px; margin-bottom: 10px; display: block;
         }
 
-        p { color: var(--text-dim); font-size: 0.85rem; margin-bottom: 30px; letter-spacing: 0.05em; font-weight: 500;}
-        
         input { 
-            width: 100%; padding: 14px; margin: 12px 0; 
-            background: rgba(0,0,0,0.4); border: 1px solid var(--border); 
-            color: white; border-radius: 14px; box-sizing: border-box;
-            font-family: inherit; font-size: 1rem; transition: all 0.3s;
+            width: 100%; padding: 18px 20px; box-sizing: border-box;
+            background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 16px; color: white; font-size: 15px; font-weight: 500;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             outline: none;
         }
-        input:focus { border-color: var(--accent-primary); box-shadow: 0 0 15px rgba(18, 117, 226, 0.2); background: rgba(0,0,0,0.6); }
+        input:focus { 
+            border-color: var(--accent-primary); 
+            box-shadow: 0 0 30px rgba(6, 182, 212, 0.15);
+            background: rgba(0, 0, 0, 0.6);
+        }
 
         button { 
-            width: 100%; padding: 14px; 
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); 
-            color: white; border: none; border-radius: 14px; 
-            cursor: pointer; font-weight: 700; font-size: 1rem;
-            transition: transform 0.2s, opacity 0.2s;
-            box-shadow: 0 10px 20px rgba(168, 85, 247, 0.2);
-            margin-top: 10px;
+            width: 100%; padding: 18px; margin-top: 15px; border-radius: 16px;
+            background: linear-gradient(135deg, #3B82F6, #8B5CF6);
+            color: white; border: none; font-weight: 900; font-size: 14px;
+            letter-spacing: 2px; cursor: pointer; transition: all 0.3s;
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
         }
-        button:hover { transform: translateY(-2px); opacity: 0.9; }
-        button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        button:hover { transform: translateY(-3px) scale(1.02); filter: brightness(1.1); box-shadow: 0 15px 35px rgba(59, 130, 246, 0.4); }
+        button:disabled { opacity: 0.5; transform: none; }
 
-        /* DASHBOARD METRICS */
-        .metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 25px; }
-        .metric-card {
-            background: rgba(255,255,255,0.02);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 15px;
+        .admin-box {
+            margin-top: 45px; padding-top: 30px; border-top: 1px solid rgba(255,255,255,0.05);
             text-align: center;
         }
-        .metric-val { font-size: 1.5rem; font-weight: 800; color: white; display: block; }
-        .metric-lbl { font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; }
+        .admin-name { font-size: 13px; font-weight: 900; letter-spacing: 1.5px; color: white; margin-bottom: 5px; }
+        .admin-phone { font-size: 11px; font-weight: 500; color: var(--text-dim); }
 
-        #terminal-box {
-            margin-top: 20px;
-            background: rgba(0,0,0,0.5);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 12px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.7rem;
-            height: 80px;
-            overflow-y: auto;
-            text-align: left;
-            line-height: 1.4;
-        }
-
-        .pulse-live {
-            display: inline-block; width: 8px; height: 8px; background: #34d399; border-radius: 50%;
-            box-shadow: 0 0 10px #34d399; margin-right: 8px;
+        #error-msg {
+            margin-top: 20px; padding: 12px; border-radius: 12px;
+            background: rgba(220, 38, 38, 0.1); border: 1px solid rgba(220, 38, 38, 0.2);
+            color: #ef4444; font-size: 12px; font-weight: 600; display: none;
         }
     </style>
 </head>
 <body>
-    <div class="grid-bg"></div>
-    <div class="wave-bg"></div>
+    <video class="video-bg" autoplay loop muted playsinline>
+        <source src="https://storage.googleapis.com/gweb-gemini-cdn/gemini/uploads/89e9004d716a7803fc7c9aab18c985af783f5a36.mp4" type="video/mp4">
+    </video>
+    <div class="video-overlay"></div>
+    <div class="grid-mesh"></div>
 
     <div class="container" id="login-view">
-        <div class="brand-logo">xScout</div>
-        <p>Quantum Forensic Nexus</p>
-        <input type="text" id="username" placeholder="Student ID (e.g. s1)" />
-        <button onclick="login()">Initiate Link</button>
-        <div id="error-msg" style="color: #ff6b6b; margin-top: 15px; font-size: 0.8rem; font-weight: 600; display: none;"></div>
+        <div class="logo-area">
+            <h1 class="brand-name">xScout</h1>
+            <div class="brand-sub">Forensic Terminal</div>
+        </div>
+
+        <div class="form-group">
+            <label class="field-label">Developer Identity</label>
+            <input type="text" id="username" autocomplete="off" />
+        </div>
+
+        <div class="form-group">
+            <label class="field-label">Secure Node ID</label>
+            <input type="text" id="node-code" autocomplete="off" />
+        </div>
+
+        <button onclick="login()">CONNECT</button>
+        
+        <div class="admin-box">
+            <div class="admin-name">PRANIT GOPALE</div>
+            <div class="admin-phone">Lead Forensic Engineer • 9970343404</div>
+        </div>
+
+        <div id="error-msg"></div>
     </div>
 
+
     <div id="dashboard-view" class="container" style="display: none;">
-        <div style="font-size: 0.75rem; color: #34d399; font-weight: 700; letter-spacing: 0.1em; margin-bottom: 20px;">
-            <span class="pulse-live"></span> SYSTEM ACTIVE
+        <div style="font-size: 0.7rem; color: #34d399; font-weight: 800; letter-spacing: 0.2em; margin-bottom: 20px; border: 1px solid rgba(52, 211, 153, 0.2); display: inline-block; padding: 4px 12px; rounded: 4px; background: rgba(52, 211, 153, 0.05);">
+            <span class="pulse-live"></span> SIGNAL_STATE: ACTIVE
         </div>
-        <div style="font-size: 1rem; color: white; font-weight: 600;">ID: <span id="session-id">--</span></div>
+        <div style="font-size: 0.9rem; color: #fff; font-weight: 800; text-transform: uppercase;">Node: <span id="session-id" style="color: var(--accent-tertiary);">--</span></div>
+        <div style="font-size: 0.6rem; color: var(--text-dim); margin-top: 4px;">Cluster: <span id="node-id" style="color: #fff;">GLOBAL</span></div>
         
         <div class="metric-grid">
             <div class="metric-card">
@@ -226,10 +219,11 @@ class ReportPanel {
         const vscode = acquireVsCodeApi();
         function login() {
             const user = document.getElementById('username').value;
+            const node = document.getElementById('node-code').value;
             if(user) {
                 document.querySelector('button').disabled = true;
                 document.querySelector('button').innerText = 'Syncing...';
-                vscode.postMessage({ command: 'login', user: user });
+                vscode.postMessage({ command: 'login', user: user, nodeCode: node });
             }
         }
         window.addEventListener('message', event => {
@@ -238,6 +232,7 @@ class ReportPanel {
                 document.getElementById('login-view').style.display = 'none';
                 document.getElementById('dashboard-view').style.display = 'block';
                 document.getElementById('session-id').innerText = msg.user;
+                document.getElementById('node-id').innerText = msg.nodeCode || 'GLOBAL';
             } else if(msg.command === 'loginFailed') {
                  document.querySelector('button').disabled = false;
                  document.querySelector('button').innerText = 'Initiate Link';

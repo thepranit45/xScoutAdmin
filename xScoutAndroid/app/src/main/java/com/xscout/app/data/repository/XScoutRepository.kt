@@ -48,7 +48,8 @@ private const val KEY_LOGGED  = "is_logged_in"
 class XScoutRepository @Inject constructor(
     @ApplicationContext private val context: Context,
     private val firestore: FirebaseFirestore,
-    private val auth: FirebaseAuth
+    private val auth: FirebaseAuth,
+    private val api: com.xscout.app.data.api.XScoutApiService
 ) {
     private val prefs: SharedPreferences =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -95,40 +96,36 @@ class XScoutRepository @Inject constructor(
     }
 
     // ─── Live Sessions ────────────────────────────────────────────────────────
-    fun observeActiveSessions(): Flow<List<StudentSession>> = callbackFlow {
-        val listener = firestore.collection("reports")
-            .whereEqualTo("isActive", true)
-            .orderBy("timestamp", Query.Direction.DESCENDING)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    Log.e("XScoutRepo", "Sessions listener error", error)
-                    trySend(emptyList())
-                    return@addSnapshotListener
+    fun observeActiveSessions(): Flow<List<StudentSession>> = kotlinx.coroutines.flow.flow {
+        while (true) {
+            try {
+                val response = api.getTelemetryData()
+                if (response.status == "success") {
+                    val sessions = response.data.map { mapDocToSession(it["id"] as? String ?: "nexus", it) }
+                    emit(sessions.filter { it.isActive })
                 }
-                val sessions = snapshot?.documents?.mapNotNull { doc ->
-                    mapDocToSession(doc.id, doc.data ?: emptyMap())
-                } ?: emptyList()
-                trySend(sessions)
+            } catch (e: Exception) {
+                Log.e("XScoutRepo", "Poll Active Sessions Fail: ${e.message}")
             }
-        awaitClose { listener.remove() }
+            kotlinx.coroutines.delay(5000)
+        }
     }
 
-    fun observeAllSessions(): Flow<List<StudentSession>> = callbackFlow {
-        val listener = firestore.collection("reports")
-            .orderBy("timestamp", Query.Direction.DESCENDING)
-            .limit(100)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    trySend(emptyList())
-                    return@addSnapshotListener
+    fun observeAllSessions(): Flow<List<StudentSession>> = kotlinx.coroutines.flow.flow {
+        while (true) {
+            try {
+                val response = api.getTelemetryData()
+                if (response.status == "success") {
+                    val sessions = response.data.map { mapDocToSession(it["id"] as? String ?: "nexus", it) }
+                    emit(sessions)
                 }
-                val sessions = snapshot?.documents?.mapNotNull { doc ->
-                    mapDocToSession(doc.id, doc.data ?: emptyMap())
-                } ?: emptyList()
-                trySend(sessions)
+            } catch (e: Exception) {
+                Log.e("XScoutRepo", "Poll All Sessions Fail: ${e.message}")
             }
-        awaitClose { listener.remove() }
+            kotlinx.coroutines.delay(5000)
+        }
     }
+
 
     suspend fun getSession(sessionId: String): StudentSession? {
         return try {
@@ -185,28 +182,39 @@ class XScoutRepository @Inject constructor(
                 "isActive"    to true,
                 "createdAt"   to System.currentTimeMillis()
             )
-            // Use studentId as document ID for easy unique check
-            // Add a 10s timeout to prevent indefinite buffering
             withTimeout(10000L) {
                 firestore.collection("authorized_students").document(studentId.trim()).set(data).await()
             }
             true
         } catch (e: Exception) {
-            Log.e("XScoutRepo", "addAuthorizedStudent error (Check Firestore Rules): ", e)
+            Log.e("XScoutRepo", "addAuthorizedStudent error: ", e)
             false
         }
     }
 
-    fun observeAuthorizedStudents(): Flow<List<Map<String, Any>>> = callbackFlow {
-        val listener = firestore.collection("authorized_students")
-            .orderBy("createdAt", Query.Direction.DESCENDING)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) { trySend(emptyList()); return@addSnapshotListener }
-                val students = snapshot?.documents?.map { it.data ?: emptyMap() } ?: emptyList()
-                trySend(students)
+    fun observeAuthorizedStudents(): Flow<List<Map<String, Any>>> = kotlinx.coroutines.flow.flow {
+        while (true) {
+            try {
+                val response = api.getAuthorizedStudents()
+                if (response.success) {
+                    val users = response.users.map { u ->
+                        mapOf(
+                            "studentId"   to u.student_id,
+                            "studentName" to (u.student_id), // Use ID as name if name not available in list
+                            "description" to (u.description ?: ""),
+                            "isActive"    to u.is_active,
+                            "isLocal"     to true
+                        )
+                    }
+                    emit(users)
+                }
+            } catch (e: Exception) {
+                Log.e("XScoutRepo", "Poll Students Fail: ${e.message}")
             }
-        awaitClose { listener.remove() }
+            kotlinx.coroutines.delay(5000)
+        }
     }
+
 
     // ─── Dashboard Stats ──────────────────────────────────────────────────────
     fun observeDashboardStats(): Flow<DashboardStats> = callbackFlow {

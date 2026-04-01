@@ -27,15 +27,19 @@ urlpatterns = [
     path('playback/', views.playback_view, name='playback_view'),
     path('api/playback-data/', views.get_playback_data, name='get_playback_data'),
 
-    # Network Graph
-    path('network/', views.network_view, name='network_graph'),
-    path('api/network-data/', views.get_network_data, name='get_network_data'),
+    # Network Node (Formerly Graph)
+    path('network/', views.network_view, name='network_node'),
+    path('network/explore/<str:node_code>/', views.cluster_explore, name='cluster_explore'),
+    path('api/network-data/', views.get_network_data, name='get_network_node_data'),
+    path('api/create-node/', views.create_node, name='create_node'),
+    path('api/environments/', views.get_environments, name='get_environments'),
 
     # History API for Analyze Modal
     path('api/history/<str:user_id>/', views.get_playback_data, name='get_history_data'),
     
     # SYSTEM DIAGNOSTIC
     path('api/debug-server/', views.debug_server_view, name='debug_server'),
+    path('api/delete-session/<str:user_id>/', views.delete_user_session, name='delete_user_session'),
 ]
 
 if settings.DEBUG:

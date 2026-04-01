@@ -8,27 +8,9 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 import os
 
-# Robust Firebase Initialization
+# STRICT LOCAL AUTH OVERRIDE (Neutralize Cloud 429)
+def get_auth_db(): return None
 db = None
-try:
-    if not firebase_admin._apps:
-        current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        # Search for any valid firebase json
-        json_file = next((f for f in os.listdir(current_dir) if f.endswith('.json') and 'firebase-adminsdk' in f), 'serviceAccountKey.json')
-        cred_path = os.path.join(current_dir, json_file)
-
-        if os.path.exists(cred_path):
-            cred = credentials.Certificate(cred_path)
-            firebase_admin.initialize_app(cred)
-            db = firestore.client()
-            print("✅ Firebase Auth Engine: INITIALIZED")
-        else:
-            print("⚠️ Firebase Credentials not found - Cloud Sync Disabled")
-    else:
-        db = firestore.client()
-except Exception as e:
-    print(f"❌ Firebase Init Error: {e}")
-    db = None
 
 @csrf_exempt
 @require_POST
@@ -40,22 +22,23 @@ def verify_student_id(request):
         if not student_id:
             return JsonResponse({'success': False, 'message': 'ID Required'}, status=400)
 
-        print(f"🔍 Verifying Student ID: {student_id}")
+        print(f"Verifying Student ID: {student_id}")
 
         # --- OPTIMIZATION: Check Local Ledger FIRST (Instant) ---
-        try:
-            local_user = AuthorizedID.objects.get(student_id=student_id)
+        # SEARCH LOCAL LEDGER (Case-Insensitive)
+        local_user = AuthorizedID.objects.filter(student_id__iexact=student_id).first()
+        if local_user:
             if local_user.is_active:
-                print(f"✅ Auth Success: {student_id} (Local Ledger)")
+                print(f"[AUTH] Granted: {local_user.student_id}")
                 return JsonResponse({
                     'success': True, 
-                    'message': 'Authorized (Local Mode)', 
+                    'message': 'Authorized (Local Hub)', 
                     'redirect': '/dashboard/'
                 })
             else:
                 return JsonResponse({'success': False, 'message': 'ID Suspended Locally'}, status=403)
-        except AuthorizedID.DoesNotExist:
-            print(f"ℹ️ ID {student_id} not found locally, checking cloud...")
+        
+        print(f"[AUTH] Denied: {student_id} (Not in Local Ledger)")
 
         # --- FALLBACK: Check Cloud (Firestore) ---
         if db:
@@ -69,43 +52,41 @@ def verify_student_id(request):
                     if user_data.get('isActive', True):
                         # Cache to local for next time
                         AuthorizedID.objects.get_or_create(student_id=student_id, defaults={'description': 'Cloud Synced User'})
-                        print(f"✅ Auth Success: {student_id} (Cloud Sync)")
+                        print(f"Auth Success: {student_id} (Cloud Sync)")
                         return JsonResponse({
                             'success': True, 
                             'message': 'Authorized (Cloud Sync)', 
                             'redirect': '/dashboard/'
                         })
             except Exception as fe:
-                print(f"❌ Cloud Check Failed: {fe}")
+                print(f"Cloud Check Failed: {fe}")
 
         return JsonResponse({'success': False, 'message': 'ID Not Authorized'}, status=403)
             
     except Exception as e:
-        print(f"❌ Server Error in Verify: {e}")
+        print(f"Server Error in Verify: {e}")
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 @csrf_exempt
 @require_POST
-@login_required
 def add_authorized_user(request):
+    """PROVISION_NODE: Strictly Local Ledger Setup"""
     try:
         data = json.loads(request.body)
-        student_id = data.get('student_id')
+        student_id = data.get('student_id', '').strip()
         if not student_id: return JsonResponse({'success': False, 'message': 'ID Required'}, status=400)
             
-        AuthorizedID.objects.get_or_create(student_id=student_id, defaults={'description': data.get('description', '')})
+        # Create in Local SQLite Ledger
+        user_obj, created = AuthorizedID.objects.get_or_create(
+            student_id=student_id, 
+            defaults={'description': data.get('description', 'Default Monitoring Target')}
+        )
         
-        if db:
-            try:
-                db.collection('authorized_students').document(student_id).set({
-                    'studentId': student_id,
-                    'isActive': True,
-                    'authorizedAt': firestore.SERVER_TIMESTAMP
-                })
-            except: pass
+        print(f"[AUTH] Provisioned Local ID: {student_id}")
+        return JsonResponse({'success': True, 'message': f'ID {student_id} Authorized Locally'})
             
-        return JsonResponse({'success': True, 'message': 'User authorized'})
     except Exception as e:
+        print(f"[AUTH] Provisioning Crash: {e}")
         return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 @login_required

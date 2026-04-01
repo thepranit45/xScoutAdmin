@@ -51,7 +51,7 @@ fun LoginScreen(
                 .size(400.dp)
                 .offset(x = 150.dp, y = (-200).dp)
                 .background(
-                    Brush.radialGradient(listOf(Color(0x0DFF26B9), Color.Transparent)),
+                    Brush.radialGradient(listOf(XScoutColors.XScoutBlue.copy(0.05f), Color.Transparent)),
                     CircleShape
                 )
         )
@@ -60,7 +60,7 @@ fun LoginScreen(
                 .size(400.dp)
                 .offset(x = (-150).dp, y = 200.dp)
                 .background(
-                    Brush.radialGradient(listOf(Color(0x0DB026FF), Color.Transparent)),
+                    Brush.radialGradient(listOf(XScoutColors.XScoutCyan.copy(0.08f), Color.Transparent)),
                     CircleShape
                 )
         )
@@ -139,7 +139,7 @@ fun LoginScreen(
                                     Modifier
                                         .fillMaxSize()
                                         .background(
-                                            Brush.linearGradient(listOf(Color(0xFFD946EF), Color(0xFF8B5CF6))),
+                                            Brush.linearGradient(listOf(XScoutColors.XScoutCyan, XScoutColors.XScoutBlue)),
                                             RoundedCornerShape(12.dp)
                                         ),
                                     contentAlignment = Alignment.Center

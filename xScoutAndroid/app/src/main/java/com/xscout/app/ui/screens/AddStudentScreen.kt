@@ -81,7 +81,7 @@ fun AddStudentScreen(
                 }
                 Spacer(Modifier.width(4.dp))
                 Column {
-                    Text("AUTHORIZATION", color = XScoutColors.NeonPurple, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                    Text("AUTHORIZATION", color = XScoutColors.XScoutCyan, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                     Text("ADD NEW ENTITY", fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color.White)
                 }
             }
@@ -112,7 +112,7 @@ fun AddStudentScreen(
                     placeholder = { Text("Optional forensic notes...", color = Color.White.copy(0.2f), fontSize = 14.sp) },
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = XScoutColors.NeonPurple,
+                        focusedBorderColor = XScoutColors.XScoutCyan,
                         unfocusedBorderColor = Color.White.copy(0.1f)
                     )
                 )
@@ -125,7 +125,7 @@ fun AddStudentScreen(
                     enabled = !isSaving,
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = XScoutColors.NeonPurple,
+                        containerColor = XScoutColors.XScoutCyan,
                         contentColor = Color.White
                     )
                 ) {

@@ -94,78 +94,63 @@
     </style>
 </head>
 <body class="font-body selection:bg-primary-container selection:text-on-primary-container">
-<!-- SideNavBar Anchor -->
-<aside class="h-screen w-64 fixed left-0 top-0 border-r border-white/10 bg-[#11131c]/80 backdrop-blur-xl flex flex-col p-4 z-50">
-<div class="mb-10 px-2">
-<h1 class="text-2xl font-black tracking-tighter text-[#e2e1ef] uppercase">xScout</h1>
-<p class="font-mono text-[10px] text-on-surface-variant tracking-[0.2em] opacity-60">ORBITAL OBSERVER</p>
-</div>
-<nav class="flex-1 space-y-2">
-<a class="flex items-center gap-3 px-4 py-3 text-[#e6bdb8] hover:bg-white/5 hover:backdrop-blur-sm transition-all duration-300 rounded-lg group" href="#">
-<span class="material-symbols-outlined text-xl group-hover:text-white" data-icon="play_circle">play_circle</span>
-<span class="font-label text-sm tracking-wide">Live Playback</span>
-</a>
-<a class="flex items-center gap-3 px-4 py-3 text-[#e6bdb8] hover:bg-white/5 hover:backdrop-blur-sm transition-all duration-300 rounded-lg group" href="#">
-<span class="material-symbols-outlined text-xl group-hover:text-white" data-icon="sensors">sensors</span>
-<span class="font-label text-sm tracking-wide">Node Monitor</span>
-</a>
-<a class="flex items-center gap-3 px-4 py-3 text-[#d2bbff] bg-white/10 backdrop-blur-md rounded-lg border-l-2 border-[#dc2626] scale-[0.98] brightness-125 transition-all" href="#">
-<span class="material-symbols-outlined text-xl" data-icon="analytics" style="font-variation-settings: 'FILL' 1;">analytics</span>
-<span class="font-label text-sm tracking-wide">Student Details</span>
-</a>
-<a class="flex items-center gap-3 px-4 py-3 text-[#e6bdb8] hover:bg-white/5 hover:backdrop-blur-sm transition-all duration-300 rounded-lg group" href="#">
-<span class="material-symbols-outlined text-xl group-hover:text-white" data-icon="terminal">terminal</span>
-<span class="font-label text-sm tracking-wide">System Logs</span>
-</a>
-<a class="flex items-center gap-3 px-4 py-3 text-[#e6bdb8] hover:bg-white/5 hover:backdrop-blur-sm transition-all duration-300 rounded-lg group" href="#">
-<span class="material-symbols-outlined text-xl group-hover:text-white" data-icon="settings">settings</span>
-<span class="font-label text-sm tracking-wide">Settings</span>
-</a>
-</nav>
-<div class="mt-auto pt-4 border-t border-white/5 space-y-1">
-<div class="px-4 py-3 mb-4 rounded-lg bg-surface-container-lowest/50 border border-white/5">
-<p class="font-mono text-[9px] text-[#dc2626] uppercase tracking-tighter flex items-center gap-2">
-<span class="w-1.5 h-1.5 rounded-full bg-[#dc2626] animate-pulse"></span>
-                    System Integrity: Optimal
-                </p>
-</div>
-<a class="flex items-center gap-3 px-4 py-2 text-[#e6bdb8] hover:text-white transition-colors text-xs font-label uppercase tracking-widest" href="#">
-<span class="material-symbols-outlined text-lg" data-icon="help">help</span>
-                Support
+    <!-- SIDEBAR -->
+    <aside class="h-screen w-64 fixed left-0 top-0 border-r border-white/10 bg-[#11131c]/80 backdrop-blur-xl flex flex-col p-4 z-50">
+        <div class="mb-10 px-2 flex items-center gap-2">
+            <h1 class="text-2xl font-black tracking-tighter text-[#e2e1ef] uppercase"><span class="text-primary">x</span>Scout</h1>
+        </div>
+        <nav class="flex-1 flex flex-col gap-1">
+            <a href="{% url 'dashboard' %}" class="flex items-center gap-3 px-4 py-3 text-[#e6bdb8] hover:text-[#e2e1ef] transition-all cursor-pointer">
+                <span class="material-symbols-outlined text-xl">analytics</span>
+                <span class="text-sm font-medium">Overview</span>
             </a>
-<a class="flex items-center gap-3 px-4 py-2 text-[#e6bdb8] hover:text-white transition-colors text-xs font-label uppercase tracking-widest" href="#">
-<span class="material-symbols-outlined text-lg" data-icon="logout">logout</span>
-                Sign Out
+            <a href="{% url 'dashboard' %}" class="flex items-center gap-3 px-4 py-3 text-[#d2bbff] bg-white/10 backdrop-blur-md rounded-lg border-l-2 border-[#dc2626] scale-[0.98] brightness-125 transition-all cursor-pointer">
+                <span class="material-symbols-outlined text-xl">search</span>
+                <span class="text-sm font-medium">Forensics</span>
             </a>
-</div>
-</aside>
+            <a class="flex items-center gap-3 px-4 py-3 text-[#e6bdb8] hover:text-[#e2e1ef] transition-all cursor-pointer" href="{% url 'network_node' %}">
+                <span class="material-symbols-outlined text-xl">account_tree</span>
+                <span class="text-sm font-medium">Network Node</span>
+            </a>
+            <a href="{% url 'dashboard' %}" class="flex items-center gap-3 px-4 py-3 text-[#e6bdb8] hover:text-[#e2e1ef] transition-all cursor-pointer">
+                <span class="material-symbols-outlined text-xl">person_add</span>
+                <span class="text-sm font-medium">Add Users</span>
+            </a>
+            <a href="{% url 'dashboard' %}" class="flex items-center gap-3 px-4 py-3 text-[#e6bdb8] hover:text-[#e2e1ef] transition-all cursor-pointer" >
+                <span class="material-symbols-outlined text-xl">settings</span>
+                <span class="text-sm font-medium">Settings</span>
+            </a>
+        </nav>
+        <div class="mt-auto border-t border-white/5 pt-4">
+            <div class="px-4 py-2 mb-4">
+                <p class="jetbrains-mono text-[9px] text-on-surface-variant uppercase tracking-widest">Monitor Status</p>
+                <div class="flex items-center gap-2 mt-2">
+                    <div class="w-1.5 h-1.5 rounded-full bg-[#00ff9d] animate-pulse"></div>
+                    <p class="jetbrains-mono text-[10px] text-on-surface">Active Sessions: <span id="sidebar-active" class="font-bold">...</span></p>
+                </div>
+            </div>
+        </div>
+    </aside>
 <!-- TopAppBar Anchor -->
-<header class="fixed top-0 right-0 left-64 h-16 z-40 bg-[#03040B]/50 backdrop-blur-2xl flex justify-between items-center px-8 w-full border-b border-white/5">
-<div class="flex items-center gap-8">
-<div class="flex items-center gap-2">
-<span class="font-headline font-semibold text-lg">XSC-8091</span>
-<span class="px-2 py-0.5 rounded text-[10px] bg-secondary-container text-on-secondary-container font-mono">ACTIVE_SESSION</span>
-</div>
-<nav class="hidden md:flex items-center gap-6">
-<a class="text-[#e6bdb8] font-medium font-mono text-[10px] uppercase tracking-widest hover:text-white transition-opacity" href="#">Telemetry</a>
-<a class="text-[#d2bbff] border-b-2 border-[#dc2626] pb-1 font-mono text-[10px] uppercase tracking-widest" href="#">Forensics</a>
-<a class="text-[#e6bdb8] font-medium font-mono text-[10px] uppercase tracking-widest hover:text-white transition-opacity" href="#">Archive</a>
-</nav>
-</div>
-<div class="flex items-center gap-6">
-<div class="relative group">
-<span class="material-symbols-outlined text-[#e6bdb8] cursor-pointer hover:text-white transition-shadow hover:shadow-[0_0_15px_rgba(220,38,38,0.3)]" data-icon="rss_feed">rss_feed</span>
-</div>
-<span class="material-symbols-outlined text-[#e6bdb8] cursor-pointer hover:text-white" data-icon="security">security</span>
-<div class="flex items-center gap-3 pl-4 border-l border-white/10">
-<div class="text-right">
-<p class="text-[10px] font-mono text-on-surface-variant uppercase tracking-tighter">Admin-01</p>
-<p class="text-[9px] font-mono text-[#dc2626]">Level 4 Clearance</p>
-</div>
-<img alt="Admin-01" class="w-8 h-8 rounded-full border border-white/20" data-alt="minimalist professional portrait of a tech security officer with dramatic rim lighting and digital UI reflections" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmfeJnCyspIhLq11MpW-d05Vgi7wV3zGRGQWfucZpDaj4qZgikwAayscp2ZEB721k1ZSic0MLfdzNoM91qQLhDYpHocuTpY7kzblyla77DSA_ilnafj518K2ub4LU5KsCfNaPZnxhgkOSwjIM41bgEgqXFdZ2xKexmBj035Qg77lEpAq6ftzxY5mGIK85z6hSudqMPTAxZ6214j1gw7hCX3putCbiiQS12DdV3Xho8ckoSqqG4FpCfHe4K5JZ_D4bEtR9eDRq2lCrI"/>
-</div>
-</div>
-</header>
+    <!-- TOP NAV -->
+    <header class="fixed top-0 right-0 left-64 h-16 z-40 border-b border-white/5 bg-[#03040B]/50 backdrop-blur-2xl flex justify-between items-center px-8">
+        <div class="flex-1 flex items-center">
+            <div class="relative w-96">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-white/30 text-sm">search</span>
+                <input id="node-search" type="text" placeholder="Search Node / Identity..." class="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-2 text-xs font-mono text-white focus:outline-none focus:border-primary/50 transition-colors">
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <button onclick="window.history.back()" class="flex items-center gap-2 px-3 py-1.5 rounded border border-white/10 bg-white/5 hover:bg-white/10 transition-colors text-[10px] font-bold text-white uppercase tracking-wider">
+                <span class="material-symbols-outlined text-[14px]">arrow_back</span> Back to Fleet
+            </button>
+            <div class="flex items-center gap-2 pl-4 border-l border-white/10 ml-2">
+                <span class="material-symbols-outlined text-[16px] text-[#d2bbff]">person</span>
+                <span class="font-bold text-xs uppercase">{{ user.username|default:"admin" }}</span>
+                <a href="{% url 'logout' %}" class="ml-4 px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-500 transition-colors text-[10px] font-bold text-white uppercase tracking-wider">Logout</a>
+            </div>
+        </div>
+    </header>
 <!-- Main Content Canvas -->
 <main class="ml-64 pt-24 pb-12 px-12 min-h-screen">
 <!-- Header Section -->

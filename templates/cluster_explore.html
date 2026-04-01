@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>xScout | Cluster Oversight: {{ node_code }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@500;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --admin-primary: #d2bbff; --admin-bg: #03040B; }
+        body { background-color: var(--admin-bg); color: #fff; font-family: 'Inter', sans-serif; overflow: hidden; height: 100vh; }
+        .jetbrains-mono { font-family: 'JetBrains Mono', monospace; }
+        
+        #map-container { width: 100vw; height: 100vh; position: fixed; inset: 0; z-index: 10; }
+        
+        .stitch-grid { position: fixed; inset: 0; background-image: radial-gradient(rgba(210, 187, 255, 0.1) 1px, transparent 1px); background-size: 40px 40px; z-index: 5; pointer-events: none; }
+        .ambient-glow { position: fixed; width: 60vw; height: 60vw; background: radial-gradient(circle, rgba(210, 187, 255, 0.05) 0%, transparent 70%); z-index: 1; pointer-events: none; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+
+        .hud-panel { background: rgba(3, 4, 11, 0.7); backdrop-filter: blur(32px); -webkit-backdrop-filter: blur(32px); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; position: relative; z-index: 20; color: white; box-shadow: 0 40px 100px rgba(0,0,0,0.8); }
+        .premium-text { background: linear-gradient(to right, #fff, #d2bbff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 900; }
+        
+        .status-badge { background: rgba(210, 187, 255, 0.1); border: 1px solid rgba(210, 187, 255, 0.2); padding: 5px 14px; border-radius: 8px; font-size: 10px; font-weight: 800; letter-spacing: 0.2em; color: #d2bbff; text-transform: uppercase; }
+        
+        .vis-tooltip { background: rgba(3, 4, 11, 0.95) !important; border: 1px solid rgba(210, 187, 255, 0.3) !important; color: white !important; border-radius: 16px !important; padding: 16px !important; box-shadow: 0 20px 50px rgba(0,0,0,0.6) !important; font-family: 'JetBrains Mono', monospace !important; }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(210, 187, 255, 0.2); border-radius: 10px; }
+
+        @keyframes scan-line { 0% { transform: translateY(-100%); } 100% { transform: translateY(100%); } }
+        .scanning-effect::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: rgba(210, 187, 255, 0.5); box-shadow: 0 0 20px #d2bbff; animation: scan-line 3s linear infinite; pointer-events: none; }
+    </style>
+</head>
+<body class="bg-[#03040B]">
+    <div class="stitch-grid"></div>
+    <div class="ambient-glow"></div>
+    
+    <!-- Immersive Map Canvas -->
+    <div id="map-container"></div>
+
+    <!-- Interface HUD Overlay (Left) -->
+    <div class="fixed top-12 left-12 h-[calc(100vh-6rem)] flex flex-col gap-6 z-30">
+        <!-- Cluster Header -->
+        <div class="hud-panel p-8 min-w-[360px]">
+            <div class="flex items-center gap-6 mb-8">
+                <a href="/network/" class="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/15 transition-all group">
+                    <svg class="w-5 h-5 text-white/50 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                </a>
+                <div>
+                    <p class="jetbrains-mono text-[9px] uppercase tracking-[0.5em] text-primary mb-2 font-black">Cluster Exploration Mode</p>
+                    <h1 class="text-4xl premium-text italic tracking-tighter uppercase leading-none">{{ node_code }}</h1>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-4 mb-4">
+                <span class="w-2.5 h-2.5 rounded-full bg-primary animate-pulse shadow-[0_0_15px_#d2bbff]"></span>
+                <span class="status-badge" id="fleet-status">Live Forensic Stream</span>
+            </div>
+        </div>
+
+        <!-- Developer Roster (Sidebar) -->
+        <div class="hud-panel flex-1 min-w-[360px] flex flex-col overflow-hidden">
+            <div class="p-8 border-b border-white/10 bg-white/[0.01]">
+                <div class="flex justify-between items-center jetbrains-mono text-[10px] tracking-widest text-white/40 uppercase font-black">
+                    <span>Mounted Infrastructure Nodes</span>
+                    <span id="node-count" class="text-primary text-sm font-black">0</span>
+                </div>
+            </div>
+            
+            <div id="developer-list" class="flex-1 overflow-y-auto p-4 custom-scrollbar space-y-2">
+                <!-- Dynamically populated -->
+                <div class="text-center py-12 text-white/20 jetbrains-mono text-[10px] uppercase tracking-widest italic">Awaiting node mounting...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Node Insight HUD (Floating Right) -->
+    <div class="fixed top-12 right-12 z-30">
+        <div id="node-insight" class="hud-panel p-10 min-w-[400px] translate-x-[450px] transition-all duration-500">
+            <h3 class="jetbrains-mono text-[10px] uppercase tracking-[0.4em] text-primary mb-8 font-black border-b border-white/10 pb-6">Neural Node Analysis</h3>
+            <div class="space-y-10">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <label class="text-[9px] uppercase tracking-[0.3em] text-white/30 block mb-3 font-black">Target Identity</label>
+                        <p id="target-id" class="text-3xl font-black tracking-tight text-white uppercase italic">None Selected</p>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-8">
+                    <div class="bg-white/5 p-6 rounded-2xl border border-white/5">
+                        <label class="text-[9px] uppercase tracking-[0.3em] text-white/30 block mb-3 font-black">AI Deviation</label>
+                        <p id="target-risk" class="text-4xl font-black text-primary">0%</p>
+                    </div>
+                    <div class="bg-white/5 p-6 rounded-2xl border border-white/5">
+                        <label class="text-[9px] uppercase tracking-[0.3em] text-white/30 block mb-3 font-black">WPM Pulse</label>
+                        <p id="target-wpm" class="text-4xl font-black text-white">0</p>
+                    </div>
+                </div>
+
+                <div class="bg-white/5 p-6 rounded-2xl border border-white/5">
+                    <label class="text-[9px] uppercase tracking-[0.3em] text-white/30 block mb-3 font-black">Vitals Signature</label>
+                    <p id="target-app" class="text-xs font-bold text-white/60 truncate italic jetbrains-mono">Idle Background Hub</p>
+                </div>
+
+                <div class="pt-4">
+                    <button id="deep-scan-trigger" class="w-full py-6 bg-white text-black font-black text-xs uppercase tracking-[0.4em] rounded-2xl hover:bg-primary transition-all shadow-[0_20px_50px_rgba(255,255,255,0.1)]">Execute Diagnostic Handshake</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Forensic Deep Scan Modal -->
+    <div id="deep-scan-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md hidden transition-all duration-300">
+        <div class="w-[90vw] h-[85vh] hud-panel p-0 flex flex-col overflow-hidden relative border-primary/20 shadow-[0_0_100px_rgba(210,187,255,0.2)]">
+            <div class="absolute top-0 right-0 p-8">
+                <button onclick="closeDeepScan()" class="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <div class="p-12 border-b border-white/10 flex justify-between items-end">
+                <div>
+                    <p id="modal-app" class="jetbrains-mono text-[10px] uppercase tracking-[0.5em] text-primary mb-4 font-black">DIAGNOSTIC STREAM</p>
+                    <h2 id="modal-user" class="text-5xl font-black italic tracking-tighter premium-text uppercase">Developer_ID</h2>
+                </div>
+                <div class="flex gap-8 items-end">
+                    <div class="text-right">
+                        <p class="text-[9px] uppercase tracking-[0.3em] text-white/20 mb-2 font-black">AI VARIANCE</p>
+                        <p id="modal-ai" class="text-4xl font-black text-red-500">0%</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex-1 grid grid-cols-2 overflow-hidden">
+                <div class="border-r border-white/10 flex flex-col bg-black/40">
+                    <div class="p-8 border-b border-white/10 jetbrains-mono text-[11px] uppercase tracking-widest text-white/40 flex justify-between items-center">
+                        <span>LATEST_FORENSIC_SNAPSHOT</span>
+                        <span id="modal-filename" class="text-primary font-black">main.js</span>
+                    </div>
+                    <div class="flex-1 p-8 overflow-y-auto custom-scrollbar">
+                        <pre id="modal-code" class="jetbrains-mono text-[13px] text-white/70 leading-relaxed whitespace-pre-wrap">Awaiting code-sync...</pre>
+                    </div>
+                </div>
+                <div class="flex flex-col bg-black/60">
+                    <div class="p-8 border-b border-white/10 jetbrains-mono text-[11px] uppercase tracking-widest text-white/40">
+                        ACTIVITY_LOG_STREAM
+                    </div>
+                    <div id="modal-terminal" class="flex-1 p-8 jetbrains-mono text-[12px] space-y-4 overflow-y-auto custom-scrollbar font-bold leading-relaxed">
+                        <div class="text-green-500/80">> Initializing cluster sync...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const nodeCode = "{{ node_code }}";
+        let nodesDataSet = new vis.DataSet();
+        let edgesDataSet = new vis.DataSet();
+        let network = null;
+
+        // Forensic Vector Assets (Base64 for maximum reliability)
+        const ADMIN_SVG = `data:image/svg+xml;base64,${btoa('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>')}`;
+        const DEV_SVG = `data:image/svg+xml;base64,${btoa('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%23d2bbff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10v6M6 4h12c1 0 2 1 2 2v12c0 1-1 2-2 2H6c-1 0-2-1-2-2V6c0-1 1-2 2-2zM10 9l-2 3 2 3M14 9l2 3-2 3M2 10h20"></path></svg>')}`;
+        const RISK_SVG = `data:image/svg+xml;base64,${btoa('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%23dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01"></path></svg>')}`;
+
+        function initMap() {
+            const container = document.getElementById('map-container');
+            const data = { nodes: nodesDataSet, edges: edgesDataSet };
+            const options = {
+                layout: {
+                    hierarchical: {
+                        enabled: true,
+                        direction: 'UD',
+                        sortMethod: 'directed',
+                        nodeSpacing: 400,
+                        levelSeparation: 250
+                    }
+                },
+                nodes: {
+                    shape: 'box',
+                    borderWidth: 1.5,
+                    borderRadius: 2,
+                    margin: { top: 12, bottom: 12, left: 24, right: 24 },
+                    font: { color: '#ffffff', size: 10, face: 'JetBrains Mono', strokeWidth: 0 },
+                    shadow: { enabled: true, color: 'rgba(255,255,255,0.05)', size: 20, x: 0, y: 0 }
+                },
+                edges: {
+                    color: { color: 'rgba(255,255,255,0.1)', opacity: 0.2 },
+                    width: 1,
+                    arrows: { to: { enabled: true, scaleFactor: 0.3 } },
+                    smooth: { type: 'cubicBezier', forceDirection: 'vertical', roundness: 0.5 }
+                },
+                interaction: { hover: true, tooltipDelay: 100 },
+                physics: { enabled: false }
+            };
+            network = new vis.Network(container, data, options);
+            
+            // Animation Loop for Flowing Data
+            let offset = 0;
+            function animateEdges() {
+                offset -= 0.5;
+                const updatedEdges = [];
+                edgesDataSet.forEach(edge => {
+                    if (edge.id.startsWith('ov-')) { // Only animate oversight lines
+                        updatedEdges.push({ id: edge.id, dashes: [4, 6], dashOffset: offset });
+                    }
+                });
+                if (updatedEdges.length > 0) edgesDataSet.update(updatedEdges);
+                requestAnimationFrame(animateEdges);
+            }
+            animateEdges();
+
+            network.on("click", (params) => {
+                if (params.nodes.length > 0) showNodeInsight(params.nodes[0]);
+                else hideInsight();
+            });
+        }
+
+        async function syncCluster() {
+            try {
+                const response = await fetch(`/api/network-data/?node_code=${nodeCode}`);
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    const serverNodes = result.data.nodes;
+                    const similarityEdges = result.data.edges;
+                    document.getElementById('node-count').innerText = serverNodes.length;
+                    updateRoster(serverNodes);
+
+                    const adminNode = serverNodes.find(n => n.rank === 'admin' || n.rank === 'super' || n.rank === 'sr_developer') || serverNodes[0];
+                    const newNodes = [];
+                    const newEdges = [];
+
+                    serverNodes.forEach(node => {
+                        const isAdmin = adminNode && node.id === adminNode.id;
+                        const isRisky = node.risky;
+                        
+                        // Professional Cyan-Blue Schematic
+                        const borderColor = isRisky ? '#06b6d4' : (isAdmin ? '#ffffff' : 'rgba(210, 187, 255, 0.4)');
+                        const bgColor = isAdmin ? 'rgba(255,255,255,0.03)' : 'rgba(210, 187, 255, 0.01)';
+                        const labelPrefix = isAdmin ? "[SR_DEV] " : "";
+
+                        newNodes.push({
+                            id: node.id,
+                            label: labelPrefix + node.id.toUpperCase(),
+                            color: {
+                                background: '#03040B',
+                                border: borderColor,
+                                highlight: { background: bgColor, border: borderColor }
+                            },
+                            level: isAdmin ? 0 : 1
+                        });
+
+                        if (!isAdmin && adminNode) {
+                            newEdges.push({
+                                from: adminNode.id,
+                                to: node.id,
+                                id: `ov-${node.id}`,
+                                color: { opacity: 0.15, color: '#ffffff' },
+                                dashes: [4, 6]
+                            });
+                        }
+                    });
+
+                    similarityEdges.forEach(edge => {
+                        newEdges.push({
+                            ...edge,
+                            color: { color: 'rgba(6, 182, 212, 0.8)', opacity: 0.9 },
+                            width: 2,
+                            dashes: false,
+                            shadow: { enabled: true, color: 'rgba(6, 182, 212, 0.2)', size: 10 }
+                        });
+                    });
+
+                    nodesDataSet.update(newNodes);
+                    edgesDataSet.update(newEdges);
+
+                    const currentIds = serverNodes.map(n => n.id);
+                    nodesDataSet.getIds().forEach(id => {
+                        if (!currentIds.includes(id)) nodesDataSet.remove(id);
+                    });
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function updateRoster(serverNodes) {
+            const container = document.getElementById('developer-list');
+            if (serverNodes.length === 0) {
+                container.innerHTML = `<div class="text-center py-12 text-white/10 jetbrains-mono text-[9px] uppercase tracking-widest italic">Awaiting mounting...</div>`;
+                return;
+            }
+            container.innerHTML = '';
+            serverNodes.forEach(node => {
+                const item = `
+                    <div onclick="showNodeInsight('${node.id}')" class="p-4 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/5 hover:border-primary/50 transition-all cursor-pointer group flex justify-between items-center">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-lg bg-black/40 flex items-center justify-center font-black italic text-primary border border-white/5 group-hover:border-primary/30 text-xs">${node.id.charAt(0).toUpperCase()}</div>
+                            <span class="text-sm font-bold text-white/50 group-hover:text-white uppercase tracking-tight">${node.id}</span>
+                        </div>
+                        <span class="w-2 h-2 rounded-full ${node.risky ? 'bg-red-500 animate-pulse' : 'bg-green-500'}"></span>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', item);
+            });
+        }
+
+        async function showNodeInsight(userId) {
+            const insightPanel = document.getElementById('node-insight');
+            insightPanel.classList.remove('translate-x-[450px]');
+            document.getElementById('target-id').innerText = userId;
+            try {
+                const response = await fetch('/api/telemetry/');
+                const result = await response.json();
+                const node = result.data.find(n => n.id === userId);
+                if (node) {
+                    const ai = Math.round(node.ai <= 1.0 ? node.ai * 100 : node.ai);
+                    document.getElementById('target-risk').innerText = ai + '%';
+                    document.getElementById('target-risk').className = ai > 80 ? 'text-4xl font-black text-red-500' : 'text-4xl font-black text-primary';
+                    document.getElementById('target-wpm').innerText = node.behavior ? (node.behavior.wpm || '0') : '0';
+                    document.getElementById('target-app').innerText = node.forensic ? (node.forensic.activeApp || 'Background') : 'Background';
+                    document.getElementById('deep-scan-trigger').onclick = () => openDeepScan(node);
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function hideInsight() {
+            document.getElementById('node-insight').classList.add('translate-x-[450px]');
+        }
+
+        async function openDeepScan(node) {
+            const modal = document.getElementById('deep-scan-modal');
+            modal.classList.remove('hidden');
+            document.getElementById('modal-user').innerText = node.id;
+            try {
+                const response = await fetch('/api/playback-data/?user_id=' + node.id);
+                const result = await response.json();
+                if (result.status === 'success' && result.data.length > 0) {
+                    const latest = result.data[result.data.length - 1];
+                    const ai = Math.round((latest.ai || 0) * 100);
+                    document.getElementById('modal-ai').innerText = ai + '%';
+                    document.getElementById('modal-app').innerText = latest.forensic ? (latest.forensic.activeApp || 'NODE_SESSION') : 'NODE_SESSION';
+                    if (latest.forensic && latest.forensic.snapshot) {
+                         document.getElementById('modal-code').innerText = latest.forensic.snapshot.code || 'Binary stream or empty file.';
+                         document.getElementById('modal-filename').innerText = latest.forensic.snapshot.filename || 'unknown.log';
+                    } else {
+                         document.getElementById('modal-code').innerText = "No code snapshots captured.";
+                         document.getElementById('modal-filename').innerText = "null.void";
+                    }
+                    const term = document.getElementById('modal-terminal');
+                    term.innerHTML = `<div class="text-primary">> INITIALIZING DEEP_SCAN HANDSHAKE...</div>`;
+                    result.data.slice(-5).forEach(p => {
+                        const activity = p.forensic ? (p.forensic.activeApp || 'Idle') : 'Idle';
+                        term.innerHTML += `<div class="text-white/40">> [${new Date(p.timestamp).toLocaleTimeString()}] MOUNTED: ${activity}</div>`;
+                    });
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function closeDeepScan() { document.getElementById('deep-scan-modal').classList.add('hidden'); }
+
+        window.onload = () => {
+            initMap();
+            syncCluster();
+            setInterval(syncCluster, 4000);
+        };
+    </script>
+</body>
+</html>

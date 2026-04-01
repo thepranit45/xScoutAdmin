@@ -11,12 +11,11 @@ const https = require('https');
 const http = require('http');
 
 const config = vscode.workspace.getConfiguration('xscout');
-// --- HARDCORE OVERRIDE: Forcing AWS Connection ---
-const DASHBOARD_HOST = '13.126.202.124'; 
-const DASHBOARD_PORT = 80;
+const DASHBOARD_HOST = config.get('dashboardHost') || '127.0.0.1'; 
+const DASHBOARD_PORT = config.get('dashboardPort') || 8000;
 const DASHBOARD_PATH = '/api/telemetry/';
 
-console.log(`📡 xScout FORCE LINK: http://${DASHBOARD_HOST}:${DASHBOARD_PORT}${DASHBOARD_PATH}`);
+console.log(`xScout Link: http://${DASHBOARD_HOST}:${DASHBOARD_PORT}${DASHBOARD_PATH}`);
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -34,13 +33,16 @@ function activate(context) {
 	const terminalScanner = new Terminal_Scanner();
 
 	let activeUser = config.get('studentId') || null; 
+	let activeNodeCode = null;
 	let telemetryInterval = null;
 
-	// AUTO-PILOT: Attempt to verify stored ID immediately
+	// AUTO-PILOT: Disabled for manual Node ID entry
+	/*
 	if (activeUser) {
 		console.log(`📡 Auto-Pilot: Connecting with ID: ${activeUser}`);
 		verifyUser(activeUser);
 	}
+	*/
 
 	function verifyUser(user) {
 		const verifyData = JSON.stringify({ student_id: user });
@@ -65,11 +67,11 @@ function activate(context) {
 					const response = JSON.parse(data);
 					if (response.success) {
 						activeUser = user;
-						vscode.window.showInformationMessage(`✅ xScout Connected: ${user} (Final Ready Mode)`);
+						vscode.window.showInformationMessage(`✅ xScout Connected: ${user} [Node: ${activeNodeCode || 'Global'}]`);
 						startTelemetryLoop();
 
 						if (ReportPanel.currentPanel) {
-							ReportPanel.currentPanel._panel.webview.postMessage({ command: 'loginSuccess', user: user });
+							ReportPanel.currentPanel._panel.webview.postMessage({ command: 'loginSuccess', user: user, nodeCode: activeNodeCode });
 						}
 					} else {
 						console.error(`⛔ xScout Auth Error: ${response.message}`);
@@ -125,7 +127,8 @@ function activate(context) {
 				integrity: integrity,
 				terminal: terminal,
 				ai: aiScore,
-				user: activeUser
+				user: activeUser,
+				node_code: activeNodeCode
 			};
 
 			const postData = JSON.stringify(pulseData);
@@ -149,13 +152,18 @@ function activate(context) {
 			const requestModule = DASHBOARD_PORT === 443 ? https : http;
 			const req = requestModule.request(options, (res) => {
 				if (res.statusCode === 200 || res.statusCode === 201) {
-					console.log('✅ Heartbeat Received by Local Server');
+					console.log('✅ Heartbeat Received by Master Command');
+					vscode.window.setStatusBarMessage(`$(rss) xScout: Synchronized (${activeUser})`, 4000);
 				} else {
-					console.error(`❌ SIGNAL FAILED: ${res.statusCode}`);
+					console.error(`❌ COMMAND REJECTION: ${res.statusCode}`);
+					vscode.window.showErrorMessage(`xScout ERROR: Master Command rejected node sequence (Status: ${res.statusCode})`);
 				}
 			});
 
-			req.on('error', (e) => console.error(`Signal Transmission Error: ${e.message}`));
+			req.on('error', (e) => {
+				console.error(`Signal Transmission Error: ${e.message}`);
+				vscode.window.setStatusBarMessage(`$(warning) xScout: Connection Blocked`, 5000);
+			});
 			req.write(postData);
 			req.end();
 		};
@@ -170,8 +178,9 @@ function activate(context) {
 	}
 
 	// Listen for Login from UI (Manual override)
-	ReportPanel.onLogin = (user) => {
-		console.log(`Manual Override: Connecting ${user}`);
+	ReportPanel.onLogin = (user, node) => {
+		console.log(`Manual Override: Connecting ${user} to node ${node}`);
+		activeNodeCode = node; // Store node code
 		verifyUser(user);
 	};
 

@@ -57,7 +57,7 @@ fun SessionsScreen(
                     }
                     Spacer(Modifier.width(4.dp))
                     Column {
-                        Text("SESSION HISTORY", color = XScoutColors.NeonPurple, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                        Text("SESSION HISTORY", color = XScoutColors.XScoutCyan, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                         Text("${uiState.filteredSessions.size} FORENSIC LOGS", fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color.White)
                     }
                 }
@@ -73,9 +73,9 @@ fun SessionsScreen(
                     leadingIcon = { Icon(Icons.Default.Search, null, tint = Color.White.copy(0.3f)) },
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = XScoutColors.NeonPurple,
+                        focusedBorderColor = XScoutColors.XScoutCyan,
                         unfocusedBorderColor = Color.White.copy(0.1f),
-                        cursorColor = XScoutColors.NeonPurple
+                        cursorColor = XScoutColors.XScoutCyan
                     ),
                     singleLine = true
                 )
@@ -110,7 +110,7 @@ fun SessionsScreen(
             }
 
             if (uiState.isLoading) {
-                item { Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = XScoutColors.NeonPurple) } }
+                item { Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = XScoutColors.XScoutCyan) } }
             } else if (uiState.filteredSessions.isEmpty()) {
                 item { Box(Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) { Text("No records match criteria", color = Color.White.copy(0.3f), fontSize = 13.sp) } }
             } else {
@@ -136,8 +136,8 @@ fun SessionEntryRow(session: StudentSession, onClick: () -> Unit) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(36.dp).background(XScoutColors.NeonPurple.copy(0.1f), CircleShape), contentAlignment = Alignment.Center) {
-                    Text(session.studentName.take(1), color = XScoutColors.NeonPurple, fontWeight = FontWeight.Bold)
+                Box(Modifier.size(36.dp).background(XScoutColors.XScoutCyan.copy(0.1f), CircleShape), contentAlignment = Alignment.Center) {
+                    Text(session.studentName.take(1), color = XScoutColors.XScoutCyan, fontWeight = FontWeight.Bold)
                 }
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {

@@ -85,7 +85,7 @@ fun SessionDetailScreen(
     WarpBackground {
         if (isLoading) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = XScoutColors.NeonPurple)
+                CircularProgressIndicator(color = XScoutColors.XScoutCyan)
             }
         } else {
             val s = session
@@ -112,7 +112,7 @@ fun SessionDetailScreen(
                                 Icon(Icons.Default.ArrowBack, null, tint = Color.White.copy(0.6f))
                             }
                             Spacer(Modifier.height(8.dp))
-                            Text("FORENSIC ANALYSIS", color = XScoutColors.NeonPurple, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                            Text("FORENSIC ANALYSIS", color = XScoutColors.XScoutCyan, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                             Text(s.studentName, fontSize = 32.sp, fontWeight = FontWeight.Black, color = Color.White)
                             Text("ID: ${s.studentId}", fontSize = 14.sp, color = Color.White.copy(0.4f))
                             
@@ -150,11 +150,11 @@ fun SessionDetailScreen(
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            ActionButton(Modifier.weight(1f), "REPLAY", XScoutColors.NeonPurple) {
+                            ActionButton(Modifier.weight(1f), "REPLAY", XScoutColors.XScoutCyan) {
                                 viewModel.loadReplay(s.id)
                                 showReplay = true
                             }
-                            ActionButton(Modifier.weight(1f), "STACK", XScoutColors.NeonCyan) { showTechStack = true }
+                            ActionButton(Modifier.weight(1f), "STACK", XScoutColors.XScoutCyan) { showTechStack = true }
                             ActionButton(Modifier.weight(1f), "FILES", Color(0xFFFACC15)) { showExplorer = true }
                         }
                         Spacer(Modifier.height(24.dp))
@@ -174,7 +174,7 @@ fun SessionDetailScreen(
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            BiometricBlock(Modifier.weight(1f), "WPM", "${s.biometrics.wpm.toInt()}", XScoutColors.NeonCyan)
+                            BiometricBlock(Modifier.weight(1f), "WPM", "${s.biometrics.wpm.toInt()}", XScoutColors.XScoutCyan)
                             BiometricBlock(Modifier.weight(1f), "PASTE", "${s.biometrics.pasteEvents}", XScoutColors.Danger)
                             BiometricBlock(Modifier.weight(1f), "BKS", "${s.biometrics.backspaceRate.toInt()}%", XScoutColors.Warning)
                         }
@@ -185,19 +185,107 @@ fun SessionDetailScreen(
                     if (s.titleHistory.isNotEmpty()) {
                         item {
                             Text(
-                                "WINDOW / BROWSER LOGS",
-                                modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                                "INTELLIGENT ACTIVITY TRACE",
+                                modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
                                 color = Color.White.copy(0.3f),
                                 fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 1.sp
+                                fontWeight = FontWeight.Heavy,
+                                letterSpacing = 2.sp
                             )
                         }
-                        itemsIndexed(s.titleHistory) { index, title ->
-                            val isSuspicious = listOf("ChatGPT", "OpenAI", "Claude", "Copilot", "Gemini", "StackOverflow").any { title.contains(it, ignoreCase = true) }
-                            LogEntry(index + 1, title, isSuspicious)
+
+                        // Grouping for "Access Frequency" & "Searched Things"
+                        val groupedHistory = s.titleHistory.mapIndexed { i, t -> i to t }
+                            .groupBy { it.second.split(" - ").last().split(" | ").last() } // Rough App Grouping
+                        
+                        groupedHistory.forEach { (appName, logs) ->
+                            item {
+                                AppLogGroup(appName, logs.map { it.second })
+                            }
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AppLogGroup(appName: String, logs: List<String>) {
+    var expanded by remember { mutableStateOf(false) }
+    val (icon, tint) = getAppIconInfo(appName)
+    val freq = logs.size
+    
+    val searchQueries = logs.mapNotNull { extractSearchQuery(it) }.distinct()
+
+    Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp)) {
+        Surface(
+            modifier = Modifier.fillMaxWidth().clickable { expanded = !expanded },
+            color = Color.White.copy(0.03f),
+            shape = RoundedCornerShape(12.dp),
+            border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(0.05f))
+        ) {
+            Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(icon, null, tint = tint, modifier = Modifier.size(24.dp))
+                Spacer(Modifier.width(16.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(appName.uppercase(), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
+                    Text(
+                        if (searchQueries.isNotEmpty()) "Searched: ${searchQueries.first()} (+${searchQueries.size - 1})" 
+                        else "${logs.lastOrNull()?.take(30)}...", 
+                        color = Color.White.copy(0.3f), 
+                        fontSize = 11.sp, 
+                        maxLines = 1
+                    )
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text("$freq", color = XScoutColors.XScoutCyan, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Text("PULSES", color = Color.White.copy(0.2f), fontSize = 8.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+        
+        if (expanded) {
+            Column(modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 12.dp).border(1.dp, Color.White.copy(0.05f), RoundedCornerShape(8.dp)).padding(8.dp)) {
+                logs.reversed().forEach { log ->
+                    val search = extractSearchQuery(log)
+                    Row(modifier = Modifier.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(4.dp).background(if (search != null) XScoutColors.XScoutCyan else Color.White.copy(0.2f), RoundedCornerShape(2.dp)))
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            if (search != null) "Search: $search" else log,
+                            color = if (search != null) XScoutColors.XScoutCyan else Color.White.copy(0.6f),
+                            fontSize = 12.sp,
+                            maxLines = 2
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+fun getAppIconInfo(appName: String): Pair<androidx.compose.ui.graphics.vector.ImageVector, Color> {
+    val name = appName.lowercase()
+    return when {
+        name.contains("chrome") || name.contains("browser") -> androidx.compose.material.icons.filled.Language to Color(0xFF4285F4)
+        name.contains("studio")                             -> androidx.compose.material.icons.filled.DeveloperMode to Color(0xFF3DDC84)
+        name.contains("code") || name.contains("vscode")    -> androidx.compose.material.icons.filled.Code to Color(0xFF007ACC)
+        name.contains("slack") || name.contains("discord")  -> androidx.compose.material.icons.filled.Chat to Color(0xFF7289DA)
+        name.contains("spotify")                            -> androidx.compose.material.icons.filled.MusicNote to Color(0xFF1DB954)
+        else                                                -> androidx.compose.material.icons.filled.Apps to Color.White.copy(0.2f)
+    }
+}
+
+fun extractSearchQuery(title: String): String? {
+    return when {
+        title.contains(" - Google Search") -> title.replace(" - Google Search", "")
+        title.contains(" - Bing")          -> title.replace(" - Bing", "")
+        title.contains(" | Stack Overflow") -> "Stack Overflow: " + title.replace(" | Stack Overflow", "")
+        else -> null
+    }
+}
+
                 }
             }
         }
@@ -243,7 +331,7 @@ fun ReplayDialog(snapshots: List<com.xscout.app.data.model.SessionSnapshot>, onD
         dragHandle = { BottomSheetDefaults.DragHandle(color = Color.White.copy(0.2f)) }
     ) {
         Column(modifier = Modifier.fillMaxSize().padding(20.dp)) {
-            Text("CINEMA MODE REPLAY", color = XScoutColors.NeonPurple, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            Text("CINEMA MODE REPLAY", color = XScoutColors.XScoutCyan, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             Text(currentSnapshot.file ?: "Active Editor", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
             
             Spacer(Modifier.height(20.dp))
@@ -253,7 +341,7 @@ fun ReplayDialog(snapshots: List<com.xscout.app.data.model.SessionSnapshot>, onD
                 value = currentIndex,
                 onValueChange = { currentIndex = it },
                 valueRange = 0f..(snapshots.size - 1).coerceAtLeast(0).toFloat(),
-                colors = SliderDefaults.colors(thumbColor = XScoutColors.NeonPurple, activeTrackColor = XScoutColors.NeonPurple)
+                colors = SliderDefaults.colors(thumbColor = XScoutColors.XScoutCyan, activeTrackColor = XScoutColors.XScoutCyan)
             )
             
             Spacer(Modifier.height(10.dp))
@@ -288,7 +376,7 @@ fun TechStackDialog(tech: com.xscout.app.data.model.TechDetails, onDismiss: () -
         containerColor = Color(0xFF0F0518)
     ) {
         Column(modifier = Modifier.padding(20.dp).fillMaxWidth()) {
-            Text("TECHNOLOGY STACK", color = XScoutColors.NeonCyan, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            Text("TECHNOLOGY STACK", color = XScoutColors.XScoutCyan, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(20.dp))
             
             DetailSpec("AUTHOR", tech.author)

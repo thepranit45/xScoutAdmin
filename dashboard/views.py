@@ -8,10 +8,11 @@ from django.views.decorators.csrf import csrf_exempt
 import firebase_admin
 from firebase_admin import credentials, firestore
 import os
-import difflib # For similarity checking
+import difflib 
 import json
 import csv
-from datetime import datetime, timedelta
+from datetime import datetime
+from authentication.models import AuthorizedID, TelemetryPulse, CodeSnapshot, Environment
 
 # Custom JSON encoder to handle Firestore datetime objects
 class FirestoreEncoder(json.JSONEncoder):
@@ -20,42 +21,20 @@ class FirestoreEncoder(json.JSONEncoder):
             return obj.isoformat()
         return super().default(obj)
 
-# Initialize Firebase (Universal Singleton)
+# STRICT LOCAL OVERRIDE (Neutralize Cloud 429)
+def initialize_firebase(): return None
 db = None
-init_error = "Success"
-try:
-    # 1. Check if ANY app exists, if not, try searching for credentials
-    if not firebase_admin._apps:
-        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        # Robustly search for any potential json
-        json_file = next((f for f in os.listdir(root_dir) if f.endswith('.json') and ('firebase' in f.lower() or 'service' in f.lower())), None)
-        
-        if json_file:
-            cred_path = os.path.join(root_dir, json_file)
-            cred = credentials.Certificate(cred_path)
-            firebase_admin.initialize_app(cred)
-            print(f"✅ Firebase Dashboard: Initialized via NEW APP from {json_file}")
-        else:
-            # Fallback to defaults
-            firebase_admin.initialize_app()
-            print("✅ Firebase Dashboard: Initialized via DEFAULT Fallback")
-    
-    # 2. Extract Firestore Client from the active app
-    db = firestore.client()
-except Exception as e:
-    init_error = str(e)
-    # If the app already exists, just get the client
-    try:
-        db = firestore.client()
-        init_error = f"Recovered Client after Init Error: {e}"
-        print(f"✅ Firebase Dashboard: Recovered Client: {init_error}")
-    except:
-        print(f"❌ Firebase Dashboard CRITICAL Failure: {init_error}")
-        db = None
+LOCAL_TELEMETRY = {}
+init_error = None
 
 def home(request):
     """Landing page - public access"""
     return render(request, 'home.html')
+
+@login_required
+def cluster_explore(request, node_code):
+    """Full-screen immersive forensic map for a specific cluster"""
+    return render(request, 'cluster_explore.html', {'node_code': node_code})
 
 def login_view(request):
     """Handle user login"""
@@ -83,151 +62,167 @@ def logout_view(request):
 
 @login_required
 def index(request):
-    return render(request, 'index.html')
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__))).replace('\\', '/')
+    return render(request, 'index.html', {'base_dir': base_dir})
 
 def code_city_demo(request):
     """3D Visualization Demo"""
     return render(request, 'code_city_demo.html')
 
-@login_required
+@login_required 
 def playback_view(request):
     """Render Code Playback Page"""
-    return render(request, 'playback.html')
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__))).replace('\\', '/')
+    return render(request, 'playback.html', {'base_dir': base_dir})
 
-@login_required # Force reload comment
+@login_required 
 def get_playback_data(request, user_id=None):
-    """API to fetch session history for playback"""
-    if not user_id:
-        user_id = request.GET.get('user_id')
-    if not user_id:
-        return JsonResponse({'status': 'error', 'message': 'Missing user_id'}, status=400)
+    """API: Full-SQLite Forensic Playback with Root Discovery"""
+    if not user_id: user_id = request.GET.get('user_id')
+    if not user_id: return JsonResponse({'status': 'error', 'message': 'Missing user_id'}, status=400)
 
     try:
-        # Fetch history from sub-collection, ordered by timestamp
+        # Fetch pulses for this developer (most recent 250)
+        pulses = TelemetryPulse.objects.filter(developer_id=user_id).order_by('timestamp')
+        
         history = []
-        if db:
-            docs = db.collection('reports').document(user_id).collection('history').order_by('timestamp').stream()
-            for doc in docs:
-                data = doc.to_dict()
-                # Manual serialization for Firestore datetimes
-                for key, value in data.items():
-                    if isinstance(value, datetime):
-                        data[key] = value.isoformat()
-                    elif isinstance(value, dict):
-                        for k2, v2 in value.items():
-                            if isinstance(v2, datetime):
-                                value[k2] = v2.isoformat()
+        root_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) # Default to admin root
+        
+        # Discover latest root from forensic pulses
+        latest_pulse = pulses.last()
+        if latest_pulse:
+            try:
+                raw_payload = json.loads(latest_pulse.raw_data)
+                # PRIORITY 1: Explicit Workspace Path from Project Scanner
+                if raw_payload.get('project') and raw_payload['project'].get('path'):
+                    root_path = raw_payload['project']['path'].replace('\\', '/')
+                else:
+                    # PRIORITY 2: Infer from latest code snapshot
+                    latest_with_snap = pulses.filter(snapshots__isnull=False).last()
+                    if latest_with_snap:
+                        snap = latest_with_snap.snapshots.first()
+                        if snap and snap.filename:
+                            p = snap.filename.replace('\\', '/')
+                            parts = p.split('/')
+                            # Deep detection: climb up until we find a project-like folder
+                            if len(parts) >= 2:
+                                root_path = "/".join(parts[:2])
+            except: pass
+
+        for pulse in pulses[:250]: # Increased cap for deeper forensics
+            try:
+                data = json.loads(pulse.raw_data)
+                # Attach the actual code snapshot if it exists
+                snapshot_obj = pulse.snapshots.first() 
+                if snapshot_obj:
+                    data['snapshot'] = {
+                        'file': snapshot_obj.filename,
+                        'code': snapshot_obj.content,
+                        'language': snapshot_obj.language
+                    }
+                data['timestamp'] = pulse.timestamp.isoformat()
                 history.append(data)
+            except: continue
             
-        return JsonResponse({'status': 'success', 'data': history})
+        return JsonResponse({'status': 'success', 'data': history, 'root_path': root_path})
     except Exception as e:
-        print(f"GET Playback Error: {e}")
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-
-
 
 @csrf_exempt
 def get_dashboard_data(request):
-    print(f"DEBUG: Telemetry Request - Method: {request.method}")
-    if request.method == 'GET':
+    """MASTER PULSE ENGINE - Full SQLite Hub Conversion"""
+    if request.method == "POST":
         try:
-            # Android expects data in 'reports' collection
-            data = []
-            if db:
-                docs = db.collection('reports').stream()
-                for doc in docs:
-                    try:
-                        doc_data = doc.to_dict()
-                        doc_data['id'] = doc.id
-                        
-                        # Manual serialization check for ALL nested levels (basic)
-                        def serialize_datetimes(item):
-                            if isinstance(item, list):
-                                return [serialize_datetimes(i) for i in item]
-                            if isinstance(item, dict):
-                                return {k: serialize_datetimes(v) for k, v in item.items()}
-                            if isinstance(item, datetime):
-                                return item.isoformat()
-                            return item
-
-                        doc_data = serialize_datetimes(doc_data)
-                        data.append(doc_data)
-                    except Exception as doc_err:
-                        print(f"Error processing document {doc.id}: {doc_err}")
-                
-            return JsonResponse({'status': 'success', 'data': data})
-        except Exception as e:
-            print(f"GET Telemetry BIG Error: {e}")
-            import traceback
-            traceback.print_exc()
-            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-            
-    elif request.method == 'POST':
-        try:
-            if not request.body:
-                 return JsonResponse({'status': 'error', 'message': 'Empty Body'}, status=400)
-                 
             body = json.loads(request.body)
-            # Use user ID from body or fall back to 'unknown'
-            user_id = body.get('user', body.get('student_id', 'user_001'))
+            uid = body.get("user", body.get("student_id", "nexus_node"))
             
-            # Map Extension data to Android 'StudentSession' model
-            android_report = {
-                'studentId': user_id,
-                'studentName': user_id, # Fallback to ID until we have a name lookup
-                'email': body.get('email', f"{user_id}@xscout.app"),
-                'timestamp': firestore.SERVER_TIMESTAMP,
-                'isActive': True,
-                'ai': body.get('ai', 0), # Store raw score (0-100)
-                'behavior': {
-                    'wpm': body.get('behavior', {}).get('wpm', 0),
-                    'backspaceRate': body.get('behavior', {}).get('backspaceCount', 0),
-                    'pasteEvents': body.get('behavior', {}).get('pasteCount', 0),
-                    'idleTime': body.get('behavior', {}).get('idleTime', 0),
-                },
-                'stack': body.get('tech', {}).get('detectedTech', 'Web Content'),
-                'project': body.get('project', {}), # SAVE PROJECT STRUCTURE
-                'tech': body.get('tech', {}), # SAVE TECH METADATA
-                'terminal': body.get('terminal', {}), # SAVE TERMINAL HISTORY
-                'integrity': body.get('integrity', {}), # SAVE SECURITY ALERTS
-                'titleHistory': (body.get('forensic') or {}).get('activeDocuments', [])
-            }
+            # Risk Score Processing Logic (Ensure it's always an integer)
+            raw_ai = body.get('ai', 0)
+            if raw_ai is None: raw_ai = 0
             
-            # Write to Firestore in the 'reports' collection for Android compatibility
-            if db:
-                db.collection('reports').document(user_id).set(android_report)
+            risk_score = int(raw_ai * 100) if isinstance(raw_ai, (float, int)) and isinstance(raw_ai, float) else int(raw_ai)
 
-                # Store History for playback (Archive snapshots)
-                snapshot = body.get('snapshot') or (body.get('forensic') or {}).get('snapshot')
-                if snapshot:
-                    history_entry = {
-                        'timestamp': firestore.SERVER_TIMESTAMP,
-                        'file': snapshot.get('file') or snapshot.get('filename') or 'unknown',
-                        'code': snapshot.get('code', ''),
-                        'language': snapshot.get('language', 'text'),
-                        'ai_score': android_report['ai'],
-                        'forensic': body.get('forensic', {}) # Include full forensic data for completeness
-                    }
-                    db.collection('reports').document(user_id).collection('history').add(history_entry)
+            # Commit to SQLite (Permanent Ledger)
+            pulse = TelemetryPulse.objects.create(
+                developer_id=uid,
+                node_code=body.get('node_code'),  # RESTORE NODE MAPPING
+                risk_score=risk_score,
+                raw_data=json.dumps(body)
+            )
+            
+            # 2. Extract Forensic & Snapshot (Handle stringified payloads from some extension versions)
+            forensic = body.get('forensic', {})
+            if isinstance(forensic, str):
+                try: forensic = json.loads(forensic)
+                except: forensic = {}
                 
-                return JsonResponse({'status': 'saved'})
-            else:
-                return JsonResponse({
-                    'status': 'error', 
-                    'message': f'Cloud Engine Offline: {init_error}'
-                }, status=503)
-        except json.JSONDecodeError:
-            print("Error: Invalid JSON in Telemetry POST")
-            return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
-        except Exception as e:
-            print(f"POST Telemetry BIG Error: {e}")
-            import traceback
-            traceback.print_exc()
-            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+            snapshot = body.get('snapshot') or (forensic.get('snapshot') if isinstance(forensic, dict) else {})
             
-    return JsonResponse({'status': 'method_not_allowed'}, status=405)
+            if snapshot and isinstance(snapshot, dict):
+                CodeSnapshot.objects.create(
+                    pulse=pulse,
+                    filename=snapshot.get('file') or snapshot.get('filename') or 'unknown',
+                    content=snapshot.get('code') or snapshot.get('content') or '',
+                    language=snapshot.get('language') or 'text'
+                )
+            
+            # Update RAM Cache (Dashboard)
+            body["id"] = uid
+            if "timestamp" not in body: body["timestamp"] = datetime.now().isoformat()
+            LOCAL_TELEMETRY[uid] = body
+            
+            return JsonResponse({"status": "saved", "hub": "sqlite_local"})
+        except Exception as e:
+            print(f"TELEMETRY_SYNC_ERROR: {e}")
+            return JsonResponse({"status": "error", "message": f"Sync rejected: {str(e)}"}, status=400)
+    
+    # GET: Summarize current status for Fleet Dashboard
+    data = []
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    
+    for dev_id, pulse_entry in LOCAL_TELEMETRY.items():
+        if not pulse_entry: continue # Prevent crash on empty sessions
+        
+        # Support both latest-only dict or historical pulse list (for future-proofing)
+        latest = pulse_entry[-1] if isinstance(pulse_entry, list) else pulse_entry
+        root_path = base_dir
 
-# Removed redundant imports moved to top
+        try:
+            # Extract raw payload: Using dict from RAM cache directly or unpacking if it's a Pulse instance
+            if isinstance(latest, dict) and 'raw_data' not in latest:
+                raw_payload = latest
+            else:
+                raw_data = getattr(latest, 'raw_data', latest.get('raw_data', '{}') if hasattr(latest, 'get') else '{}')
+                raw_payload = json.loads(raw_data) if isinstance(raw_data, str) else raw_data
+
+            if raw_payload.get('project') and raw_payload['project'].get('path'):
+                root_path = raw_payload['project']['path'].replace('\\', '/')
+            else:
+                # Fallback to snap inference from SQLite
+                latest_with_file = TelemetryPulse.objects.filter(developer_id=dev_id, snapshots__isnull=False).last()
+                if latest_with_file:
+                    snap = latest_with_file.snapshots.first()
+                    if snap and snap.filename:
+                        p = snap.filename.replace('\\', '/')
+                        parts = p.split('/')
+                        if len(parts) >= 2:
+                            root_path = "/".join(parts[:2])
+        except: pass
+
+        summary = latest.copy() if hasattr(latest, 'copy') else {}
+        summary["id"] = dev_id
+        summary["root_path"] = root_path
+        data.append(summary)
+
+    if not data:
+        data = [{
+            "id": "Nexus-Sync-Node",
+            "timestamp": datetime.now().isoformat(),
+            "forensic": {"activeApp": "Engine Operational (Full-SQLite Hub Active)"},
+            "status": "system",
+            "root_path": base_dir
+        }]
+    return JsonResponse({"status": "success", "data": data})
 
 @login_required
 def export_logs(request):
@@ -265,7 +260,8 @@ def system_backup(request):
             docs = db.collection('reports').stream()
             all_data = {doc.id: doc.to_dict() for doc in docs}
         
-        response = JsonResponse(all_data, json_dumps_params={'indent': 2})
+        all_json = json.dumps(all_data, indent=2, cls=FirestoreEncoder)
+        response = HttpResponse(all_json, content_type='application/json')
         response['Content-Disposition'] = f'attachment; filename="xscout_backup_{datetime.now().strftime("%Y%m%d")}.json"'
         return response
     except Exception as e:
@@ -277,26 +273,12 @@ def purge_logs(request):
     if request.method == 'POST':
         try:
             # Logic to delete old logs
-            # Since Firestore free tier requires individual deletes, we'll just batch delete for this demo
-            # In production, query by timestamp < 30 days ago
-            
-            # Mocking the "30 days" check by checking if 'timestamp' exists and parsing it
-            # For this demo, we will just count items to show it "worked" without actually destroying data aggressively
-            # unless explicitly requested. I'll delete documents that explicitly look like test data or old.
-            
-            # Simple implementation: Delete everything for cleanup demo or just return success simulation
-            # Let's actually delete just to be functional
-            
             deleted_count = 0
             if db:
                 batch = db.batch()
                 docs = db.collection('reports').limit(50).stream() 
                 
                 for doc in docs:
-                    # In a real scenario: if doc.create_time < 30_days_ago:
-                    # db.collection('telemetry').document(doc.id).delete()
-                    # For safety in this demo, let's NOT wipe the DB, but return success 
-                    # or maybe delete strictly 'unknown' users
                     if 'user' in doc.id and 'test' in doc.id.lower():
                          batch.delete(doc.reference)
                          deleted_count += 1
@@ -327,10 +309,11 @@ def get_directory_structure(request):
     else:
         full_path = os.path.join(base_dir, target_path)
 
-    # Simplified security: Only block if it looks like a relative break-out (../)
-    # If absolute, we trust the dashboard user (Admin) to browse their own system
-    if not is_absolute and not os.path.abspath(full_path).startswith(os.path.abspath(base_dir)):
-        return JsonResponse({'status': 'error', 'message': f'Access denied to {target_path}'}, status=403)
+    # Security check: Relative paths must be within BASE_DIR. 
+    # Absolute paths (initiated by the Admin via telemetry discovery) are trusted.
+    if not is_absolute:
+        if not os.path.normpath(full_path).startswith(os.path.normpath(base_dir)):
+            return JsonResponse({'status': 'error', 'message': f'Access denied to {target_path}'}, status=403)
         
     if not os.path.exists(full_path):
         return JsonResponse({'status': 'error', 'message': f'Path not found: {full_path}'}, status=404)
@@ -346,7 +329,7 @@ def get_directory_structure(request):
                 items.append({
                     'name': entry.name,
                     'type': 'directory' if entry.is_dir() else 'file',
-                    'path': os.path.relpath(entry.path, base_dir).replace('\\', '/')
+                    'path': entry.path.replace('\\', '/')
                 })
         
         # Sort: Directories first, then files
@@ -360,7 +343,7 @@ def get_directory_structure(request):
 def read_file_content(request):
     """
     Reads and returns the content of a file.
-    Restricted to valid text files within BASE_DIR.
+    Restricted to valid text files within BASE_DIR (unless absolute path is provided by Admin).
     """
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     target_path = request.GET.get('path', '')
@@ -371,20 +354,24 @@ def read_file_content(request):
     else:
         full_path = os.path.join(base_dir, target_path)
     
-    # Security check
-    if not is_absolute and not os.path.abspath(full_path).startswith(os.path.abspath(base_dir)):
-        return JsonResponse({'status': 'error', 'message': f'Access denied to {target_path}'}, status=403)
+    # Security check: Relative paths only
+    if not is_absolute:
+        if not os.path.normpath(full_path).startswith(os.path.normpath(base_dir)):
+            return JsonResponse({'status': 'error', 'message': f'Access denied to {target_path}'}, status=403)
         
     if not os.path.isfile(full_path):
         return JsonResponse({'status': 'error', 'message': f'File not found: {full_path}'}, status=404)
         
-    # Content type check (basic)
-    allowed_extensions = ['.py', '.js', '.html', '.css', '.json', '.txt', '.md', '.xml', '.yml', '.yaml', '']
+    # Content type check (Extensive source code support)
+    allowed_extensions = [
+        '.py', '.js', '.ts', '.tsx', '.jsx', '.html', '.css', '.json', '.txt', '.md', 
+        '.xml', '.yml', '.yaml', '.gradle', '.kt', '.ktm', '.java', '.c', '.cpp', 
+        '.h', '.hpp', '.cs', '.sh', '.bat', '.ps1', '.sql', '.env', '.gitignore', 
+        '.dockerfile', '.properties', '.toml', '.lock', '.cfg', ''
+    ]
     _, ext = os.path.splitext(full_path)
     
-    print(f"DEBUG: Reading file {full_path} with extension '{ext}'")
-    
-    if ext.lower() not in allowed_extensions:
+    if ext.lower() not in allowed_extensions and not full_path.endswith('Dockerfile'):
          return JsonResponse({'status': 'error', 'message': f'File type ({ext}) not supported for viewing'}, status=400)
     
     try:
@@ -400,8 +387,8 @@ def read_file_content(request):
 
 @login_required
 def network_view(request):
-    """Render the Network Graph page"""
-    return render(request, 'network_graph.html')
+    """Render the Network Node page"""
+    return render(request, 'network_node.html')
 
 @login_required
 def get_network_data(request):
@@ -410,28 +397,47 @@ def get_network_data(request):
     O(N^2) complexity - Suitable for standard classrooms (< 100 students).
     """
     try:
-        # 1. Fetch all active users
+        node_code = request.GET.get('node_code')
+        # 1. Fetch latest pulse for all users with code snapshots (Query SQLite Ledger)
         users = []
-        if db:
-            docs = db.collection('reports').stream()
-            for doc in docs:
-                data = doc.to_dict()
-                uid = doc.id
-                # Extract code snapshot
-                code = ""
-                if 'snapshot' in data and 'code' in data['snapshot']:
-                    code = data['snapshot']['code']
+        pulses_query = TelemetryPulse.objects.all()
+        if node_code:
+            pulses_query = pulses_query.filter(node_code__iexact=node_code)
+            
+        developer_ids = pulses_query.values_list('developer_id', flat=True).distinct()
+        
+        for uid in developer_ids:
+            # Find the last pulse that actually contains code for this developer
+            query = TelemetryPulse.objects.filter(developer_id=uid).exclude(snapshots=None).order_by('timestamp')
+            if node_code:
+                query = query.filter(node_code__iexact=node_code)
+            latest_with_code = query.last()
+            
+            # FALLBACK to latest pulse if no snapshots exist yet
+            if not latest_with_code:
+                fallback_query = TelemetryPulse.objects.filter(developer_id=uid).order_by('timestamp')
+                if node_code:
+                    fallback_query = fallback_query.filter(node_code__iexact=node_code)
+                latest_with_code = fallback_query.last()
                 
-                # Skip empty code
-                if not code or len(code.strip()) < 10:
-                    continue
+            if not latest_with_code:
+                continue
+                
+            code_content = ""
+            try:
+                snapshot = latest_with_code.snapshots.first()
+                if snapshot and snapshot.content:
+                    code_content = snapshot.content
+            except:
+                pass
 
-                users.append({
-                    'id': uid,
-                    'label': uid, 
-                    'code': code,
-                    'last_seen': data.get('timestamp', 'Unknown')
-                })
+            users.append({
+                'id': uid,
+                'label': uid, 
+                'code': code_content,
+                'last_seen': latest_with_code.timestamp.isoformat(),
+                'rank': getattr(latest_with_code, 'rank', 'developer')
+            })
 
         # 2. Pairwise Comparison
         edges = []
@@ -465,7 +471,8 @@ def get_network_data(request):
                 'id': user['id'],
                 'label': user['label'],
                 'last_seen': user['last_seen'],
-                'risky': user['id'] in risky_users
+                'risky': user['id'] in risky_users,
+                'rank': user.get('rank', 'developer')
             })
 
         return JsonResponse({
@@ -479,6 +486,70 @@ def get_network_data(request):
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
+@login_required
+@csrf_exempt
+def create_node(request):
+    """API: Provision a new Environment Node (Super Developer action)"""
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            code = data.get('node_code')
+            desc = data.get('description', '')
+            
+            if not code:
+                return JsonResponse({'status': 'error', 'message': 'Node Code Required'}, status=400)
+                
+            if Environment.objects.filter(invite_code=code).exists():
+                return JsonResponse({'status': 'error', 'message': 'Node Code already exists'}, status=400)
+                
+            Environment.objects.create(
+                invite_code=code,
+                created_by=request.user,
+                description=desc
+            )
+            return JsonResponse({'status': 'success', 'message': f'Environment {code} provisioned.'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    return JsonResponse({'status': 'error', 'message': 'POST Required'}, status=405)
+
+@login_required
+def get_environments(request):
+    """API: List all provisioned environment nodes"""
+    try:
+        envs = Environment.objects.all().order_by('-created_at')
+        data = []
+        for env in envs:
+            # Case-insensitive count of active developer pulses for this node_code
+            user_count = TelemetryPulse.objects.filter(node_code__iexact=env.invite_code).values('developer_id').distinct().count()
+            data.append({
+                'invite_code': env.invite_code,
+                'description': env.description,
+                'created_by': env.created_by.username,
+                'created_at': env.created_at.isoformat(),
+                'user_count': user_count
+            })
+        return JsonResponse({'status': 'success', 'data': data})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@csrf_exempt
+@login_required
+def delete_user_session(request, user_id):
+    """Admin: Permanent Wipe of User Session from Ledger & Cache"""
+    if request.method == "POST":
+        try:
+            # 1. Purge from SQLite Ledger
+            TelemetryPulse.objects.filter(developer_id=user_id).delete()
+            
+            # 2. Flush from RAM Cache
+            if user_id in LOCAL_TELEMETRY:
+                del LOCAL_TELEMETRY[user_id]
+            
+            return JsonResponse({"status": "success", "message": f"Session ledger for {user_id} purged."})
+        except Exception as e:
+            return JsonResponse({"status": "error", "message": str(e)}, status=500)
+    return JsonResponse({"status": "error", "message": "POST required"}, status=405)
+
 @csrf_exempt
 def debug_server_view(request):
     """PUBLIC: Diagnostic view to help find out why telemetry isn't saved"""
@@ -486,7 +557,7 @@ def debug_server_view(request):
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         files = os.listdir(base_dir)
         
-        # Search for any valid firebase json (matching our known production naming)
+        # Search for any valid firebase json
         json_file = next((f for f in files if f.endswith('.json') and ('firebase' in f.lower() or 'service' in f.lower())), "NOT FOUND")
 
         status_data = {

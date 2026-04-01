@@ -67,9 +67,10 @@ fun XScoutLogo(fontSize: Int = 24) {
         Text(
             text = "x",
             style = TextStyle(
-                brush = Brush.linearGradient(listOf(Color(0xFFD946EF), Color(0xFF8B5CF6))),
+                brush = Brush.linearGradient(listOf(XScoutColors.XScoutCyan, XScoutColors.XScoutBlue)),
                 fontSize = (fontSize * 1.5).sp,
-                fontWeight = FontWeight.Black
+                fontWeight = FontWeight.Black,
+                letterSpacing = (-2).sp
             )
         )
         Text(
@@ -116,32 +117,33 @@ fun GlassCard(
 fun NeonProgressBar(
     progress: Float,
     modifier: Modifier = Modifier,
-    color: Color = XScoutColors.NeonPurple
+    color: Color = XScoutColors.XScoutCyan
 ) {
     LinearProgressIndicator(
         progress = { (progress / 100f).coerceIn(0f, 1f) },
         modifier = modifier
             .fillMaxWidth()
+            .height(6.dp)
             .clip(RoundedCornerShape(8.dp)),
         color = color,
-        trackColor = Color(0x33FFFFFF),
+        trackColor = Color(0x1AFFFFFF),
         strokeCap = StrokeCap.Round
     )
 }
 
 // ─── Suspicion color helper ──────────────────────────────────────────────────
 fun suspicionColor(level: SuspicionLevel): Color = when (level) {
-    SuspicionLevel.LOW      -> XScoutColors.NeonGreen
+    SuspicionLevel.LOW      -> XScoutColors.AdminGreen
     SuspicionLevel.MEDIUM   -> XScoutColors.Warning
-    SuspicionLevel.HIGH     -> Color(0xFFFF6600)
-    SuspicionLevel.CRITICAL -> XScoutColors.Danger
+    SuspicionLevel.HIGH     -> XScoutColors.XScoutBlue
+    SuspicionLevel.CRITICAL -> XScoutColors.XScoutBlue
 }
 
 fun suspicionLabel(level: SuspicionLevel): String = when (level) {
-    SuspicionLevel.LOW      -> "LOW RISK"
-    SuspicionLevel.MEDIUM   -> "MEDIUM"
+    SuspicionLevel.LOW      -> "NODE STABLE"
+    SuspicionLevel.MEDIUM   -> "AI WARNING"
     SuspicionLevel.HIGH     -> "HIGH RISK"
-    SuspicionLevel.CRITICAL -> "CRITICAL"
+    SuspicionLevel.CRITICAL -> "CRITICAL BREACH"
 }
 
 // ─── Premium Text Field ─────────────────────────────────────────────────────
@@ -183,11 +185,11 @@ fun WarpTextField(
             visualTransformation = if (isPassword && !passwordVisible) PasswordVisualTransformation() else VisualTransformation.None,
             keyboardOptions = keyboardOptions,
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = XScoutColors.NeonPurple,
+                focusedBorderColor = XScoutColors.XScoutCyan,
                 unfocusedBorderColor = Color.White.copy(0.1f),
-                cursorColor = XScoutColors.NeonPurple,
+                cursorColor = XScoutColors.XScoutCyan,
                 errorBorderColor = XScoutColors.Danger,
-                focusedLabelColor = XScoutColors.NeonPurple,
+                focusedLabelColor = XScoutColors.XScoutCyan,
                 unfocusedLabelColor = Color.White.copy(0.4f)
             ),
             shape = RoundedCornerShape(12.dp),

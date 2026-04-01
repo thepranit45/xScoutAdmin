@@ -154,13 +154,13 @@
                     <div class="space-y-4">
                         <div>
                             <label class="block text-xs font-mono text-on-surface-variant mb-2">STUDENT ID</label>
-                            <input type="text" placeholder="e.g. STU-2024-001" class="w-full bg-white/5 border border-white/10 rounded p-3 text-sm focus:border-primary/50 outline-none transition-colors">
+                            <input type="text" id="new-student-id" placeholder="e.g. s2" class="w-full bg-white/5 border border-white/10 rounded p-3 text-sm focus:border-primary/50 outline-none transition-colors">
                         </div>
                         <div>
-                            <label class="block text-xs font-mono text-on-surface-variant mb-2">FULL NAME / DESCRIPTION</label>
-                            <input type="text" placeholder="e.g. John Doe - Science Lab" class="w-full bg-white/5 border border-white/10 rounded p-3 text-sm focus:border-primary/50 outline-none transition-colors">
+                            <label class="block text-xs font-mono text-on-surface-variant mb-2">FULL NAME / DESCRIPTION (OPTIONAL)</label>
+                            <input type="text" id="new-student-desc" placeholder="e.g. John Doe - Science Lab" class="w-full bg-white/5 border border-white/10 rounded p-3 text-sm focus:border-primary/50 outline-none transition-colors">
                         </div>
-                        <button class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded text-xs uppercase tracking-widest transition-colors mt-4">Add Authorized User</button>
+                        <button id="add-user-btn" onclick="addAuthorizedUser()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded text-xs uppercase tracking-widest transition-colors mt-4">Add Authorized User</button>
                     </div>
                 </div>
                 <!-- Authorized Users Table -->
@@ -174,14 +174,8 @@
                                 <th class="p-4 jetbrains-mono text-[10px] text-on-surface-variant uppercase tracking-widest font-bold text-right">Action</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <!-- Dummy Data for Now -->
-                            <tr class="border-b border-white/5">
-                                <td class="p-4 font-bold text-sm">s1</td>
-                                <td class="p-4 text-sm text-on-surface-variant">Default Monitoring Target</td>
-                                <td class="p-4"><span class="text-[#27c93f] text-xs font-bold">Active</span></td>
-                                <td class="p-4 text-right"><button class="text-xs px-3 py-1 border border-white/20 rounded hover:bg-white/10">Revoke</button></td>
-                            </tr>
+                        <tbody id="authorized-users-list">
+                            <!-- Dynamic Data via loadUsers() -->
                         </tbody>
                     </table>
                 </div>
@@ -255,7 +249,12 @@
 
                 const isHighRisk = risk > 20;
                 const activityTxt = node.forensic?.activeApp || 'Web Content';
-                const timeStr = new Date().toLocaleTimeString('en-US', {hour12: false});
+                
+                // Calculate Liveness
+                const lastSeen = node.timestamp ? new Date(node.timestamp) : new Date();
+                const diffMs = (new Date() - lastSeen);
+                const isLive = diffMs < 60000; // 1 minute window
+                const timeStr = lastSeen.toLocaleTimeString('en-US', {hour12: false});
                 const userColor = isHighRisk ? 'bg-primary-container text-white' : 'bg-blue-600 text-white';
 
                 htmlTable += `
@@ -276,12 +275,12 @@
                     <td class="p-4 font-mono text-xs text-on-surface-variant">${timeStr}</td>
                     <td class="p-4">
                         <div class="flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full ${isHighRisk ? 'bg-primary animate-pulse' : 'bg-on-surface-variant'}"></span>
-                            <span class="text-xs text-on-surface-variant uppercase tracking-wider">Recent</span>
+                            <span class="w-2 h-2 rounded-full ${isLive ? 'bg-[#3ddc84] animate-pulse' : 'bg-on-surface-variant'}"></span>
+                            <span class="text-xs ${isLive ? 'text-[#3ddc84]' : 'text-on-surface-variant'} uppercase tracking-wider font-bold">${isLive ? 'Live' : 'Offline'}</span>
                         </div>
                     </td>
                     <td class="p-4 text-right">
-                        <a href="/monitor/${node.id}/" class="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded font-bold text-xs transition-colors inline-block text-white">Analyze</a>
+                        <a href="/playback/?user_id=${node.id}" class="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded font-bold text-xs transition-colors inline-block text-white">Analyze</a>
                     </td>
                 </tr>`;
             });
@@ -290,8 +289,78 @@
             document.getElementById('stat-active-threats').innerText = threats;
         }
 
+        async function loadUsers() {
+            try {
+                const response = await fetch('/auth/api/list-users/');
+                const data = await response.json();
+                if (data.success) {
+                    const tbody = document.getElementById('authorized-users-list');
+                    tbody.innerHTML = '';
+                    if(!data.users || data.users.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-white/20 italic">No authorized users configured</td></tr>';
+                        return;
+                    }
+                    data.users.forEach(user => {
+                        tbody.innerHTML += `
+                        <tr class="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                            <td class="p-4"><div class="font-bold text-white">${user.student_id}</div></td>
+                            <td class="p-4 text-xs text-on-surface-variant">${user.description || 'No description'}</td>
+                            <td class="p-4">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold ${user.is_active ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'} uppercase">
+                                    ${user.is_active ? 'Active' : 'Suspended'}
+                                </span>
+                            </td>
+                            <td class="p-4 text-right">
+                                <button onclick="toggleUser('${user.student_id}')" class="text-[10px] px-3 py-1 border border-white/10 rounded uppercase text-white hover:bg-white/10 transition-colors">
+                                    ${user.is_active ? 'Revoke' : 'Reinstate'}
+                                </button>
+                            </td>
+                        </tr>`;
+                    });
+                }
+            } catch (e) { console.error('Ledger sync failure', e); }
+        }
+
+        async function addAuthorizedUser() {
+            const id = document.getElementById('new-student-id').value.trim();
+            const desc = document.getElementById('new-student-desc').value.trim();
+            if (!id) return alert('ID Required');
+            
+            const btn = document.getElementById('add-user-btn');
+            btn.disabled = true;
+            btn.innerText = 'PROVISIONING...';
+
+            try {
+                const response = await fetch('/auth/api/add-user/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ student_id: id, description: desc })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('new-student-id').value = '';
+                    document.getElementById('new-student-desc').value = '';
+                    loadUsers();
+                }
+            } catch (e) { alert('Provisioning failed'); }
+            btn.disabled = false;
+            btn.innerText = 'ADD AUTHORIZED USER';
+        }
+
+        async function toggleUser(studentId) {
+            try {
+                await fetch('/auth/api/toggle-status/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ student_id: studentId })
+                });
+                loadUsers();
+            } catch (e) { alert('Status toggle failed'); }
+        }
+
         setInterval(fetchTelemetry, 2000);
         fetchTelemetry();
+        loadUsers();
     </script>
 </body>
 </html>

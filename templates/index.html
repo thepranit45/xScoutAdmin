@@ -19,6 +19,7 @@
         .stitch-video-bg { position: fixed; inset: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: -20; opacity: 0.95; filter: hue-rotate(60deg) saturate(1.4); mix-blend-mode: screen; }
         
         .android-wobble { animation: wobble 2s infinite ease-in-out; transform-origin: bottom center; }
+        main, header { transition: transform 0.6s cubic-bezier(0.19, 1, 0.22, 1); }
         @keyframes wobble { 0%, 100% { transform: translateY(0) rotate(0); filter: drop-shadow(0 0 5px rgba(61, 220, 132, 0.2)); } 25% { transform: translateY(-4px) rotate(-6deg); filter: drop-shadow(0 0 8px rgba(61, 220, 132, 0.6)); } 75% { transform: translateY(-4px) rotate(6deg); filter: drop-shadow(0 0 8px rgba(61, 220, 132, 0.6)); } }
     </style>
     <script>
@@ -37,9 +38,9 @@
     </video>
 
     <!-- SIDEBAR -->
-    <aside class="h-screen w-64 fixed left-0 top-0 border-r border-white/10 bg-[#11131c]/80 backdrop-blur-xl flex flex-col p-4 z-50">
-        <div class="mb-10 px-2 flex items-center gap-2">
-            <h1 class="text-2xl font-black tracking-tighter text-[#e2e1ef] uppercase"><span class="text-primary">x</span>Scout</h1>
+    <aside class="h-screen w-56 fixed left-0 top-0 border-r border-white/10 bg-[#11131c]/80 backdrop-blur-xl flex flex-col p-4 z-50">
+        <div class="mb-4 px-2 flex items-center justify-between">
+            <h1 class="text-xl font-black tracking-tighter text-[#e2e1ef] uppercase"><span class="text-primary">x</span>Scout <span class="text-[8px] text-on-surface-variant font-mono opacity-50 ml-2">v2.53</span></h1>
         </div>
         <nav class="flex-1 flex flex-col gap-1">
             <a class="flex items-center gap-3 px-4 py-3 text-[#d2bbff] bg-white/10 backdrop-blur-md rounded-lg border-l-2 border-[#dc2626] scale-[0.98] brightness-125 transition-all cursor-pointer" onclick="switchTab('overview')">
@@ -50,9 +51,9 @@
                 <span class="material-symbols-outlined text-xl">search</span>
                 <span class="text-sm font-medium">Forensics</span>
             </a>
-            <a class="flex items-center gap-3 px-4 py-3 text-[#e6bdb8] hover:text-[#e2e1ef] transition-all cursor-pointer" href="{% url 'network_graph' %}">
+            <a class="flex items-center gap-3 px-4 py-3 text-[#e6bdb8] hover:text-[#e2e1ef] transition-all cursor-pointer" href="{% url 'network_node' %}">
                 <span class="material-symbols-outlined text-xl">account_tree</span>
-                <span class="text-sm font-medium">Network Graph</span>
+                <span class="text-sm font-medium">Network Node</span>
             </a>
             <a class="flex items-center gap-3 px-4 py-3 text-[#e6bdb8] hover:text-[#e2e1ef] transition-all cursor-pointer" onclick="switchTab('add-users')">
                 <span class="material-symbols-outlined text-xl">person_add</span>
@@ -67,19 +68,22 @@
             <div class="px-4 py-2 mb-4">
                 <p class="jetbrains-mono text-[9px] text-on-surface-variant uppercase tracking-widest">Monitor Status</p>
                 <div class="flex items-center gap-2 mt-2">
-                    <div class="w-1.5 h-1.5 rounded-full bg-[#00ff9d] animate-pulse"></div>
-                    <p class="jetbrains-mono text-[10px] text-on-surface">Active Sessions: <span id="sidebar-active" class="font-bold">0</span></p>
+                    <div id="status-dot" class="w-1.5 h-1.5 rounded-full bg-[#00ff9d] animate-pulse"></div>
+                    <p id="status-msg" class="jetbrains-mono text-[9px] text-on-surface">Scanning Fleet...</p>
+                </div>
+                <div class="mt-2 pt-2 border-t border-white/5">
+                    <p class="jetbrains-mono text-[10px] text-on-surface">Active Sessions: <span id="sidebar-active" class="font-bold text-primary">0</span></p>
                 </div>
             </div>
         </div>
     </aside>
 
     <!-- TOP NAV -->
-    <header class="fixed top-0 right-0 left-64 h-16 z-40 border-b border-white/5 bg-[#03040B]/50 backdrop-blur-2xl flex justify-between items-center px-8">
+    <header class="fixed top-0 right-0 left-56 h-12 z-40 border-b border-white/5 bg-[#03040B]/50 backdrop-blur-2xl flex justify-between items-center px-8">
         <div class="flex-1 flex items-center">
             <div class="relative w-96">
                 <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-white/30 text-sm">search</span>
-                <input type="text" placeholder="Search Session / Student ID..." class="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-2 text-xs font-mono text-white focus:outline-none focus:border-primary/50 transition-colors">
+                <input id="node-search" type="text" placeholder="Search Session / Student ID..." class="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-2 text-xs font-mono text-white focus:outline-none focus:border-primary/50 transition-colors">
             </div>
         </div>
         <div class="flex items-center gap-4">
@@ -89,7 +93,7 @@
                 </svg>
                 Mobile App
             </a>
-            <button class="flex items-center gap-2 px-3 py-1.5 rounded border border-[#ffbd2e]/30 bg-[#ffbd2e]/10 hover:bg-[#ffbd2e]/20 transition-colors text-[10px] font-bold text-[#ffbd2e] uppercase tracking-wider">
+            <button onclick="toggleExplorer()" class="flex items-center gap-2 px-3 py-1.5 rounded border border-[#ffbd2e]/30 bg-[#ffbd2e]/10 hover:bg-[#ffbd2e]/20 transition-colors text-[10px] font-bold text-[#ffbd2e] uppercase tracking-wider">
                 <span class="material-symbols-outlined text-[14px]">folder_open</span> Explorer
             </button>
             <div class="flex items-center gap-2 pl-4 border-l border-white/10 ml-2">
@@ -101,83 +105,104 @@
     </header>
 
     <!-- MAIN CONTENT -->
-    <main class="pl-64 pt-16 min-h-screen">
+    <main class="pl-56 pt-12 min-h-screen">
         <div id="tab-overview" class="p-8 max-w-[1600px] mx-auto min-h-full tab-section">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <!-- Stat: Active Threats -->
                 <div class="bg-white/5 backdrop-blur-xl p-6 rounded-xl border border-white/10 relative overflow-hidden">
                     <div class="absolute inset-0 bg-primary/5 pointer-events-none"></div>
-                    <p class="jetbrains-mono text-[10px] text-on-surface-variant uppercase tracking-widest mb-2 font-bold">Active Threats</p>
+                    <p class="jetbrains-mono text-[10px] text-on-surface-variant uppercase tracking-widest mb-2 font-bold">Similarity Conflicts</p>
                     <span id="stat-active-threats" class="text-4xl font-black text-primary">0</span>
                 </div>
                 <!-- Stat: Total Monitored -->
                 <div class="bg-white/5 backdrop-blur-xl p-6 rounded-xl border border-white/10 relative overflow-hidden">
                     <div class="absolute inset-0 bg-blue-500/5 pointer-events-none"></div>
-                    <p class="jetbrains-mono text-[10px] text-on-surface-variant uppercase tracking-widest mb-2 font-bold">Total Monitored</p>
+                    <p class="jetbrains-mono text-[10px] text-on-surface-variant uppercase tracking-widest mb-2 font-bold">Fleet Developers</p>
                     <span id="stat-total-monitored" class="text-4xl font-black text-blue-400">0</span>
                 </div>
             </div>
 
-            <h3 class="font-bold text-lg mb-4 tracking-tight">Priority Alerts</h3>
+            <h3 class="font-bold text-lg mb-4 tracking-tight">Active Fleet Oversight</h3>
             <div class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden">
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="border-b border-white/10 bg-white/5">
-                            <th class="p-4 jetbrains-mono text-[10px] text-on-surface-variant uppercase tracking-widest font-bold">Student</th>
-                            <th class="p-4 jetbrains-mono text-[10px] text-on-surface-variant uppercase tracking-widest font-bold">Activity</th>
-                            <th class="p-4 jetbrains-mono text-[10px] text-on-surface-variant uppercase tracking-widest font-bold">AI Risk</th>
-                            <th class="p-4 jetbrains-mono text-[10px] text-on-surface-variant uppercase tracking-widest font-bold">Last Activity</th>
+                            <th class="p-4 jetbrains-mono text-[10px] text-on-surface-variant uppercase tracking-widest font-bold">Developer</th>
+                            <th class="p-4 jetbrains-mono text-[10px] text-on-surface-variant uppercase tracking-widest font-bold">Focus Context</th>
+                            <th class="p-4 jetbrains-mono text-[10px] text-on-surface-variant uppercase tracking-widest font-bold">Variance</th>
+                            <th class="p-4 jetbrains-mono text-[10px] text-on-surface-variant uppercase tracking-widest font-bold">Last Sync</th>
                             <th class="p-4 jetbrains-mono text-[10px] text-on-surface-variant uppercase tracking-widest font-bold">Status</th>
                             <th class="p-4 jetbrains-mono text-[10px] text-on-surface-variant uppercase tracking-widest font-bold text-right">Action</th>
                         </tr>
                     </thead>
                     <tbody id="student-table" class="divide-y divide-white/5 text-sm">
                         <!-- Populated by JS -->
-                        <tr><td colspan="6" class="p-8 text-center text-on-surface-variant text-xs font-mono animate-pulse">Awaiting Telemetry Sync...</td></tr>
+                        <tr><td colspan="6" class="p-8 text-center text-on-surface-variant text-xs font-mono animate-pulse">Awaiting Fleet Handshake...</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
 
-        <div id="tab-forensics" class="hidden p-8 max-w-[1600px] mx-auto min-h-full tab-section flex-col items-center justify-center text-center mt-32">
-            <span class="material-symbols-outlined text-[80px] text-white/10 mb-6">search</span>
-            <h3 class="text-2xl font-bold mb-2">Forensic Analysis</h3>
-            <p class="text-on-surface-variant max-w-md mx-auto">Select a student from the Priority Alerts table to start reconstructing granular behavioral events.</p>
+        <div id="tab-forensics" class="hidden p-8 max-w-[1600px] mx-auto h-[calc(100vh-80px)] tab-section flex-col">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-4">
+                    <div class="p-2 rounded bg-primary/10">
+                        <span class="material-symbols-outlined text-primary">terminal</span>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-white uppercase tracking-tight">Forensic Node Insight</h3>
+                        <p id="forensic-file-label" class="text-xs jetbrains-mono text-on-surface-variant italic">select_a_node.sys</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                     <span id="forensic-lang-badge" class="px-3 py-1 bg-white/5 border border-white/10 rounded font-bold text-[10px] text-primary uppercase">TEXT</span>
+                     <button onclick="switchTab('overview')" class="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded font-bold text-xs transition-all uppercase tracking-widest text-white">Return to Fleet Overview</button>
+                </div>
+            </div>
+            
+            <div class="flex-1 bg-[#1e1e1e]/80 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden flex flex-col shadow-2xl relative">
+                <div class="absolute inset-0 bg-primary/5 pointer-events-none opacity-20"></div>
+                <!-- CODE VIEWER HUB -->
+                <div id="dash-code-viewer" class="flex-1 p-8 jetbrains-mono text-[14px] leading-relaxed overflow-y-auto whitespace-pre-wrap selection:bg-primary/30 text-white/90">
+// UNBOUND NODE SELECTION
+// Please access the 'Fleet Explorer' via the top bar or select a developer node 
+// from the Fleet Oversight table to mount forensic snapshots...
+                </div>
+            </div>
         </div>
 
         <div id="tab-add-users" class="hidden p-8 max-w-[1600px] mx-auto min-h-full tab-section">
-            <h3 class="font-bold text-lg mb-6 tracking-tight">User Access Management</h3>
+            <h3 class="font-bold text-lg mb-6 tracking-tight">Fleet Provisioning</h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <!-- Add User Form -->
                 <div class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-6 h-fit">
-                    <h4 class="font-bold mb-6">Authorize New Identity</h4>
+                    <h4 class="font-bold mb-6">Authorize Dev Node</h4>
                     <div class="space-y-4">
                         <div>
-                            <label class="block text-xs font-mono text-on-surface-variant mb-2">STUDENT ID</label>
-                            <input type="text" placeholder="e.g. STU-2024-001" class="w-full bg-white/5 border border-white/10 rounded p-3 text-sm focus:border-primary/50 outline-none transition-colors">
+                            <label class="block text-xs font-mono text-on-surface-variant mb-2">DEVELOPER ID</label>
+                            <input id="new-student-id" type="text" placeholder="e.g. DEV-UX-102" class="w-full bg-white/5 border border-white/10 rounded p-3 text-sm focus:border-primary/50 outline-none transition-colors">
                         </div>
                         <div>
-                            <label class="block text-xs font-mono text-on-surface-variant mb-2">FULL NAME / DESCRIPTION</label>
-                            <input type="text" placeholder="e.g. John Doe - Science Lab" class="w-full bg-white/5 border border-white/10 rounded p-3 text-sm focus:border-primary/50 outline-none transition-colors">
+                            <label class="block text-xs font-mono text-on-surface-variant mb-2">FULL NAME / ROLE</label>
+                            <input id="new-student-desc" type="text" placeholder="e.g. Sarah J. - Senior UX" class="w-full bg-white/5 border border-white/10 rounded p-3 text-sm focus:border-primary/50 outline-none transition-colors">
                         </div>
-                        <button class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded text-xs uppercase tracking-widest transition-colors mt-4">Add Authorized User</button>
+                        <button onclick="addAuthorizedUser()" id="add-user-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded text-xs uppercase tracking-widest transition-colors mt-4">Mount Individual Developer</button>
                     </div>
                 </div>
                 <!-- Authorized Users Table -->
-                <div class="md:col-span-2 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden">
+                <div class="md:col-span-2 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden h-[400px] overflow-y-auto">
                     <table class="w-full text-left">
                         <thead>
-                            <tr class="border-b border-white/10 bg-white/5">
-                                <th class="p-4 jetbrains-mono text-[10px] text-on-surface-variant uppercase tracking-widest font-bold">Student ID</th>
-                                <th class="p-4 jetbrains-mono text-[10px] text-on-surface-variant uppercase tracking-widest font-bold">Description</th>
+                            <tr class="border-b border-white/10 bg-white/5 sticky top-0 backdrop-blur-xl">
+                                <th class="p-4 jetbrains-mono text-[10px] text-on-surface-variant uppercase tracking-widest font-bold">Identity</th>
+                                <th class="p-4 jetbrains-mono text-[10px] text-on-surface-variant uppercase tracking-widest font-bold">Context</th>
                                 <th class="p-4 jetbrains-mono text-[10px] text-on-surface-variant uppercase tracking-widest font-bold">Status</th>
                                 <th class="p-4 jetbrains-mono text-[10px] text-on-surface-variant uppercase tracking-widest font-bold text-right">Action</th>
                             </tr>
                         </thead>
-                        <tbody id="student-table">
-                            <!-- Live Telemetry Injected Here -->
+                        <tbody id="authorized-users-list">
                             <tr class="border-b border-white/5">
-                                <td colspan="6" class="p-12 text-center text-on-surface-variant/40 italic text-sm">AWAITING TELEMETRY SYNC...</td>
+                                <td colspan="4" class="p-12 text-center text-on-surface-variant/40 italic text-sm">FETCHING AUTH LEDGER...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -190,13 +215,33 @@
             <div class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl p-6 max-w-sm">
                 <h4 class="font-bold mb-4 flex items-center gap-2"><span class="material-symbols-outlined text-primary">shield</span> Data Compliance</h4>
                 <div class="space-y-3 flex flex-col">
-                    <button class="text-left px-4 py-3 bg-white/5 hover:bg-white/10 rounded border border-white/5 text-sm transition-colors flex items-center gap-3"><span class="material-symbols-outlined text-sm">download</span> Export Audit Trail (.CSV)</button>
-                    <button class="text-left px-4 py-3 bg-white/5 hover:bg-white/10 rounded border border-white/5 text-sm transition-colors flex items-center gap-3"><span class="material-symbols-outlined text-sm">cloud_sync</span> Manual System Snapshot</button>
-                    <button class="text-left px-4 py-3 bg-primary/10 hover:bg-primary/20 text-primary rounded border border-primary/20 text-sm transition-colors flex items-center gap-3"><span class="material-symbols-outlined text-sm">delete</span> Flush Compliance Data</button>
+                    <button onclick="performAction('export')" class="text-left px-4 py-3 bg-white/5 hover:bg-white/10 rounded border border-white/5 text-sm transition-colors flex items-center gap-3"><span class="material-symbols-outlined text-sm">download</span> Export Audit Trail (.CSV)</button>
+                    <button onclick="performAction('backup')" class="text-left px-4 py-3 bg-white/5 hover:bg-white/10 rounded border border-white/5 text-sm transition-colors flex items-center gap-3"><span class="material-symbols-outlined text-sm">cloud_sync</span> Manual System Snapshot</button>
+                    <button onclick="performAction('purge')" class="text-left px-4 py-3 bg-primary/10 hover:bg-primary/20 text-primary rounded border border-primary/20 text-sm transition-colors flex items-center gap-3"><span class="material-symbols-outlined text-sm">delete</span> Flush Compliance Data</button>
                 </div>
             </div>
         </div>
     </main>
+
+    <!-- EXPLORER OVERLAY -->
+    <div id="explorer-panel" class="fixed left-0 top-0 bottom-0 w-[360px] bg-[#11131c] border-r border-white/5 z-[60] pt-12 -translate-x-full transition-transform duration-300 shadow-2xl overflow-hidden flex flex-col">
+        <div class="px-6 py-4 border-b border-white/10 flex items-center justify-between bg-black/20">
+            <h4 class="text-[11px] font-black text-white/50 uppercase tracking-[0.2em] flex items-center gap-3 font-mono">
+                <span class="material-symbols-outlined text-[18px] text-primary">folder_managed</span>
+                Forensic Explorer
+            </h4>
+            <button onclick="toggleExplorer()" class="text-white/20 hover:text-white transition-colors"><span class="material-symbols-outlined text-[18px]">close</span></button>
+        </div>
+        
+        <div id="explorer-workspace-status" class="px-6 py-4 bg-primary/5 border-b border-white/5 mb-2">
+            <p class="text-[9px] font-bold text-primary uppercase tracking-widest mb-1">Active Workspace</p>
+            <p id="current-root-display" class="text-[11px] font-mono text-white/60 truncate">system_unbound.sys</p>
+        </div>
+
+        <div id="explorer-content" class="flex-1 overflow-y-auto jetbrains-mono text-[13px] py-4 px-2 scrollbar-hide">
+            <div class="px-4 text-white/20 italic animate-pulse">Syncing Ledger Structure...</div>
+        </div>
+    </div>
 
     <script>
         function switchTab(tabId) {
@@ -224,37 +269,62 @@
             });
         }
 
+        // Store nodes globally for filtering
+        let allNodes = [];
+
         async function fetchTelemetry() {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort('WATCHDOG_TIMEOUT'), 20000); 
+
             try {
-                const response = await fetch('/api/telemetry/');
+                const response = await fetch('/api/telemetry/', { signal: controller.signal });
+                clearTimeout(timeoutId);
                 const json = await response.json();
-                
                 if (json.status === 'success') {
-                    updateDashboard(json.data);
+                    allNodes = json.data || [];
+                    applyFilter();
+                    document.getElementById('status-msg').innerText = 'Operational - Fleet Link Synchronized';
+                    document.getElementById('status-dot').classList.replace('bg-red-500', 'bg-[#00ff9d]');
                 }
             } catch (e) {
-                console.error("Telemetry Endpoint Error:", e);
+                clearTimeout(timeoutId);
+                const isTimeout = e.name === 'AbortError' || (e.reason === 'WATCHDOG_TIMEOUT');
+                const msg = isTimeout ? 'Sync Delayed (Retry in progress)' : `PIPELINE FAIL: ${e.message}`;
+                document.getElementById('status-msg').innerText = msg;
+                document.getElementById('status-dot').classList.replace('bg-[#00ff9d]', 'bg-orange-500');
+                if (isTimeout) document.getElementById('status-dot').classList.replace('bg-red-500', 'bg-orange-500');
+            } finally {
+                setTimeout(fetchTelemetry, 3000); // Serial recursion
             }
         }
 
-        function updateDashboard(nodes) {
+        function applyFilter() {
+            const searchTerm = document.getElementById('node-search').value.toLowerCase();
+            const filtered = allNodes.filter(node => 
+                node.id.toLowerCase().includes(searchTerm) || 
+                (node.forensic && node.forensic.activeApp && node.forensic.activeApp.toLowerCase().includes(searchTerm))
+            );
+            renderTable(filtered);
+        }
+
+        document.getElementById('node-search').addEventListener('input', applyFilter);
+
+        function renderTable(nodes) {
             const tableBody = document.getElementById('student-table');
             const totalMonitoredEl = document.getElementById('stat-total-monitored');
             const sidebarActiveEl = document.getElementById('sidebar-active');
 
-            if (!nodes || nodes.length === 0) {
-                if (tableBody) {
-                    tableBody.innerHTML = '<tr><td colspan="6" class="p-12 text-center text-on-surface-variant/40 italic text-sm">NO ACTIVE SESSIONS DETECTED</td></tr>';
-                }
-                if (totalMonitoredEl) totalMonitoredEl.innerText = '0';
-                if (sidebarActiveEl) sidebarActiveEl.innerText = '0';
-                return;
-            }
-            
             totalMonitoredEl.innerText = nodes.length;
             sidebarActiveEl.innerText = nodes.length;
 
             let threats = 0;
+            if (nodes.length === 0) {
+                if (tableBody) {
+                    tableBody.innerHTML = '<tr><td colspan="6" class="p-12 text-center text-on-surface-variant/40 italic text-sm">NO ACTIVE SESSIONS DETECTED IN CURRENT FLEET</td></tr>';
+                }
+                document.getElementById('stat-active-threats').innerText = '0';
+                return;
+            }
             let htmlTable = '';
 
             nodes.forEach(node => {
@@ -263,7 +333,8 @@
                 const diffMinutes = Math.floor((now - lastSeen) / 60000);
                 const isLive = diffMinutes < 2; // Active in last 2 mins
 
-                const aiVariance = Math.round((node.ai || 0) * 100);
+                const rawAi = node.ai || 0;
+                const aiVariance = rawAi <= 1.0 ? Math.round(rawAi * 100) : Math.round(rawAi);
                 const isHighRisk = aiVariance > 70;
                 if (isHighRisk) threats++;
                 
@@ -271,7 +342,7 @@
                 const activityTxt = node.forensic ? (node.forensic.activeApp || 'Idle') : 'Idle';
 
                 htmlTable += `
-                <tr class="border-b border-white/5 hover:bg-white/[0.02] transition-colors group">
+                <tr onclick="selectFleetNode('${node.id}', '${node.root_path}')" class="border-b border-white/5 hover:bg-white/[0.02] cursor-pointer transition-colors group">
                     <td class="p-4">
                         <div class="flex items-center gap-3">
                             <div class="w-8 h-8 rounded bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
@@ -295,7 +366,12 @@
                         </div>
                     </td>
                     <td class="p-4 text-right">
-                        <a href="/playback/?user_id=${node.id}" class="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded font-bold text-xs transition-colors inline-block text-white">Analyze</a>
+                        <div class="flex items-center justify-end gap-2">
+                            <a href="/playback/?user_id=${node.id}" class="px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded font-bold text-xs transition-colors inline-block text-white">Analyze</a>
+                            <button onclick="deleteSession('${node.id}')" class="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded transition-colors group">
+                                <span class="material-symbols-outlined text-sm">delete</span>
+                            </button>
+                        </div>
                     </td>
                 </tr>`;
             });
@@ -304,8 +380,241 @@
             document.getElementById('stat-active-threats').innerText = threats;
         }
 
-        setInterval(fetchTelemetry, 2000);
-        fetchTelemetry();
+        async function deleteSession(userId) {
+            if (!confirm(`Are you sure you want to purge all telemetry for ${userId}?`)) return;
+            try {
+                const res = await fetch(`/api/delete-session/${userId}/`, { method: 'POST' });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    applyFilter(); // Refresh table
+                } else {
+                    alert('Purge Failed: ' + data.message);
+                }
+            } catch (e) { alert('Critical Purge Error'); }
+        }
+
+
+        // --- SYSTEM ACTIONS ---
+        async function performAction(action) {
+            if (action === 'export') window.location.href = '/api/export-logs/';
+            else if (action === 'backup') window.location.href = '/api/system-backup/';
+            else if (action === 'purge') {
+                if (!confirm('🚨 Are you sure you want to flush compliance data? This action is irreversible.')) return;
+                try {
+                    const res = await fetch('/api/purge-logs/', { method: 'POST' });
+                    const data = await res.json();
+                    alert(data.message);
+                } catch (e) { alert('Critical Purge Error'); }
+            }
+        }
+
+        // --- AUTHORIZED USER MANAGEMENT ---
+        async function loadUsers() {
+            try {
+                const response = await fetch('/auth/api/list-users/');
+                const data = await response.json();
+                if (data.success) {
+                    const tbody = document.getElementById('authorized-users-list');
+                    tbody.innerHTML = '';
+                    if(!data.users || data.users.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-white/20 italic">No authorized users configured</td></tr>';
+                        return;
+                    }
+                    data.users.forEach(user => {
+                        tbody.innerHTML += `
+                        <tr class="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                            <td class="p-4">
+                                <div class="font-bold text-white">${user.student_id}</div>
+                            </td>
+                            <td class="p-4 text-xs text-on-surface-variant">${user.description || 'No description'}</td>
+                            <td class="p-4">
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tighter ${user.is_active ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}">
+                                    ${user.is_active ? 'Active' : 'Suspended'}
+                                </span>
+                            </td>
+                            <td class="p-4 text-right">
+                                <button onclick="toggleUser('${user.student_id}')" class="text-[10px] px-3 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded font-bold uppercase text-white transition-all">
+                                    ${user.is_active ? 'Revoke' : 'Reinstate'}
+                                </button>
+                            </td>
+                        </tr>`;
+                    });
+                }
+            } catch (e) { console.error('Ledger sync failure', e); }
+        }
+
+        async function addAuthorizedUser() {
+            const id = document.getElementById('new-student-id').value.trim();
+            const desc = document.getElementById('new-student-desc').value.trim();
+            if (!id) return alert('ID Required');
+            
+            const btn = document.getElementById('add-user-btn');
+            btn.disabled = true;
+            btn.innerText = 'PROVISIONING...';
+
+            try {
+                const response = await fetch('/auth/api/add-user/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ student_id: id, description: desc })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('new-student-id').value = '';
+                    document.getElementById('new-student-desc').value = '';
+                    loadUsers();
+                }
+            } catch (e) { alert('Provisioning failed'); }
+            btn.disabled = false;
+            btn.innerText = 'ADD AUTHORIZED USER';
+        }
+
+        async function toggleUser(studentId) {
+            try {
+                await fetch('/auth/api/toggle-status/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ student_id: studentId })
+                });
+                loadUsers();
+            } catch (e) { alert('Status toggle failed'); }
+        }
+
+        // Consolidation point for Fleet Explorer logic
+        let currentFleetRoot = '';
+        function selectFleetNode(id, root) {
+            currentFleetRoot = root;
+            // Highlight selected row visually
+            document.querySelectorAll('#student-table tr').forEach(r => r.classList.remove('bg-white/5'));
+            const row = event.currentTarget;
+            if (row) row.classList.add('bg-white/5');
+            
+            // If explorer is open, refresh it to the new root
+            const panel = document.getElementById('explorer-panel');
+            if (!panel.classList.contains('-translate-x-full')) {
+                renderExplorer(currentFleetRoot);
+            }
+        }
+
+        function toggleExplorer() {
+            const panel = document.getElementById('explorer-panel');
+            const main = document.querySelector('main');
+            const header = document.querySelector('header');
+            const isActive = !panel.classList.contains('-translate-x-full');
+            
+            if (isActive) {
+                panel.classList.add('-translate-x-full');
+                main.style.transform = 'translateX(0)';
+                header.style.transform = 'translateX(0)';
+            } else {
+                panel.classList.remove('-translate-x-full');
+                main.style.transform = 'translateX(360px)'; 
+                header.style.transform = 'translateX(360px)'; 
+                renderExplorer(currentFleetRoot || '{{ base_dir }}');
+            }
+        }
+
+        async function toggleExplorerNode(path, element) {
+            const childrenContainer = element.nextElementSibling;
+            const caret = element.querySelector('.caret');
+            const icon = element.querySelector('.folder-icon');
+            
+            if (childrenContainer && childrenContainer.classList.contains('expanded')) {
+                childrenContainer.innerHTML = '';
+                childrenContainer.classList.remove('expanded');
+                if (caret) caret.innerText = 'chevron_right';
+                icon.innerText = 'folder';
+                return;
+            }
+
+            if (!childrenContainer) return;
+
+            childrenContainer.innerHTML = '<div class="px-10 py-1 text-white/10 italic text-[10px]">retrieving_nodes...</div>';
+            childrenContainer.classList.add('expanded');
+            if (caret) caret.innerText = 'expand_more';
+            icon.innerText = 'folder_open';
+
+            try {
+                const response = await fetch(`/api/explorer/?path=${encodeURIComponent(path)}`);
+                const json = await response.json();
+                if (json.status === 'success') {
+                    childrenContainer.innerHTML = '';
+                    json.data.forEach(item => {
+                        const isDir = item.type === 'directory';
+                        const safePath = item.path.replace(/\\/g, '/');
+                        const nodeHtml = `
+                            <div class="tree-node">
+                                <div onclick="${isDir ? `toggleExplorerNode('${safePath}', this)` : `openFile('${safePath}')`}" 
+                                     class="flex items-center gap-2 hover:bg-white/5 cursor-pointer group whitespace-nowrap overflow-hidden py-[3px] rounded transition-all" 
+                                     style="padding-left: 20px;">
+                                    ${isDir ? '<span class="material-symbols-outlined text-[14px] text-white/20 caret">chevron_right</span>' : '<span class="w-[14px]"></span>'}
+                                    <span class="material-symbols-outlined text-[18px] ${isDir ? 'text-secondary/70 folder-icon' : 'text-white/30 group-hover:text-primary'}">${isDir ? 'folder' : 'description'}</span>
+                                    <span class="${isDir ? 'text-white/80 font-bold uppercase text-[10px] tracking-widest' : 'text-white/60'} group-hover:text-white transition-colors">${item.name}</span>
+                                </div>
+                                ${isDir ? '<div class="children ml-3 border-l border-white/10"></div>' : ''}
+                            </div>
+                        `;
+                        childrenContainer.innerHTML += nodeHtml;
+                    });
+                }
+            } catch (e) { childrenContainer.innerHTML = '<div class="px-10 text-red-500/50 text-[10px]">Access Blocked</div>'; }
+        }
+
+        async function renderExplorer(path = '') {
+            document.getElementById('current-root-display').innerText = path || '{{ base_dir }}';
+            const content = document.getElementById('explorer-content');
+            content.innerHTML = '<div class="children expanded"></div>';
+            const rootContainer = content.querySelector('.children');
+            
+            try {
+                const response = await fetch(`/api/explorer/?path=${encodeURIComponent(path)}`);
+                const json = await response.json();
+                if (json.status === 'success') {
+                    rootContainer.innerHTML = '';
+                    json.data.forEach(item => {
+                        const isDir = item.type === 'directory';
+                        const safePath = item.path.replace(/\\/g, '/');
+                        const nodeHtml = `
+                            <div class="tree-node">
+                                <div onclick="${isDir ? `toggleExplorerNode('${safePath}', this)` : `openFile('${safePath}')`}" 
+                                     class="flex items-center gap-2 hover:bg-white/5 cursor-pointer group whitespace-nowrap overflow-hidden py-[3px] rounded transition-all" 
+                                     style="padding-left: 8px;">
+                                    ${isDir ? '<span class="material-symbols-outlined text-[14px] text-white/20 caret">chevron_right</span>' : '<span class="w-[14px]"></span>'}
+                                    <span class="material-symbols-outlined text-[18px] ${isDir ? 'text-secondary/70 folder-icon' : 'text-white/30 group-hover:text-primary'}">${isDir ? 'folder' : 'description'}</span>
+                                    <span class="${isDir ? 'text-white/80 font-bold uppercase text-[10px] tracking-widest' : 'text-white/60'} group-hover:text-white transition-colors">${item.name}</span>
+                                </div>
+                                ${isDir ? '<div class="children ml-3 border-l border-white/10"></div>' : ''}
+                            </div>
+                        `;
+                        rootContainer.innerHTML += nodeHtml;
+                    });
+                }
+            } catch(e) { content.innerHTML = '<div class="px-4 text-red-400">Scan failed</div>'; }
+        }
+
+        async function openFile(path) {
+             try {
+                const response = await fetch('/api/read-file/?path=' + encodeURIComponent(path));
+                const json = await response.json();
+                if (json.status === 'success') {
+                    // Inject file content into Forensic View
+                    document.getElementById('dash-code-viewer').innerText = json.content;
+                    document.getElementById('forensic-file-label').innerText = path;
+                    document.getElementById('forensic-lang-badge').innerText = (path.split('.').pop() || 'txt').toUpperCase();
+                    
+                    // Seamless transition to Forensic Tab
+                    switchTab('forensics');
+                } else {
+                    console.error("Hub Reject:", json.message);
+                }
+            } catch (e) { 
+                console.error("Forensic Retrieval Fail:", e);
+                alert("CRITICAL: Code View Offline. Check Dashboard Sync Status.");
+            }
+        }
+
+        fetchTelemetry(); // Starts serial loop
+        loadUsers();
     </script>
 </body>
 </html>

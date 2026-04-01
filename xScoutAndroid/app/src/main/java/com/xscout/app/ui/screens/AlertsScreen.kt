@@ -54,7 +54,7 @@ fun AlertsScreen(
                     }
                     Spacer(Modifier.width(4.dp))
                     Column {
-                        Text("SYSTEM ALERTS", color = XScoutColors.NeonPurple, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                        Text("SYSTEM ALERTS", color = XScoutColors.XScoutCyan, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                         val unread = uiState.alerts.count { !it.isRead }
                         Text(if (unread > 0) "$unread UNREAD THREATS" else "ALL CLEAR", fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color.White)
                     }
@@ -64,7 +64,7 @@ fun AlertsScreen(
             if (uiState.isLoading) {
                 item {
                     Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = XScoutColors.NeonPurple)
+                        CircularProgressIndicator(color = XScoutColors.XScoutCyan)
                     }
                 }
             } else if (uiState.alerts.isEmpty()) {
@@ -89,7 +89,7 @@ fun AlertsScreen(
 private fun AlertEntryRow(alert: Alert, onMarkRead: () -> Unit) {
     val sdf = remember { SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()) }
     val color = when (alert.type) {
-        AlertType.INFO     -> XScoutColors.NeonCyan
+        AlertType.INFO     -> XScoutColors.XScoutCyan
         AlertType.WARNING  -> XScoutColors.Warning
         AlertType.DANGER   -> Color(0xFFFF6600)
         AlertType.CRITICAL -> XScoutColors.Danger

@@ -220,9 +220,9 @@ class Forensic_Scanner {
             appHistory: appHistoryArray,
             urlHistory: Array.from(this.urlHistory),
             snapshot: {
-                code: snapshot,
-                language: language,
-                file: (editor && editor.document) ? editor.document.fileName : 'Untitled',
+                code: snapshot || "",
+                language: language || "text",
+                file: (editor && editor.document) ? editor.document.fileName : "Untitled",
                 timestamp: new Date().toISOString()
             }
         };

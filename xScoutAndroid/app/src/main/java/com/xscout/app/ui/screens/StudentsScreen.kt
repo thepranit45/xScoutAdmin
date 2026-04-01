@@ -56,7 +56,7 @@ fun StudentsScreen(
                     }
                     Spacer(Modifier.width(4.dp))
                     Column {
-                        Text("STUDENT DATABASE", color = XScoutColors.NeonPurple, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                        Text("STUDENT DATABASE", color = XScoutColors.XScoutCyan, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                         Text("${studentMap.size} MONITORED ENTITIES", fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color.White)
                     }
                 }
@@ -65,7 +65,7 @@ fun StudentsScreen(
             if (uiState.isLoading) {
                 item {
                     Box(Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = XScoutColors.NeonPurple)
+                        CircularProgressIndicator(color = XScoutColors.XScoutCyan)
                     }
                 }
             } else {
@@ -81,7 +81,7 @@ fun StudentsScreen(
         FloatingActionButton(
             onClick = onAddStudent,
             modifier = Modifier.align(Alignment.BottomEnd).padding(24.dp),
-            containerColor = XScoutColors.NeonPurple,
+            containerColor = XScoutColors.XScoutCyan,
             contentColor = Color.White,
             shape = RoundedCornerShape(16.dp)
         ) {
@@ -110,10 +110,10 @@ private fun StudentEntryRow(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
-                modifier = Modifier.size(44.dp).background(XScoutColors.NeonPurple.copy(0.1f), CircleShape),
+                modifier = Modifier.size(44.dp).background(XScoutColors.XScoutCyan.copy(0.1f), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Text(latest?.studentName?.take(1) ?: "?", color = XScoutColors.NeonPurple, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Text(latest?.studentName?.take(1) ?: "?", color = XScoutColors.XScoutCyan, fontWeight = FontWeight.Bold, fontSize = 18.sp)
             }
             Spacer(Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
@@ -124,7 +124,7 @@ private fun StudentEntryRow(
                     fontSize = 16.sp
                 )
                 Text("ID: $studentId", fontSize = 12.sp, color = Color.White.copy(0.4f))
-                Text("${sessions.size} ANALYSIS REPORTS", fontSize = 9.sp, color = XScoutColors.NeonPurple, fontWeight = FontWeight.Bold)
+                Text("${sessions.size} ANALYSIS REPORTS", fontSize = 9.sp, color = XScoutColors.XScoutCyan, fontWeight = FontWeight.Bold)
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text(

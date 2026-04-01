@@ -1,0 +1,418 @@
+{% load static %}
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>xScout | Node Insights - Developer Connectivity</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&amp;family=JetBrains+Mono:wght@400;500;700&amp;family=Space+Grotesk:wght@300;400;500&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    
+    <style>
+        :root { --admin-primary: #d2bbff; --admin-red: #dc2626; --admin-bg: #03040B; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .glass-panel { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .glass-panel-hover:hover { background: rgba(255, 255, 255, 0.05); border-color: var(--admin-primary); transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        body { background-color: var(--admin-bg); color: #ffffff; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        .jetbrains-mono { font-family: 'JetBrains Mono', monospace; }
+        .premium-text { background: linear-gradient(to right, #fff, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        .stitch-video-overlay { position: fixed; inset: 0; background: radial-gradient(circle at 50% 50%, transparent 20%, #03040B 90%), rgba(3, 4, 11, 0.4); z-index: -10; }
+        .stitch-grid { position: fixed; inset: 0; background-image: radial-gradient(rgba(210, 187, 255, 0.1) 1.5px, transparent 1.5px); background-size: 30px 30px; z-index: -5; }
+        .stitch-video-bg { position: fixed; inset: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: -20; opacity: 0.7; filter: saturate(1.8) hue-rotate(-20deg); mix-blend-mode: color-dodge; }
+        
+        .node-glow { box-shadow: 0 0 50px rgba(210, 187, 255, 0.1); }
+        
+        #network-container { width: 100%; height: 100%; border-radius: 1rem; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(210, 187, 255, 0.2); border-radius: 10px; }
+    </style>
+</head>
+<body class="selection:bg-primary-container selection:text-on-primary-container bg-[#03040B]">
+    <!-- STITCH VIDEO BACKGROUND Engine -->
+    <div class="stitch-grid"></div>
+    <div class="stitch-video-overlay"></div>
+    <video class="stitch-video-bg" autoplay loop muted playsinline>
+        <source src="https://storage.googleapis.com/gweb-gemini-cdn/gemini/uploads/89e9004d716a7803fc7c9aab18c985af783f5a36.mp4" type="video/mp4">
+    </video>
+
+    <!-- SIDEBAR -->
+    <aside class="h-screen w-64 fixed left-0 top-0 border-r border-white/10 bg-[#11131c]/80 backdrop-blur-xl flex flex-col p-4 z-50">
+        <div class="mb-10 px-2 flex items-center gap-2">
+            <h1 class="text-2xl font-black tracking-tighter text-[#e2e1ef] uppercase"><span class="text-primary">x</span>Scout</h1>
+        </div>
+        <nav class="flex-1 flex flex-col gap-1">
+            <a href="{% url 'dashboard' %}" class="flex items-center gap-3 px-4 py-3 text-[#e6bdb8] hover:text-[#e2e1ef] transition-all cursor-pointer">
+                <span class="material-symbols-outlined text-xl">analytics</span>
+                <span class="text-sm font-medium">Overview</span>
+            </a>
+            <a href="{% url 'dashboard' %}" class="flex items-center gap-3 px-4 py-3 text-[#e6bdb8] hover:text-[#e2e1ef] transition-all cursor-pointer">
+                <span class="material-symbols-outlined text-xl">search</span>
+                <span class="text-sm font-medium">Forensics</span>
+            </a>
+            <a class="flex items-center gap-3 px-4 py-3 text-[#d2bbff] bg-white/10 backdrop-blur-md rounded-lg border-l-2 border-[#dc2626] scale-[0.98] brightness-125 transition-all cursor-pointer" href="{% url 'network_node' %}">
+                <span class="material-symbols-outlined text-xl">account_tree</span>
+                <span class="text-sm font-medium">Network Node</span>
+            </a>
+            <a href="{% url 'dashboard' %}" class="flex items-center gap-3 px-4 py-3 text-[#e6bdb8] hover:text-[#e2e1ef] transition-all cursor-pointer">
+                <span class="material-symbols-outlined text-xl">person_add</span>
+                <span class="text-sm font-medium">Add Users</span>
+            </a>
+            <a href="{% url 'dashboard' %}" class="flex items-center gap-3 px-4 py-3 text-[#e6bdb8] hover:text-[#e2e1ef] transition-all cursor-pointer" >
+                <span class="material-symbols-outlined text-xl">settings</span>
+                <span class="text-sm font-medium">Settings</span>
+            </a>
+        </nav>
+        <div class="mt-auto border-t border-white/5 pt-4">
+            <div class="px-4 py-2 mb-4">
+                <p class="jetbrains-mono text-[9px] text-on-surface-variant uppercase tracking-widest">Monitor Status</p>
+                <div class="flex items-center gap-2 mt-2">
+                    <div class="w-1.5 h-1.5 rounded-full bg-[#00ff9d] animate-pulse"></div>
+                    <p class="jetbrains-mono text-[10px] text-on-surface">Fleet Capacity: <span id="sidebar-active" class="font-bold">0</span></p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- TOP NAV -->
+    <header class="fixed top-0 right-0 left-64 h-16 z-40 border-b border-white/5 bg-[#03040B]/50 backdrop-blur-2xl flex justify-between items-center px-8">
+        <div class="flex-1 flex items-center">
+            <div class="relative w-96">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-white/30 text-sm">search</span>
+                <input id="node-search" type="text" placeholder="Search Node / Identity..." class="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-2 text-xs font-mono text-white focus:outline-none focus:border-primary/50 transition-colors">
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-3 px-3 py-1.5 rounded border border-[#3ddc84]/30 bg-[#3ddc84]/10 text-[10px] font-bold text-[#3ddc84] uppercase tracking-wider">
+                <span class="material-symbols-outlined text-[14px] animate-pulse">hub</span> <span id="graph-status">Graph Online</span>
+            </div>
+            <div class="flex items-center gap-2 pl-4 border-l border-white/10 ml-2">
+                <span class="material-symbols-outlined text-[16px] text-[#d2bbff]">person</span>
+                <span class="font-bold text-xs uppercase">{{ user.username|default:"admin" }}</span>
+                <a href="{% url 'logout' %}" class="ml-4 px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-500 transition-colors text-[10px] font-bold text-white uppercase tracking-wider">Logout</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="ml-64 pt-32 pb-12 px-12 min-h-screen relative">
+        <!-- Glow accents -->
+        <div class="absolute top-0 right-0 w-[800px] h-[800px] bg-primary/10 rounded-full blur-[200px] -z-10 pointer-events-none"></div>
+
+        <!-- Header Section -->
+        <section class="mb-16 flex justify-between items-start">
+            <div class="max-w-4xl">
+                <p class="jetbrains-mono text-[10px] uppercase tracking-[0.6em] text-primary mb-6">Central Forensic Command Center</p>
+                <h2 class="text-7xl font-black tracking-tighter mb-8 premium-text leading-none">Network Environment Node</h2>
+                <div class="flex items-center gap-8 font-mono">
+                    <div class="flex items-center gap-3">
+                        <span class="w-3 h-3 rounded-full bg-primary animate-pulse shadow-[0_0_10px_#d2bbff]"></span>
+                        <span class="text-white/30 uppercase text-[10px] tracking-widest">Target ID:</span>
+                        <span id="active-user-id" class="text-white font-black text-xs tracking-wider">AWAITING SELECTION</span>
+                    </div>
+                    <div class="w-px h-4 bg-white/20"></div>
+                    <span id="active-user-status" class="text-primary font-black uppercase text-[10px] tracking-[0.2em]">Ready for Forensic Handshake</span>
+                </div>
+            </div>
+            <button onclick="updateGraph()" class="px-10 py-4 bg-white text-black font-black text-xs uppercase tracking-[0.2em] hover:bg-primary transition-all shadow-2xl">Synchronize Fleet</button>
+        </section>
+
+        <!-- Bento Grid Layout -->
+        <div class="grid grid-cols-12 gap-8">
+            <!-- Left Panel: Node Management -->
+            <div class="col-span-12 lg:col-span-4 flex flex-col gap-8">
+                <!-- Create Environment -->
+                <div class="glass-panel p-10 rounded-2xl border-white/5 relative overflow-hidden node-glow">
+                    <div class="absolute -top-12 -right-12 w-48 h-48 bg-primary/10 rounded-full blur-3xl"></div>
+                    
+                    <h3 class="font-mono text-[10px] uppercase tracking-[0.4em] text-[#06b6d4] mb-10 pb-6 border-b border-white/10 font-black">Environment Provisioning</h3>
+                    
+                    <div class="space-y-8">
+                        <div class="group">
+                            <label class="block text-[10px] font-mono text-white/80 mb-4 uppercase tracking-[0.3em] font-black">Secure Node ID</label>
+                            <input id="new-node-code" type="text" placeholder="NODE_X_ALPHA" class="w-full bg-white/10 border-2 border-white/10 rounded-2xl p-6 text-sm font-mono text-white focus:border-[#06b6d4] outline-none transition-all placeholder:text-white/30">
+                        </div>
+                        <div class="group">
+                            <label class="block text-[10px] font-mono text-white/80 mb-4 uppercase tracking-[0.3em] font-black">Operational Context</label>
+                            <input id="new-node-desc" type="text" placeholder="Dev Cluster v2.0" class="w-full bg-white/10 border-2 border-white/10 rounded-2xl p-6 text-sm font-mono text-white focus:border-[#06b6d4] outline-none transition-all placeholder:text-white/30">
+                        </div>
+                        <button onclick="createNode()" id="create-node-btn" class="w-full bg-[#06b6d4] text-black font-black py-6 rounded-2xl text-xs uppercase tracking-[0.4em] hover:bg-white transition-all shadow-[0_0_40px_rgba(6,182,212,0.4)]">Create Node</button>
+                    </div>
+                </div>
+
+                <!-- Active Environment List -->
+                <div class="glass-panel p-10 rounded-2xl border-white/10 relative overflow-hidden">
+                    <div class="flex justify-between items-center mb-10 border-b border-white/10 pb-8">
+                        <h3 class="font-mono text-xs uppercase tracking-[0.4em] text-white font-black">Infrastructure Clusters</h3>
+                        <span class="animate-pulse w-2 h-2 rounded-full bg-primary shadow-[0_0_10px_#d2bbff]"></span>
+                    </div>
+                    <div id="env-list-container" class="space-y-5 max-h-[400px] overflow-y-auto pr-4 custom-scrollbar">
+                        <div class="text-center py-12">
+                            <div class="w-10 h-10 border-2 border-white/5 border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
+                            <p class="text-[10px] text-white/20 font-mono tracking-widest uppercase">Initializing Registry...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Central Area -->
+            <div class="col-span-12 lg:col-span-8 flex flex-col gap-8">
+                <!-- Center Top: Performance & History Bento -->
+                <div class="grid grid-cols-2 gap-8 h-[340px]">
+                    <!-- Activity Status Card -->
+                    <div class="glass-panel p-10 rounded-2xl border-white/5 relative overflow-hidden group">
+                        <span class="material-symbols-outlined absolute -bottom-8 -right-8 text-9xl text-white/5 group-hover:text-[#06b6d4]/10 transition-colors duration-500">android</span>
+                        <h3 class="font-mono text-[10px] uppercase tracking-[0.4em] text-[#06b6d4] mb-8 font-black">Activity Intelligence</h3>
+                        <div class="space-y-6">
+                            <div class="flex justify-between items-end border-b border-white/5 pb-4">
+                                <span class="text-[10px] font-mono text-white/60 uppercase tracking-widest">Active Application</span>
+                                <span id="detail-app" class="text-sm font-black text-white tracking-tight">---</span>
+                            </div>
+                            <div class="flex justify-between items-end border-b border-white/5 pb-4">
+                                <span class="text-[10px] font-mono text-white/60 uppercase tracking-widest">Temporal Signature</span>
+                                <span id="detail-time" class="text-sm font-black text-[#06b6d4] tracking-tight">STABLE</span>
+                            </div>
+                            <div class="pt-4">
+                                <div class="flex justify-between mb-3 items-center">
+                                    <span class="text-[10px] font-mono text-white/70 uppercase tracking-widest">Variance Index</span>
+                                    <span id="detail-ai" class="text-xs font-black text-white">0%</span>
+                                </div>
+                                <div class="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                    <div id="variance-bar" class="h-full bg-[#06b6d4] transition-all duration-1000" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Snapshot History Card -->
+                    <div class="glass-panel p-10 rounded-2xl border-white/5 relative overflow-hidden">
+                        <h3 class="font-mono text-[10px] uppercase tracking-[0.4em] text-white/40 mb-8 font-black">Behavioral Snapshot</h3>
+                        <div id="detail-summary" class="text-xs text-white/50 leading-loose italic jetbrains-mono">
+                            Awaiting Node Selection. <br><br> Execute a cluster handshake or select a developer terminal from the forensic map to begin behavioral synchronization.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Central Network Forensic Map -->
+                <div class="h-[600px] glass-panel rounded-2xl border-white/5 relative overflow-hidden group node-glow">
+                    <div class="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_50%_50%,_#06b6d4_0%,_transparent_70%)] group-hover:opacity-20 transition-opacity duration-700"></div>
+                    <div class="absolute top-10 left-10 z-10 pointer-events-none">
+                        <h3 class="font-mono text-[10px] uppercase tracking-[0.5em] text-[#06b6d4] mb-3 font-black">Node Cluster Distribution</h3>
+                        <p class="font-mono text-[9px] text-white/60 uppercase tracking-[0.2em]">Layer: Behavioral Intersection / Sim_V4</p>
+                    </div>
+                    <!-- Network Visualizer -->
+                    <div id="network-container"></div>
+
+                    <!-- Legend -->
+                    <div class="absolute bottom-10 right-10 z-10 glass-panel px-6 py-4 rounded-xl border-white/10 font-mono text-[9px] space-y-3 pointer-events-none backdrop-blur-xl">
+                        <div class="flex items-center gap-3"><span class="w-2 h-2 rounded-full bg-[#06b6d4] shadow-[0_0_10px_rgba(6,182,212,0.5)]"></span><span class="text-white/80">SIMILARITY > 80% (SYNC)</span></div>
+                        <div class="flex items-center gap-3"><span class="w-2 h-2 rounded-full bg-white/40 shadow-[0_0_10px_rgba(255,255,255,0.2)]"></span><span class="text-white/80">STANDARD NODE</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+    </main>
+
+    <script>
+        let nodesDataSet = new vis.DataSet();
+        let edgesDataSet = new vis.DataSet();
+        let network = null;
+
+        function initGraph() {
+            const container = document.getElementById('network-container');
+            const data = { nodes: nodesDataSet, edges: edgesDataSet };
+            const options = {
+                nodes: {
+                    shape: 'dot',
+                    size: 20,
+                    font: { color: '#ffffff', size: 10, face: 'JetBrains Mono' },
+                    borderWidth: 2,
+                    shadow: true
+                },
+                edges: {
+                    color: { color: '#ffffff', opacity: 0.2 },
+                    width: 1,
+                    font: { align: 'top', color: '#dc2626', size: 9, face: 'JetBrains Mono' },
+                    arrows: { to: { enabled: false } }
+                },
+                physics: { enabled: true, barnesHut: { gravitationalConstant: -2000 } }
+            };
+            network = new vis.Network(container, data, options);
+
+            network.on("click", function (params) {
+                if (params.nodes.length > 0) {
+                    const nodeId = params.nodes[0];
+                    selectUser(nodeId);
+                }
+            });
+        }
+
+        async function updateGraph() {
+            try {
+                const nodeCode = window.selectedNodeCode || '';
+                const url = nodeCode ? `/api/network-data/?node_code=${nodeCode}` : '/api/network-data/';
+                // UX: Show loading on graph
+                document.getElementById('active-user-status').innerHTML = `<span class="animate-pulse">SYNCHRONIZING CLUSTER: ${nodeCode || 'GLOBAL'}...</span>`;
+                
+                const response = await fetch(url);
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    const serverNodes = result.data.nodes;
+                    const serverEdges = result.data.edges;
+
+                    if (serverNodes.length === 0) {
+                        nodesDataSet.clear();
+                        edgesDataSet.clear();
+                        document.getElementById('active-user-status').innerText = `NO NODES DETECTED IN [${nodeCode || 'GLOBAL'}]`;
+                    } else {
+                        // Clear if switching major groups
+                        if (nodeCode) { nodesDataSet.clear(); edgesDataSet.clear(); }
+                        
+                        document.getElementById('active-user-status').innerText = `MONITORING ${serverNodes.length} ACTIVE NODES [${nodeCode || 'GLOBAL'}]`;
+                        // Sync Nodes
+                        serverNodes.forEach(node => {
+                            const color = node.risky ? '#06b6d4' : '#ffffff';
+                            const edgeColor = node.risky ? 'rgba(6, 182, 212, 0.4)' : 'rgba(255, 255, 255, 0.1)';
+                            nodesDataSet.update({
+                                id: node.id,
+                                label: node.label,
+                                color: { background: '#11131c', border: color, highlight: color }
+                            });
+                        });
+
+                        // Sync Edges
+                        serverEdges.forEach(edge => {
+                            edgesDataSet.update({
+                                id: edge.from + '-' + edge.to,
+                                from: edge.from,
+                                to: edge.to,
+                                label: edge.label,
+                                color: { color: '#06b6d4', opacity: 0.4 }
+                            });
+                        });
+                    }
+                }
+            } catch (e) {
+                console.error("Network sync failure", e);
+                document.getElementById('graph-status').innerText = 'Sync Error';
+            }
+        }
+
+        async function selectUser(userId) {
+            document.getElementById('active-user-id').innerText = userId;
+            document.getElementById('active-user-status').innerText = 'INITIALIZING DEEP SCAN...';
+
+            try {
+                // Fetch full telemetry for details
+                const response = await fetch('/api/telemetry/');
+                const result = await response.json();
+                const node = result.data.find(n => n.id === userId);
+
+                if (node) {
+                    const activity = node.forensic ? (node.forensic.activeApp || 'Background') : 'Idle';
+                    const ai = Math.round(node.ai <= 1.0 ? node.ai * 100 : node.ai);
+                    
+                    document.getElementById('detail-app').innerText = activity;
+                    document.getElementById('detail-time').innerText = 'ACTIVE PULSE';
+                    document.getElementById('detail-ai').innerText = ai + '%';
+                    document.getElementById('variance-bar').style.width = ai + '%';
+                    
+                    document.getElementById('active-user-status').innerText = ai > 70 ? 'CRITICAL RISK DETECTED' : 'STABLE FORENSIC NODE';
+                    document.getElementById('active-user-status').className = ai > 70 ? 'text-red-500 font-bold uppercase tracking-widest' : 'text-primary/60 font-bold uppercase tracking-widest';
+                    
+                    document.getElementById('detail-summary').innerText = 'Analyzing node ' + userId + '. Current execution: ' + activity + '. AI behavioral variance suggests ' + (ai > 70 ? 'High probability of logical overlap.' : 'consistent development patterns.');
+                }
+            } catch (e) { console.error("Detail fetch error", e); }
+        }
+
+        async function createNode() {
+            const code = document.getElementById('new-node-code').value.trim();
+            const desc = document.getElementById('new-node-desc').value.trim();
+            if (!code) return alert('Node Code Required');
+            
+            const btn = document.getElementById('create-node-btn');
+            btn.disabled = true;
+            btn.innerText = 'CREATING NODE...';
+
+            try {
+                const res = await fetch('/api/create-node/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ node_code: code, description: desc })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    alert('Environment Node Successfully Provisioned: ' + code);
+                    document.getElementById('new-node-code').value = '';
+                    document.getElementById('new-node-desc').value = '';
+                    loadEnvironments(); // Refresh List
+                } else {
+                    alert('Provisioning Rejected: ' + data.message);
+                }
+            } catch (e) { alert('Critical System Failure during provisioning'); }
+            btn.disabled = false;
+            btn.innerText = 'Create Node';
+        }
+
+        async function loadEnvironments() {
+            try {
+                const res = await fetch('/api/environments/');
+                const result = await res.json();
+                const container = document.getElementById('env-list-container');
+                
+                if (result.status === 'success' && result.data.length > 0) {
+                    container.innerHTML = '';
+                    result.data.forEach(env => {
+                        const isActive = window.selectedNodeCode === env.invite_code;
+                        const item = `
+                            <div onclick="filterByNode('${env.invite_code}')" class="p-8 rounded-3xl border-2 ${isActive ? 'border-primary bg-primary/20 shadow-[0_0_40px_rgba(210,187,255,0.2)]' : 'border-white/5 bg-white/5'} hover:border-primary/40 transition-all duration-400 cursor-pointer group relative overflow-hidden mb-4">
+                                ${isActive ? '<div class="absolute top-0 left-0 w-2 h-full bg-primary shadow-lg"></div>' : ''}
+                                <div class="flex justify-between items-center mb-6">
+                                    <div class="flex flex-col">
+                                        <span class="font-mono text-xl font-black text-white group-hover:text-primary transition-colors uppercase tracking-[0.2em] italic">${env.invite_code}</span>
+                                        <p class="text-[10px] text-white/40 uppercase tracking-[0.3em] font-black mt-1">${env.description || 'Secure Node Context'}</p>
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        <span class="px-3 py-1.5 rounded-lg bg-black/40 text-[9px] font-black text-primary border border-primary/20 uppercase tracking-widest">${env.user_count} NODES</span>
+                                        <button onclick="event.stopPropagation(); window.open('/network/explore/${env.invite_code}/', '_blank')" class="w-10 h-10 rounded-xl bg-white text-black flex items-center justify-center hover:bg-primary hover:text-white transition-all shadow-xl">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        container.insertAdjacentHTML('beforeend', item);
+                    });
+                } else {
+                    container.innerHTML = '<p class="text-[10px] text-white/20 font-mono text-center py-4">No active nodes provisioned.</p>';
+                }
+            } catch (e) { console.error("Env fetch error", e); }
+        }
+
+        function filterByNode(nodeCode) {
+            console.log("Pivoting to cluster:", nodeCode);
+            if (window.selectedNodeCode === nodeCode) {
+                window.selectedNodeCode = null;
+                document.getElementById('active-user-id').innerText = 'GLOBAL FLEET';
+            } else {
+                window.selectedNodeCode = nodeCode;
+                document.getElementById('active-user-id').innerText = 'CLUSTER: ' + nodeCode;
+            }
+            loadEnvironments();
+            updateGraph();
+        }
+
+        window.onload = () => {
+            initGraph();
+            updateGraph();
+            loadEnvironments();
+            setInterval(updateGraph, 10000);
+            setInterval(loadEnvironments, 15000);
+        };
+    </script>
+</body>
+</html>

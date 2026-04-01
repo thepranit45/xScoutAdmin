@@ -48,7 +48,7 @@ fun SettingsScreen(
                 }
                 Spacer(Modifier.width(4.dp))
                 Column {
-                    Text("CONTROL CENTER", color = XScoutColors.NeonPurple, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                    Text("CONTROL CENTER", color = XScoutColors.XScoutCyan, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                     Text("SYSTEM SETTINGS", fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color.White)
                 }
             }
@@ -64,15 +64,15 @@ fun SettingsScreen(
                     Box(
                         modifier = Modifier
                             .size(64.dp)
-                            .background(XScoutColors.NeonPurple.copy(0.1f), CircleShape),
+                            .background(XScoutColors.XScoutCyan.copy(0.1f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Default.Person, null, tint = XScoutColors.NeonPurple, modifier = Modifier.size(32.dp))
+                        Icon(Icons.Default.Person, null, tint = XScoutColors.XScoutCyan, modifier = Modifier.size(32.dp))
                     }
                     Spacer(Modifier.width(16.dp))
                     Column {
                         Text("ADMINISTRATOR", fontWeight = FontWeight.Black, color = Color.White, fontSize = 18.sp, letterSpacing = 0.5.sp)
-                        Text(uiState.adminEmail, fontSize = 13.sp, color = XScoutColors.NeonPurple, fontWeight = FontWeight.Bold)
+                        Text(uiState.adminEmail, fontSize = 13.sp, color = XScoutColors.XScoutCyan, fontWeight = FontWeight.Bold)
                         Text("AUTH: LOCAL_SECURE_BYPASS", fontSize = 10.sp, color = Color.White.copy(0.3f), fontWeight = FontWeight.Bold)
                     }
                 }
@@ -86,12 +86,12 @@ fun SettingsScreen(
                 border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(0.05f))
             ) {
                 Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Shield, null, tint = XScoutColors.NeonPurple, modifier = Modifier.size(40.dp))
+                    Icon(Icons.Default.Shield, null, tint = XScoutColors.XScoutCyan, modifier = Modifier.size(40.dp))
                     Spacer(Modifier.width(16.dp))
                     Column {
                         Text("xScout NEXUS", fontWeight = FontWeight.Black, color = Color.White, fontSize = 16.sp)
                         Text("CORE VERSION: 2.0.4 Premium", fontSize = 11.sp, color = Color.White.copy(0.4f), fontWeight = FontWeight.Bold)
-                        Text("WARP_INTERFACE_ENGINE_READY", fontSize = 9.sp, color = XScoutColors.NeonCyan, fontWeight = FontWeight.Bold)
+                        Text("WARP_INTERFACE_ENGINE_READY", fontSize = 9.sp, color = XScoutColors.XScoutCyan, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -104,11 +104,11 @@ fun SettingsScreen(
                 border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(0.05f))
             ) {
                 Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    SettingDetail("CLOUD NODES", "SYNCED", XScoutColors.NeonGreen)
+                    SettingDetail("CLOUD NODES", "SYNCED", XScoutColors.AdminGreen)
                     Divider(color = Color.White.copy(0.05f))
-                    SettingDetail("REAL-TIME ANALYTICS", "OPTIMIZED", XScoutColors.NeonGreen)
+                    SettingDetail("REAL-TIME ANALYTICS", "OPTIMIZED", XScoutColors.AdminGreen)
                     Divider(color = Color.White.copy(0.05f))
-                    SettingDetail("UI ENGINE", "WARP_DOT_GRID", XScoutColors.NeonPurple)
+                    SettingDetail("UI ENGINE", "WARP_DOT_GRID", XScoutColors.XScoutCyan)
                 }
             }
 

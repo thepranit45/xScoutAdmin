@@ -1,467 +1,285 @@
+{% load static %}
 <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>xScout | Oversight Node: {{ student_id }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #030308;
+            --panel-bg: #0c0c12;
+            --accent-purple: #b026ff;
+            --accent-cyan: #00f3ff;
+            --border-glow: rgba(176, 38, 255, 0.15);
+        }
 
-<html class="dark" lang="en"><head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>xScout | Node Monitor</title>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&amp;family=JetBrains+Mono:wght@400;500&amp;family=Space+Grotesk:wght@300;400;500&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<style>
         body {
-            background-color: #03040B;
-            color: #e2e1ef;
+            background-color: var(--bg-deep);
+            color: #ececec;
+            margin: 0;
+            padding: 40px;
             font-family: 'Inter', sans-serif;
-            overflow-x: hidden;
+            height: 100vh;
+            overflow: hidden;
+            box-sizing: border-box;
         }
-        .jetbrains-mono { font-family: 'JetBrains Mono', monospace; }
-        .space-grotesk { font-family: 'Space Grotesk', sans-serif; }
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+
+        .mono { font-family: 'JetBrains Mono', monospace; }
+
+        .top-nav {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: rgba(0,0,0,0.4);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 40px;
+            backdrop-filter: blur(10px);
+            z-index: 100;
         }
-        /* Custom scrollbar for terminal */
-        .terminal-scroll::-webkit-scrollbar { width: 4px; }
-        .terminal-scroll::-webkit-scrollbar-track { background: transparent; }
-        .terminal-scroll::-webkit-scrollbar-thumb { background: rgba(220, 38, 38, 0.3); border-radius: 10px; }
-        
-        /* Atmospheric Glows */
-        .glow-bg {
-            background: radial-gradient(circle at 50% 50%, rgba(220, 38, 38, 0.08) 0%, rgba(3, 4, 11, 1) 70%);
+
+        .logo-text { font-weight: 900; font-size: 1.2rem; letter-spacing: -1px; text-transform: uppercase; }
+        .logo-text span { color: var(--accent-purple); }
+
+        .red-close-btn {
+            background: #ff3b3b;
+            color: white;
+            padding: 8px 30px;
+            border: none;
+            border-radius: 4px;
+            font-weight: 900;
+            text-transform: uppercase;
+            cursor: pointer;
+            font-size: 11px;
+            box-shadow: 0 4px 15px rgba(255, 59, 59, 0.3);
+            transition: all 0.2s;
         }
-        .node-active-glow {
-            box-shadow: 0 0 15px rgba(220, 38, 38, 0.2);
+
+        .monitor-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr 1.2fr;
+            gap: 24px;
+            height: calc(100% - 40px);
+            margin-top: 40px;
         }
+
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        .panel-header {
+            padding: 16px 24px;
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-title { font-size: 9px; text-transform: uppercase; letter-spacing: 2px; font-weight: 800; color: #888; }
+        .panel-body { flex: 1; overflow-y: auto; padding: 24px; }
+
+        .white-status-box {
+            background: white !important;
+            color: var(--accent-purple) !important;
+            padding: 18px;
+            border-radius: 14px;
+            font-weight: 900;
+            text-align: center;
+            font-size: 10px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .folder-hub {
+            background: rgba(0,243,255,0.03);
+            border: 1px dashed rgba(0,243,255,0.2);
+            border-radius: 12px;
+            padding: 30px 20px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 24px;
+        }
+
+        .ownership-ledger { background: white; border-radius: 12px; padding: 24px; color: #000; margin-bottom: 30px; }
+
+        .forensic-table {
+            width: 100%;
+            font-size: 11px;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            color: black;
+            overflow: hidden;
+        }
+        .forensic-table th { background: #f8f8f8; color: #777; text-align: left; padding: 14px; border-bottom: 1px solid #eee; text-transform: uppercase; font-size: 8px; }
+        .forensic-table td { padding: 14px; border-bottom: 1px solid #f0f0f0; }
+
+        .action-chip { background: transparent; border: 1px solid #ddd; color: #555; padding: 4px 8px; border-radius: 4px; font-size: 8px; font-weight: bold; cursor: pointer; }
+        .risk-val { font-size: 1.8rem; font-weight: 900; color: #00ff9d; margin: 0; }
     </style>
-<script id="tailwind-config">
-        tailwind.config = {
-          darkMode: "class",
-          theme: {
-            extend: {
-              colors: {
-                "background": "#11131c",
-                "on-primary": "#690005",
-                "surface-container-high": "#282933",
-                "on-error-container": "#ffdad6",
-                "surface-container-highest": "#33343e",
-                "on-secondary-fixed-variant": "#5a00c6",
-                "secondary-fixed-dim": "#d2bbff",
-                "inverse-primary": "#bf0715",
-                "surface-container-lowest": "#0c0e17",
-                "secondary-fixed": "#eaddff",
-                "inverse-surface": "#e2e1ef",
-                "on-primary-fixed-variant": "#93000b",
-                "surface": "#11131c",
-                "primary": "#ffb4ab",
-                "on-tertiary-fixed": "#100069",
-                "on-secondary-fixed": "#25005a",
-                "on-surface": "#e2e1ef",
-                "error": "#ffb4ab",
-                "surface-bright": "#373943",
-                "tertiary-fixed": "#e3dfff",
-                "on-tertiary-fixed-variant": "#372abf",
-                "tertiary-container": "#655dec",
-                "error-container": "#93000a",
-                "surface-dim": "#11131c",
-                "primary-container": "#dc2626",
-                "on-surface-variant": "#e6bdb8",
-                "inverse-on-surface": "#2e303a",
-                "tertiary": "#c3c0ff",
-                "surface-tint": "#ffb4ab",
-                "surface-variant": "#33343e",
-                "outline-variant": "#5c403c",
-                "outline": "#ac8884",
-                "on-tertiary-container": "#faf6ff",
-                "primary-fixed-dim": "#ffb4ab",
-                "on-secondary-container": "#c9aeff",
-                "primary-fixed": "#ffdad6",
-                "tertiary-fixed-dim": "#c3c0ff",
-                "on-secondary": "#3f008e",
-                "on-primary-container": "#fff6f5",
-                "on-tertiary": "#1f00a4",
-                "secondary-container": "#6001d1",
-                "on-primary-fixed": "#410002",
-                "on-background": "#e2e1ef",
-                "secondary": "#d2bbff",
-                "surface-container-low": "#191b24",
-                "on-error": "#690005",
-                "surface-container": "#1d1f29"
-              },
-              fontFamily: {
-                "headline": ["Inter"],
-                "body": ["Inter"],
-                "label": ["Space Grotesk"]
-              },
-              borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
-            },
-          },
-        }
-    </script>
 </head>
-<body class="glow-bg">
-<!-- SideNavBar Shell -->
-<aside class="h-screen w-64 fixed left-0 top-0 border-r border-white/10 bg-[#11131c]/80 backdrop-blur-xl flex flex-col p-4 z-50">
-<div class="mb-10 px-2">
-<h1 class="text-2xl font-black tracking-tighter text-[#e2e1ef] uppercase">xScout</h1>
-<p class="text-[10px] uppercase tracking-[0.2em] text-[#dc2626] font-bold mt-1">Orbital Observer</p>
-</div>
-<nav class="flex-1 flex flex-col gap-1">
-<a class="flex items-center gap-3 px-4 py-3 text-[#e6bdb8] hover:text-[#e2e1ef] transition-all duration-300 hover:bg-white/5 hover:backdrop-blur-sm" href="#">
-<span class="material-symbols-outlined text-xl">play_circle</span>
-<span class="text-sm font-medium">Live Playback</span>
-</a>
-<a class="flex items-center gap-3 px-4 py-3 text-[#d2bbff] bg-white/10 backdrop-blur-md rounded-lg border-l-2 border-[#dc2626] scale-[0.98] brightness-125 transition-all" href="#">
-<span class="material-symbols-outlined text-xl">sensors</span>
-<span class="text-sm font-medium">Node Monitor</span>
-</a>
-<a class="flex items-center gap-3 px-4 py-3 text-[#e6bdb8] hover:text-[#e2e1ef] transition-all duration-300 hover:bg-white/5 hover:backdrop-blur-sm" href="#">
-<span class="material-symbols-outlined text-xl">analytics</span>
-<span class="text-sm font-medium">Student Details</span>
-</a>
-<a class="flex items-center gap-3 px-4 py-3 text-[#e6bdb8] hover:text-[#e2e1ef] transition-all duration-300 hover:bg-white/5 hover:backdrop-blur-sm" href="#">
-<span class="material-symbols-outlined text-xl">terminal</span>
-<span class="text-sm font-medium">System Logs</span>
-</a>
-<a class="flex items-center gap-3 px-4 py-3 text-[#e6bdb8] hover:text-[#e2e1ef] transition-all duration-300 hover:bg-white/5 hover:backdrop-blur-sm" href="#">
-<span class="material-symbols-outlined text-xl">settings</span>
-<span class="text-sm font-medium">Settings</span>
-</a>
-</nav>
-<div class="mt-auto border-t border-white/5 pt-4">
-<div class="px-4 py-2 mb-4 bg-primary-container/10 border border-primary-container/20 rounded-lg">
-<p class="jetbrains-mono text-[9px] text-[#dc2626] font-bold uppercase tracking-wider">System Integrity: Optimal</p>
-</div>
-<div class="flex flex-col gap-1">
-<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant text-sm hover:text-on-surface transition-colors" href="#">
-<span class="material-symbols-outlined text-lg">help</span>
-                    Support
-                </a>
-<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant text-sm hover:text-error transition-colors" href="#">
-<span class="material-symbols-outlined text-lg">logout</span>
-                    Sign Out
-                </a>
-</div>
-</div>
-</aside>
-<!-- TopAppBar Shell -->
-<header class="fixed top-0 right-0 left-64 h-16 z-40 border-b border-white/5 bg-[#03040B]/50 backdrop-blur-2xl flex justify-between items-center px-8">
-<div class="flex items-center gap-8">
-<h2 class="text-on-surface font-semibold text-lg tracking-tight">Node Monitor</h2>
-<nav class="hidden md:flex items-center gap-6">
-<a class="jetbrains-mono text-[10px] uppercase tracking-widest text-[#e6bdb8] font-medium hover:text-white transition-opacity" href="#">Telemetry</a>
-<a class="jetbrains-mono text-[10px] uppercase tracking-widest text-[#e6bdb8] font-medium hover:text-white transition-opacity" href="#">Forensics</a>
-<a class="jetbrains-mono text-[10px] uppercase tracking-widest text-[#e6bdb8] font-medium hover:text-white transition-opacity" href="#">Archive</a>
-</nav>
-</div>
-<div class="flex items-center gap-6">
-<div class="relative group">
-<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors cursor-pointer">rss_feed</span>
-<span class="absolute -top-1 -right-1 flex h-2 w-2">
-<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-<span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-</span>
-</div>
-<span class="material-symbols-outlined text-on-surface-variant hover:text-white transition-opacity cursor-pointer">security</span>
-<div class="flex items-center gap-3 pl-4 border-l border-white/10">
-<div class="text-right">
-<p class="text-[10px] font-bold text-on-surface uppercase tracking-tighter">Admin-01</p>
-<p class="jetbrains-mono text-[8px] text-[#dc2626]">LEVEL 4 CLEARANCE</p>
-</div>
-<div class="w-8 h-8 rounded-full bg-surface-container-highest border border-white/10 flex items-center justify-center overflow-hidden">
-<img alt="Admin-01" class="w-full h-full object-cover" data-alt="professional portrait of a high-tech security administrator avatar with minimalistic features" src="https://lh3.googleusercontent.com/aida-public/AB6AXuApH6oPy-4J9SoI8h0v4PsEeFyKiuDAnpSq4CuUxk2vfAkEgEPLkXct7wAVJpEVbtFReOezA7ZbOEvV239PXd4REYA6ya0u8Pnk1zhuyQ4g7pPVq5YGt0airyfzfWGuCxhVgofDQTpxt7S-VTEEKwBJaGqKntfmdrv3JFD5WB6JHpV7sM94TqFBP4yDqgiI1YH-sRmTQiMZ34Tp6hCmJLsuTIOxBs1fjE-L2N8sYSdulyr8JO1ip9TBfonrJmu7AxCzbAuHFvPoxVcq"/>
-</div>
-</div>
-</div>
-</header>
-<!-- Main Content -->
-<main class="pl-64 pt-16 min-h-screen">
-<div class="p-8 grid grid-cols-12 gap-8 max-w-[1600px] mx-auto">
-<!-- Technical Overview Stats -->
-<div class="col-span-12 grid grid-cols-1 md:grid-cols-4 gap-4">
-<div class="bg-white/5 backdrop-blur-xl p-4 rounded-lg border border-white/10 hover:border-primary/30 transition-all">
-<p class="jetbrains-mono text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Active Nodes</p>
-<div class="flex items-baseline gap-2">
-<span class="text-3xl font-black text-on-surface">142</span>
-<span class="text-[10px] jetbrains-mono text-[#00ff9d]">+12.4%</span>
-</div>
-</div>
-<div class="bg-white/5 backdrop-blur-xl p-4 rounded-lg border border-white/10 hover:border-primary/30 transition-all">
-<p class="jetbrains-mono text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Global Latency</p>
-<div class="flex items-baseline gap-2">
-<span class="text-3xl font-black text-on-surface">18ms</span>
-<span class="text-[10px] jetbrains-mono text-[#00ff9d]">STABLE</span>
-</div>
-</div>
-<div class="bg-white/5 backdrop-blur-xl p-4 rounded-lg border border-white/10 hover:border-primary/30 transition-all">
-<p class="jetbrains-mono text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Traffic Flow</p>
-<div class="flex items-baseline gap-2">
-<span class="text-3xl font-black text-on-surface">8.4<span class="text-sm font-medium ml-1">GB/s</span></span>
-<span class="text-[10px] jetbrains-mono text-[#dc2626]">PEAK</span>
-</div>
-</div>
-<div class="bg-white/5 backdrop-blur-xl p-4 rounded-lg border border-white/10 hover:border-primary/30 transition-all">
-<p class="jetbrains-mono text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Threat Index</p>
-<div class="flex items-baseline gap-2">
-<span class="text-3xl font-black text-[#dc2626]">0.02</span>
-<span class="text-[10px] jetbrains-mono text-on-surface-variant">NOMINAL</span>
-</div>
-</div>
-</div>
-<!-- Terminal Stream Section -->
-<div class="col-span-12 lg:col-span-8 flex flex-col gap-4">
-<div class="flex items-center justify-between">
-<div class="flex items-center gap-3">
-<span class="material-symbols-outlined text-primary text-xl">terminal</span>
-<h3 class="font-bold text-on-surface uppercase tracking-widest text-sm">Live System Stream</h3>
-</div>
-<div class="flex items-center gap-4">
-<div class="flex items-center gap-2">
-<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-<span class="jetbrains-mono text-[10px] text-primary">aiScanner.js: ACTIVE</span>
-</div>
-<button class="bg-white/5 px-3 py-1 text-[10px] jetbrains-mono rounded border border-white/10 hover:bg-white/10 transition-colors uppercase">Clear Buffer</button>
-</div>
-</div>
-<!-- Terminal Window -->
-<div class="bg-[#03040B]/90 border border-white/10 rounded-xl overflow-hidden shadow-2xl relative">
-<div class="absolute inset-0 pointer-events-none bg-gradient-to-b from-primary/5 to-transparent opacity-20"></div>
-<div class="bg-white/5 px-4 py-2 border-b border-white/10 flex gap-1.5">
-<div class="w-2.5 h-2.5 rounded-full bg-[#ff5f56]"></div>
-<div class="w-2.5 h-2.5 rounded-full bg-[#ffbd2e]"></div>
-<div class="w-2.5 h-2.5 rounded-full bg-[#27c93f]"></div>
-</div>
-<div class="h-[460px] p-6 jetbrains-mono text-xs overflow-y-auto terminal-scroll space-y-2 relative">
-<div class="flex gap-4">
-<span class="text-on-surface-variant shrink-0">[14:02:11.23]</span>
-<span class="text-[#00ff9d]">AUTH</span>
-<span class="text-on-surface">Node XSC-8091 handshake established. Cipher: AES-256-GCM</span>
-</div>
-<div class="flex gap-4">
-<span class="text-on-surface-variant shrink-0">[14:02:11.45]</span>
-<span class="text-primary">TRAC</span>
-<span class="text-on-surface">Packet transfer initiated | Hash: <span class="text-secondary">0x8F2E...A90B</span> | Latency: 22ms</span>
-</div>
-<div class="flex gap-4">
-<span class="text-on-surface-variant shrink-0">[14:02:12.11]</span>
-<span class="text-[#c3c0ff]">SCAN</span>
-<span class="bg-secondary/20 text-secondary-fixed px-1 rounded">aiScanner.js: No anomaly detected in XSC-8091 payload.</span>
-</div>
-<div class="flex gap-4">
-<span class="text-on-surface-variant shrink-0">[14:02:12.89]</span>
-<span class="text-[#00ff9d]">AUTH</span>
-<span class="text-on-surface">Node XSC-1022 connection refresh. Re-routing via Node-4-S.</span>
-</div>
-<div class="flex gap-4">
-<span class="text-on-surface-variant shrink-0">[14:02:13.44]</span>
-<span class="text-[#ffbd2e]">WARN</span>
-<span class="text-on-surface">XSC-4402 report: Jitter detected (7ms deviation)</span>
-</div>
-<div class="flex gap-4">
-<span class="text-on-surface-variant shrink-0">[14:02:14.02]</span>
-<span class="text-primary">TRAC</span>
-<span class="text-on-surface">Packet fragment received | Hash: <span class="text-secondary">0xC119...D344</span> | Latency: 42ms</span>
-</div>
-<div class="flex gap-4">
-<span class="text-on-surface-variant shrink-0">[14:02:14.50]</span>
-<span class="text-[#c3c0ff]">SCAN</span>
-<span class="bg-secondary/20 text-secondary-fixed px-1 rounded">aiScanner.js: Analyzing cryptographic entropy... Status: Normal</span>
-</div>
-<div class="flex gap-4">
-<span class="text-on-surface-variant shrink-0">[14:02:15.11]</span>
-<span class="text-[#00ff9d]">AUTH</span>
-<span class="text-on-surface">Node XSC-5591 uplink confirmed. 1.2 GB/s dedicated tunnel.</span>
-</div>
-<div class="flex gap-4">
-<span class="text-on-surface-variant shrink-0">[14:02:15.88]</span>
-<span class="text-primary">TRAC</span>
-<span class="text-on-surface">Node heartbeats: [8091: OK] [1022: OK] [4402: OK] [5591: OK]</span>
-</div>
-<div class="flex gap-4 animate-pulse">
-<span class="text-on-surface-variant shrink-0">[14:02:16.42]</span>
-<span class="text-[#00ff9d]">SYS</span>
-<span class="text-on-surface">Scanning next packet cluster...</span>
-</div>
-<div class="flex gap-2 mt-4">
-<span class="text-primary">root@xscout:~$</span>
-<span class="w-2 h-4 bg-primary animate-[pulse_1s_infinite]"></span>
-</div>
-</div>
-</div>
-</div>
-<!-- Node Grid Section -->
-<div class="col-span-12 lg:col-span-4 flex flex-col gap-4">
-<div class="flex items-center justify-between">
-<div class="flex items-center gap-3">
-<span class="material-symbols-outlined text-secondary text-xl">hub</span>
-<h3 class="font-bold text-on-surface uppercase tracking-widest text-sm">Connection Nodes</h3>
-</div>
-<span class="jetbrains-mono text-[10px] text-on-surface-variant">SORT: LATENCY</span>
-</div>
-<div class="grid grid-cols-1 gap-3">
-<!-- Node Card 1 -->
-<div class="bg-white/5 backdrop-blur-xl p-4 rounded-xl border border-white/10 hover:border-primary/50 transition-all duration-300 group">
-<div class="flex justify-between items-start mb-3">
-<div>
-<h4 class="jetbrains-mono text-sm font-bold text-on-surface">XSC-8091</h4>
-<p class="text-[9px] jetbrains-mono text-on-surface-variant uppercase tracking-wider">AES-256 Tunnel Active</p>
-</div>
-<div class="w-2 h-2 rounded-full bg-[#27c93f] node-active-glow"></div>
-</div>
-<div class="flex justify-between items-end">
-<div class="space-y-1">
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-[14px] text-secondary">speed</span>
-<span class="jetbrains-mono text-[11px] text-on-surface">142 Kbps</span>
-</div>
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-[14px] text-on-surface-variant">timer</span>
-<span class="jetbrains-mono text-[11px] text-on-surface-variant">22ms Latency</span>
-</div>
-</div>
-<div class="opacity-0 group-hover:opacity-100 transition-opacity">
-<button class="text-[9px] jetbrains-mono text-primary uppercase font-bold px-2 py-1 border border-primary/20 rounded">Inspect</button>
-</div>
-</div>
-</div>
-<!-- Node Card 2 -->
-<div class="bg-white/5 backdrop-blur-xl p-4 rounded-xl border border-white/10 hover:border-primary/50 transition-all duration-300 group">
-<div class="flex justify-between items-start mb-3">
-<div>
-<h4 class="jetbrains-mono text-sm font-bold text-on-surface">XSC-1022</h4>
-<p class="text-[9px] jetbrains-mono text-on-surface-variant uppercase tracking-wider">Static IP Relay</p>
-</div>
-<div class="w-2 h-2 rounded-full bg-[#27c93f] node-active-glow"></div>
-</div>
-<div class="flex justify-between items-end">
-<div class="space-y-1">
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-[14px] text-secondary">speed</span>
-<span class="jetbrains-mono text-[11px] text-on-surface">98 Kbps</span>
-</div>
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-[14px] text-on-surface-variant">timer</span>
-<span class="jetbrains-mono text-[11px] text-on-surface-variant">15ms Latency</span>
-</div>
-</div>
-<div class="opacity-0 group-hover:opacity-100 transition-opacity">
-<button class="text-[9px] jetbrains-mono text-primary uppercase font-bold px-2 py-1 border border-primary/20 rounded">Inspect</button>
-</div>
-</div>
-</div>
-<!-- Node Card 3 (Warning State) -->
-<div class="bg-white/10 backdrop-blur-xl p-4 rounded-xl border border-[#ffbd2e]/30 transition-all duration-300 group">
-<div class="flex justify-between items-start mb-3">
-<div>
-<h4 class="jetbrains-mono text-sm font-bold text-on-surface">XSC-4402</h4>
-<p class="text-[9px] jetbrains-mono text-[#ffbd2e] uppercase tracking-wider">Unstable Uplink</p>
-</div>
-<div class="w-2 h-2 rounded-full bg-[#ffbd2e] animate-pulse"></div>
-</div>
-<div class="flex justify-between items-end">
-<div class="space-y-1">
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-[14px] text-secondary">speed</span>
-<span class="jetbrains-mono text-[11px] text-on-surface">12 Kbps</span>
-</div>
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-[14px] text-[#ffbd2e]">timer</span>
-<span class="jetbrains-mono text-[11px] text-[#ffbd2e]">182ms Latency</span>
-</div>
-</div>
-<div class="opacity-100">
-<button class="text-[9px] jetbrains-mono text-background bg-[#ffbd2e] uppercase font-bold px-2 py-1 rounded">Re-route</button>
-</div>
-</div>
-</div>
-<!-- Node Card 4 -->
-<div class="bg-white/5 backdrop-blur-xl p-4 rounded-xl border border-white/10 hover:border-primary/50 transition-all duration-300 group">
-<div class="flex justify-between items-start mb-3">
-<div>
-<h4 class="jetbrains-mono text-sm font-bold text-on-surface">XSC-5591</h4>
-<p class="text-[9px] jetbrains-mono text-on-surface-variant uppercase tracking-wider">P2P Encrypted Grid</p>
-</div>
-<div class="w-2 h-2 rounded-full bg-[#27c93f] node-active-glow"></div>
-</div>
-<div class="flex justify-between items-end">
-<div class="space-y-1">
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-[14px] text-secondary">speed</span>
-<span class="jetbrains-mono text-[11px] text-on-surface">1.2 Gbps</span>
-</div>
-<div class="flex items-center gap-2">
-<span class="material-symbols-outlined text-[14px] text-on-surface-variant">timer</span>
-<span class="jetbrains-mono text-[11px] text-on-surface-variant">8ms Latency</span>
-</div>
-</div>
-<div class="opacity-0 group-hover:opacity-100 transition-opacity">
-<button class="text-[9px] jetbrains-mono text-primary uppercase font-bold px-2 py-1 border border-primary/20 rounded">Inspect</button>
-</div>
-</div>
-</div>
-</div>
-<div class="mt-4 p-4 rounded-xl bg-gradient-to-br from-primary/10 to-transparent border border-white/5 overflow-hidden relative">
-<img alt="Cybersecurity Matrix Background" class="absolute inset-0 w-full h-full object-cover opacity-10 mix-blend-overlay" data-alt="Abstract cyber security background with binary code and glowing data points in deep blue and red tones" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBetpo4n7TIWNbqBNrsdzzaEnNG0wUirCGarAtcBPTEhehAmfHiYhQwpkbnsUenyHVEnOhWjdFtUnI3Y0kRctux0Ty1x4APtQJ3O3FBWJQUw0jBSmoiRPqIgf4pkJVc0Zzkq0nYn8GncueoAB1LsahJX8NZIUhqgWxrAH1lVUoC7MMnQlOGmPn4CCE2mNubuT4vDXMfhAYhJn3W-xtN6EtNxMj1NgjbkhDb4tY2EYGW3zRKTd2bF-WssDEKQvfHIyWQjoSt1vSYqJWi"/>
-<p class="jetbrains-mono text-[10px] text-primary-container font-bold mb-2">NETWORK HEALTH SUMMARY</p>
-<div class="flex items-end gap-1 h-12">
-<div class="flex-1 bg-primary/20 h-[60%] rounded-sm"></div>
-<div class="flex-1 bg-primary/40 h-[80%] rounded-sm"></div>
-<div class="flex-1 bg-primary/30 h-[40%] rounded-sm"></div>
-<div class="flex-1 bg-primary/60 h-[90%] rounded-sm"></div>
-<div class="flex-1 bg-primary/20 h-[55%] rounded-sm"></div>
-<div class="flex-1 bg-[#ffbd2e] h-[20%] rounded-sm"></div>
-<div class="flex-1 bg-primary/40 h-[70%] rounded-sm"></div>
-<div class="flex-1 bg-primary/30 h-[45%] rounded-sm"></div>
-</div>
-</div>
-</div>
-<!-- Forensic Analysis Module (Bento Grid Style) -->
-<div class="col-span-12 grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
-<div class="md:col-span-2 bg-white/5 backdrop-blur-3xl border border-white/10 rounded-2xl p-6 flex flex-col md:flex-row gap-8 items-center">
-<div class="relative w-40 h-40 shrink-0">
-<svg class="w-full h-full -rotate-90">
-<circle class="text-white/5" cx="80" cy="80" fill="transparent" r="70" stroke="currentColor" stroke-width="8"></circle>
-<circle class="text-primary" cx="80" cy="80" fill="transparent" r="70" stroke="currentColor" stroke-dasharray="440" stroke-dashoffset="88" stroke-width="8"></circle>
-</svg>
-<div class="absolute inset-0 flex flex-col items-center justify-center">
-<span class="text-3xl font-black text-on-surface">82%</span>
-<span class="jetbrains-mono text-[9px] text-on-surface-variant uppercase">Bandwidth</span>
-</div>
-</div>
-<div>
-<h4 class="font-bold text-xl mb-2">Anomaly Scanning Report</h4>
-<p class="text-on-surface-variant text-sm mb-4 leading-relaxed">
-                            Heuristic analysis from <span class="jetbrains-mono text-secondary">aiScanner.js</span> indicates that 98.4% of traffic is compliant with student node protocols. Detected 2 small bursts of non-standard fragmentation in Segment 4.
-                        </p>
-<div class="flex gap-4">
-<div class="flex flex-col">
-<span class="jetbrains-mono text-[10px] text-on-surface-variant uppercase tracking-widest">Protocol</span>
-<span class="text-sm font-bold">XSC-CORE-3</span>
-</div>
-<div class="flex flex-col">
-<span class="jetbrains-mono text-[10px] text-on-surface-variant uppercase tracking-widest">Encryption</span>
-<span class="text-sm font-bold">SHA-384</span>
-</div>
-</div>
-</div>
-</div>
-<div class="bg-primary-container/20 border border-primary-container/30 rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden">
-<div class="absolute -right-4 -bottom-4 opacity-10">
-<span class="material-symbols-outlined text-9xl">shield_locked</span>
-</div>
-<div>
-<h4 class="jetbrains-mono text-sm font-black text-[#ffdad6] uppercase mb-4 tracking-tighter">Emergency Lockdown</h4>
-<p class="text-[11px] text-[#ffdad6]/80 leading-relaxed mb-6">
-                            Immediate disconnection of all nodes. This action is irreversible and requires Level 4 authorization.
-                        </p>
-</div>
-<button class="w-full bg-[#dc2626] text-white py-3 rounded-lg font-bold text-xs uppercase tracking-[0.2em] shadow-[0_0_20px_rgba(220,38,38,0.4)] hover:brightness-110 transition-all">
-                        Execute Protocol X
-                    </button>
-</div>
-</div>
-</div>
-</main>
-<!-- Visual Accents (Cosmic Minimalism) -->
-<div class="fixed top-1/4 -right-24 w-64 h-64 bg-secondary/10 blur-[120px] pointer-events-none rounded-full"></div>
-<div class="fixed bottom-0 left-64 w-96 h-96 bg-primary/5 blur-[150px] pointer-events-none rounded-full"></div>
-</body></html>
+<body>
+
+    <nav class="top-nav">
+        <div class="logo-text"><span>x</span>Scout Oversight Hub</div>
+        <div class="mono" style="font-size: 10px; opacity: 0.4;">NODE SIGNAL: {{ student_id }}</div>
+        <button onclick="window.close()" class="red-close-btn">✕ CLOSE VIEW</button>
+    </nav>
+
+    <div class="monitor-grid">
+        <!-- COL 1 -->
+        <div style="display: flex; flex-direction: column; gap: 24px; overflow: hidden;">
+            <div class="panel" style="flex-shrink: 0; padding: 20px 30px;">
+                <h1 style="margin: 0; font-size: 2.2rem; font-weight: 900; color: #fff; letter-spacing: -1px;">{{ student_id }}</h1>
+            </div>
+
+            <div class="folder-hub" onclick="window.location.href='{% url 'network_node' %}'">
+                <span style="font-size: 2.5rem; display: block; margin-bottom: 10px;">📂</span>
+                <h3 style="margin: 0; color: var(--accent-cyan); font-weight: 900; font-size: 11px; text-transform: uppercase;">View Project Structure</h3>
+                <p style="margin: 5px 0 0; color: #555; font-size: 9px; text-transform: uppercase; font-weight: 700;">Behavioral Tree Node</p>
+            </div>
+
+            <div class="panel" style="flex: 1; background: white !important;">
+                <div class="panel-header" style="background: #f0f0f0 !important; border-bottom: 1px solid #ddd !important;">
+                    <span class="panel-title" style="color: #666;">Code Snapshot</span>
+                    <span class="mono" id="current-file" style="font-size: 10px; color: #999;">filename.py</span>
+                </div>
+                <div class="panel-body mono" style="background: white !important; color: #000 !important; font-size: 12px; white-space: pre-wrap;" id="code-viewer">
+// Awaiting telemetry pulse...
+                </div>
+            </div>
+        </div>
+
+        <!-- COL 2 -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-title">Technology Stack Analysis</span>
+                <button onclick="location.reload()" style="background: transparent; border: 1px solid var(--accent-purple); color: var(--accent-purple); padding: 4px 10px; border-radius: 4px; font-size: 9px; cursor: pointer;">REFRESH</button>
+            </div>
+            <div class="panel-body">
+                <div class="ownership-ledger">
+                    <p style="font-size: 9px; color: #aaa; text-transform: uppercase; font-weight: 900; margin-bottom: 20px;">Project Ownership</p>
+                    <div class="mono" style="font-size: 13px; font-weight: 700; line-height: 2;">
+                        <p style="margin:0;"><span style="color:#888;">ID:</span> {{ student_id }}</p>
+                        <p style="margin:0;"><span style="color:#888;">GIT:</span> ACTIVE LEDGER</p>
+                        <p style="margin:0;"><span style="color:#888;">HUB:</span> LOCAL_SQLITE_NODE</p>
+                    </div>
+                </div>
+
+                <p style="font-size: 10px; color: var(--accent-cyan); font-weight: 900; text-transform: uppercase; margin-bottom: 18px;">Detection Intelligence</p>
+                <div class="white-status-box">Frontend Engines</div>
+                <div class="white-status-box">Backend Services</div>
+                <div class="white-status-box">Database Layer</div>
+                <div class="white-status-box">Forensic Infrastructure</div>
+            </div>
+        </div>
+
+        <!-- COL 3 -->
+        <div class="panel">
+            <div class="panel-header">
+                <div>
+                    <span class="panel-title" style="color: var(--accent-purple);">Behavioral Signal</span>
+                </div>
+                <div class="risk-gauge">
+                    <p style="font-size: 8px; font-weight: 900; color: #444; margin: 0 0 4px 0; text-transform: uppercase;">Risk Score</p>
+                    <h2 id="risk-val" class="risk-val">0%</h2>
+                </div>
+            </div>
+            <div class="panel-body">
+                <p style="font-size: 10px; color: var(--accent-cyan); font-weight: 900; text-transform: uppercase; margin-bottom: 15px;">App History</p>
+                <div style="background: white; border-radius: 12px; padding: 10px; color: black; min-height: 300px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+                    <table class="forensic-table">
+                        <thead>
+                            <tr>
+                                <th>APP</th>
+                                <th>WINDOW</th>
+                                <th>CONTEXT</th>
+                                <th style="text-align: right;">TIME</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-body">
+                            <tr><td colspan="5" class="mono" style="text-align:center; padding: 60px; color: #aaa;">Searching for signal...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Timeline -->
+                <div style="margin-top: 32px; padding: 0 10px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span class="mono" style="color: #666; font-size: 9px; font-weight: 800;">TEMPORAL SCRUBBER</span>
+                        <span class="mono" style="color: #00ff9d; font-size: 9px; font-weight: 800;">LIVE</span>
+                    </div>
+                    <div style="height: 4px; background: #222; border-radius: 2px; position: relative;">
+                        <div style="position: absolute; right: 0; top: -5px; width: 14px; height: 14px; background: white; border-radius: 50%; box-shadow: 0 0 10px white;"></div>
+                    </div>
+                </div>
+
+                <h3 style="font-size: 10px; margin-top: 40px; margin-bottom: 12px; color: #ff0055; text-transform: uppercase; font-weight: 900;">Snapshot Log</h3>
+                <div class="mono" id="log-text" style="background: #000; padding: 20px; border-radius: 8px; font-size: 10px; color: #333; height: 100px; border: 1px solid #111;">
+// Node heartbeat active.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const STUDENT_ID = "{{ student_id }}";
+        async function pulseNode() {
+            try {
+                const res = await fetch('/api/telemetry/');
+                const json = await res.json();
+                if (json.status === 'success') {
+                    const node = json.data.find(n => n.id === STUDENT_ID);
+                    if (node) updateUI(node);
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function updateUI(node) {
+            // Fix 1: Score Mapping
+            const score = Math.round((node.ai || 0) * 100);
+            document.getElementById('risk-val').innerText = `${score}%`;
+            document.getElementById('risk-val').style.color = score > 70 ? '#ff3b3b' : '#00ff9d';
+
+            // Fix 2: Code Snapshot Mapping
+            const snapshot = (node.forensic && node.forensic.snapshot) ? node.forensic.snapshot : null;
+            if (snapshot && snapshot.code) {
+                document.getElementById('code-viewer').innerText = snapshot.code;
+                document.getElementById('current-file').innerText = snapshot.file || 'unknown';
+            }
+
+            // Fix 3: App History Mapping (Iterating the real array)
+            if (node.forensic && node.forensic.appHistory) {
+                const body = document.getElementById('history-body');
+                body.innerHTML = ''; // Fresh list per pulse
+                node.forensic.appHistory.slice(-10).reverse().forEach(app => {
+                    const row = `<tr style="border-bottom: 1px solid #f0f0f0;">
+                        <td style="padding: 12px; font-weight: 900;">${app.app || 'N/A'}</td>
+                        <td style="padding: 12px; color: #666; font-size: 9px; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${app.title || 'Untitled'}</td>
+                        <td style="padding: 12px;"><span class="mono" style="background: #e2e1ef; padding: 2px 5px; border-radius: 3px; font-size: 8px; font-weight: 900;">${app.context || 'Usage'}</span></td>
+                        <td style="padding: 12px; text-align: right; color: #999;">${app.time || '--:--'}</td>
+                        <td style="padding: 12px; text-align: center;"><button class="action-chip">VIEW</button></td>
+                    </tr>`;
+                    body.insertAdjacentHTML('beforeend', row);
+                });
+            }
+        }
+        setInterval(pulseNode, 3000);
+        pulseNode();
+    </script>
+</body>
+</html>

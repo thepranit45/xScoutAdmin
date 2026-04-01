@@ -62,16 +62,16 @@ fun DashboardScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Surface(
                             shape = CircleShape,
-                            color = XScoutColors.NeonGreen.copy(0.1f),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, XScoutColors.NeonGreen.copy(0.2f))
+                            color = XScoutColors.AdminGreen.copy(0.1f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, XScoutColors.AdminGreen.copy(0.2f))
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Box(Modifier.size(6.dp).clip(CircleShape).background(XScoutColors.NeonGreen))
+                                Box(Modifier.size(6.dp).clip(CircleShape).background(XScoutColors.AdminGreen))
                                 Spacer(Modifier.width(6.dp))
-                                Text("LIVE", color = XScoutColors.NeonGreen, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                Text("LIVE", color = XScoutColors.AdminGreen, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                         IconButton(onClick = onNavigateToSettings) {
@@ -91,7 +91,7 @@ fun DashboardScreen(
                     trailingIcon = { Icon(Icons.Default.Search, null, tint = Color.White.copy(0.3f)) },
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = XScoutColors.NeonPurple,
+                        focusedBorderColor = XScoutColors.XScoutCyan,
                         unfocusedBorderColor = Color.White.copy(0.1f)
                     ),
                     singleLine = true
@@ -115,7 +115,7 @@ fun DashboardScreen(
                         modifier = Modifier.weight(1f).clickable { onNavigateToStudents() },
                         label = "Monitored",
                         value = "${stats.totalStudents}",
-                        color = XScoutColors.NeonCyan
+                        color = XScoutColors.XScoutCyan
                     )
                 }
                 Spacer(Modifier.height(24.dp))
@@ -156,7 +156,7 @@ fun DashboardScreen(
             }
 
             if (uiState.isLoading) {
-                item { Box(Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = XScoutColors.NeonPurple) } }
+                item { Box(Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = XScoutColors.XScoutCyan) } }
             } else if (uiState.recentSessions.isEmpty()) {
                 item { Box(Modifier.fillMaxWidth().padding(40.dp), contentAlignment = Alignment.Center) { Text("No active threads detected", color = Color.White.copy(0.3f), fontSize = 13.sp) } }
             } else {
@@ -180,15 +180,15 @@ fun TabButton(
         onClick = onClick,
         modifier = modifier.height(44.dp),
         shape = RoundedCornerShape(8.dp),
-        color = if (isActive) XScoutColors.NeonPurple.copy(0.1f) else Color.Transparent,
-        border = androidx.compose.foundation.BorderStroke(1.dp, if (isActive) XScoutColors.NeonPurple.copy(0.3f) else Color.White.copy(0.05f))
+        color = if (isActive) XScoutColors.XScoutCyan.copy(0.1f) else Color.Transparent,
+        border = androidx.compose.foundation.BorderStroke(1.dp, if (isActive) XScoutColors.XScoutCyan.copy(0.3f) else Color.White.copy(0.05f))
     ) {
         Row(
             modifier = Modifier.fillMaxSize(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
-            Icon(icon, null, tint = if (isActive) XScoutColors.NeonPurple else Color.White.copy(0.4f), modifier = Modifier.size(16.dp))
+            Icon(icon, null, tint = if (isActive) XScoutColors.XScoutCyan else Color.White.copy(0.4f), modifier = Modifier.size(16.dp))
             Spacer(Modifier.width(6.dp))
             Text(label, color = if (isActive) Color.White else Color.White.copy(0.4f), fontSize = 12.sp, fontWeight = FontWeight.Medium)
         }

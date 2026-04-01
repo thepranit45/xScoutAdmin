@@ -12,38 +12,37 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-// ─── xScout Color Palette ───────────────────────────────────────────────────
+// ─── xScout Dashboard-Matched Color Palette ─────────────────────────────────
 object XScoutColors {
-    val NeonPurple       = Color(0xFFB026FF)
-    val NeonPink         = Color(0xFFFF26B9)
-    val NeonCyan         = Color(0xFF26FFF5)
-    val NeonGreen        = Color(0xFF39FF14)
-    val DeepVoid         = Color(0xFF0A0A0A) // Warp.dev Charcoal Black
-    val DarkCard         = Color(0xFF141419)
-    val GridDot          = Color(0xFF222222)
-    val GlassWhite       = Color(0x0AFFFFFF)
-    val GlassBorder      = Color(0x1AFFFFFF)
+    val XScoutCyan       = Color(0xFF06B6D4) // Primary Analytical Cyan
+    val XScoutBlue       = Color(0xFF3B82F6) // Secure Azure Accent
+    val AdminGreen       = Color(0xFF3DDC84) // Android/Success Green
+    val DeepVoid         = Color(0xFF03040B) // Dashboard Background
+    val DarkCard         = Color(0xFF11131C) // Component Background
+    val GridDot          = Color(0x1AFFFFFF) // Mesh Utility
+    val GlassWhite       = Color(0x14FFFFFF) // 8% Frost Overlay
+    val GlassBorder      = Color(0x1AFFFFFF) // 10% Micro-Border
     val TextPrimary      = Color(0xFFFFFFFF)
-    val TextSecondary    = Color(0xFFB0B0D0)
-    val TextMuted        = Color(0xFF6060A0)
-    val Success          = Color(0xFF39FF14)
-    val Warning          = Color(0xFFFF9500)
-    val Danger           = Color(0xFFFF3B47)
-    val Surface          = Color(0xFF160824)
-    val SurfaceVariant   = Color(0xFF1E0D35)
+    val TextSecondary    = Color(0xFFE2E1EF) // Analytic secondary text
+    val TextMuted        = Color(0xFF6B7280) // Metadata Gray
+    val Success          = Color(0xFF3DDC84)
+    val Warning          = Color(0xFFFACC15) // Diagnostic Yellow
+    val Danger           = Color(0xFFEF4444) // Secure Alert Red (de-saturated)
+    val Surface          = Color(0xFF0F111A)
+    val SurfaceVariant   = Color(0xFF1B1E2B)
 }
 
 data class XScoutColorScheme(
-    val primary: Color = XScoutColors.NeonPurple,
-    val secondary: Color = XScoutColors.NeonPink,
-    val accent: Color = XScoutColors.NeonCyan,
+    val primary: Color = XScoutColors.XScoutCyan,
+    val secondary: Color = XScoutColors.XScoutBlue,
+    val accent: Color = XScoutColors.AdminGreen,
     val background: Color = XScoutColors.DeepVoid,
     val surface: Color = XScoutColors.Surface,
     val surfaceVariant: Color = XScoutColors.SurfaceVariant,
     val card: Color = XScoutColors.DarkCard,
     val glassWhite: Color = XScoutColors.GlassWhite,
     val glassBorder: Color = XScoutColors.GlassBorder,
-    val onPrimary: Color = Color.White,
+    val onPrimary: Color = Color.Black,
     val onBackground: Color = XScoutColors.TextPrimary,
     val onSurface: Color = XScoutColors.TextPrimary,
     val textSecondary: Color = XScoutColors.TextSecondary,
@@ -51,18 +50,18 @@ data class XScoutColorScheme(
     val success: Color = XScoutColors.Success,
     val warning: Color = XScoutColors.Warning,
     val danger: Color = XScoutColors.Danger,
-    val neonGreen: Color = XScoutColors.NeonGreen,
+    val adminGreen: Color = XScoutColors.AdminGreen,
 )
 
 val LocalXScoutColors = staticCompositionLocalOf { XScoutColorScheme() }
 
 private val DarkColorScheme = darkColorScheme(
-    primary = XScoutColors.NeonPurple,
-    secondary = XScoutColors.NeonPink,
-    tertiary = XScoutColors.NeonCyan,
+    primary = XScoutColors.XScoutCyan,
+    secondary = XScoutColors.XScoutBlue,
+    tertiary = XScoutColors.AdminGreen,
     background = XScoutColors.DeepVoid,
     surface = XScoutColors.Surface,
-    onPrimary = Color.White,
+    onPrimary = Color.Black,
     onSecondary = Color.White,
     onBackground = XScoutColors.TextPrimary,
     onSurface = XScoutColors.TextPrimary,
